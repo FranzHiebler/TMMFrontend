@@ -1,0 +1,93 @@
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  margin: 0;
+  font-weight: 700;
+  color: #111827;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  background: #ffffff;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.notes-textarea {
+  min-height: 80px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+label input[type="checkbox"] {
+  width: auto;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-with-unit input {
+  flex: 1;
+}
+
+.input-with-unit span {
+  font-weight: 700;
+  color: #374151;
+}
+
+.location-select-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.systems-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.systems-checkboxes label {
+  margin: 0;
+}

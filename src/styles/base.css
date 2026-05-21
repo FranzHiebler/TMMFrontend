@@ -1,0 +1,87 @@
+:root {
+  font-family: Inter, system-ui, Arial, sans-serif;
+  color: #1f2933;
+  background: #f4f6f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f7f8fa 0%, #eef1f5 100%);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0 0 14px;
+  color: #111827;
+}
+
+h1 {
+  font-size: 32px;
+}
+
+h5 {
+  margin: 0;
+  font-size: 15px;
+  color: #111827;
+}
+
+p {
+  margin: 8px 0;
+}
+
+small {
+  color: #6b7280;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.card .card {
+  background: #f9fafb;
+  box-shadow: none;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+button[type="button"] {
+  background: #374151;
+}
+
+button[type="button"]:hover:not(:disabled) {
+  background: #1f2937;
+}
+
+.leaflet-container {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}

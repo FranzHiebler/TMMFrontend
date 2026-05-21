@@ -1,0 +1,100 @@
+.profile-form h2 {
+  margin-top: 1.5rem;
+}
+
+.profile-field-with-visibility {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-field-with-visibility .field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  column-gap: 1rem;
+  align-items: start;
+}
+
+.profile-field-with-visibility .field > label:first-child {
+  grid-column: 1;
+}
+
+.profile-field-with-visibility .field > input {
+  grid-column: 1;
+}
+
+.visibility-radio-list {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin-top: 1.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.visibility-radio-option {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.visibility-radio-option input {
+  width: auto;
+  min-width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-geo-picker {
+  grid-column: 1 / -1;
+  display: block !important;
+}
+
+.profile-geo-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.profile-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.profile-link:hover {
+  text-decoration: underline;
+}
+
+.friend-main .profile-link,
+.assigned-player-name.profile-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 900px) {
+  .profile-field-with-visibility {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-field-with-visibility .field {
+    grid-template-columns: 1fr;
+  }
+
+  .visibility-radio-list {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 0.4rem;
+  }
+}

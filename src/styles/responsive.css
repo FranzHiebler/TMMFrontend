@@ -1,0 +1,179 @@
+@media (max-width: 1100px) {
+  .app-nav {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "brand actions"
+      "links links";
+    gap: 10px 16px;
+  }
+
+  .nav-brand {
+    grid-area: brand;
+  }
+
+  .nav-links {
+    grid-area: links;
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .nav-actions {
+    grid-area: actions;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
+  .nav-link,
+  .nav-create-button {
+    white-space: nowrap;
+  }
+
+  .game-session-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-tables-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .games-filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 850px) {
+  .location-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .games-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .user-switcher {
+    min-width: 150px;
+    max-width: 190px;
+  }
+}
+
+@media (max-width: 700px) {
+  .container,
+  .page {
+    padding: 20px 12px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .app-nav {
+    position: static;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "brand"
+      "links"
+      "actions";
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .nav-brand {
+    grid-area: brand;
+  }
+
+  .nav-brand-text {
+    display: none;
+  }
+
+  .nav-links {
+    grid-area: links;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .nav-actions {
+    grid-area: actions;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .nav-link,
+  .nav-create-button {
+    min-height: 36px;
+    padding: 8px 11px;
+    font-size: 14px;
+  }
+
+  .nav-create-button {
+    order: -1;
+  }
+
+  .user-switcher {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    border-radius: 12px;
+  }
+
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .games-filter-header {
+    flex-direction: column;
+  }
+
+  .games-filter-toggles {
+    flex-direction: column;
+  }
+
+  .filter-toggle {
+    width: 100%;
+    border-radius: 14px;
+  }
+
+  .location-select-row,
+  .form-row-2,
+  .game-table-editor,
+  .game-session-meta,
+  .game-table-header,
+  .member-row,
+  .member-edit-row,
+  .proposal-row {
+    grid-template-columns: 1fr;
+  }
+
+  .table-actions,
+  .proposal-actions,
+  .modal-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .inline-add-system {
+    grid-template-columns: 1fr;
+  }
+
+  .assigned-player-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .assigned-player-remove {
+    width: auto;
+  }
+}

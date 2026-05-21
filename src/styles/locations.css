@@ -1,0 +1,63 @@
+.location-list {
+  display: grid;
+  gap: 16px;
+}
+
+.location-card-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.location-main,
+.location-members-side {
+  min-width: 0;
+}
+
+.location-actions {
+  margin-top: 12px;
+}
+
+.location-members-side > .card {
+  margin: 0;
+  background: #f9fafb;
+}
+
+.member-list {
+  display: grid;
+  gap: 10px;
+}
+
+.member-row {
+  display: grid;
+  grid-template-columns: 1fr 140px auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.member-row span {
+  font-weight: 700;
+}
+
+.member-row strong {
+  justify-self: start;
+}
+
+.member-edit-block {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.member-edit-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.member-row button,
+.member-edit-row button {
+  white-space: nowrap;
+}
