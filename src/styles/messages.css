@@ -218,24 +218,18 @@
 }
 
 .notification-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 250;
-  width: min(360px, calc(100vw - 24px));
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.16);
+  position: fixed;
+  top: 74px;
+  left: 10px;
+  right: 10px;
+  width: auto;
+  max-height: calc(100dvh - 92px);
+  overflow-y: auto;
+  z-index: 12000;
 }
 
 .notification-popover-header {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
 }
 
 .notification-item {
@@ -246,6 +240,11 @@
   color: #111827;
   text-decoration: none;
 }
+
+  .notification-popover-header button {
+    flex: 0 0 auto;
+    color: #ffffff;
+  }
 
 .notification-item:hover,
 .notification-item.unread {
@@ -318,7 +317,7 @@
   background: #ffffff;
 }
 
-.friend-row > div:first-child {
+.friend-row>div:first-child {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -329,6 +328,7 @@
 }
 
 @media (max-width: 760px) {
+
   .messages-layout,
   .new-conversation-fields,
   .friends-layout {
