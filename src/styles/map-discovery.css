@@ -75,10 +75,10 @@
 .discovery-filter-box {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
+  gap: 6px 8px;
   padding: 8px;
   border-radius: 12px;
-  background: rgba(241, 245, 249, 0.92);
+  background: rgba(241, 245, 249, 0.88);
   font-size: 12px;
   font-weight: 800;
 }
@@ -95,27 +95,6 @@
   height: 15px;
 }
 
-.session-filter-select {
-  grid-column: 1 / -1;
-  display: flex !important;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.session-filter-select select {
-  flex: 1;
-  min-width: 150px;
-  height: 30px;
-  min-height: 30px;
-  border-radius: 9px;
-  border: 1px solid rgba(148, 163, 184, 0.65);
-  padding: 3px 8px;
-  font-size: 12px;
-  font-weight: 800;
-  background: white;
-}
-
 .discovery-count {
   margin: 0;
   color: #475569;
@@ -128,16 +107,19 @@
   position: absolute;
   left: 16px;
   bottom: 16px;
-  z-index: 520;
+  z-index: 80;
   display: grid;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 5px;
+  padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
-  font-size: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: none;
+  backdrop-filter: blur(6px);
+  font-size: 11px;
   font-weight: 800;
+  opacity: 0.72;
+  pointer-events: none;
 }
 
 .legend-dot {
@@ -252,9 +234,9 @@
 .session-preview {
   right: 24px;
   bottom: 24px;
-  width: min(440px, calc(100vw - 48px));
-  border-radius: 18px;
-  padding: 18px;
+  width: min(420px, calc(100vw - 48px));
+  border-radius: 16px;
+  padding: 12px;
   animation: preview-in 180ms ease-out;
 }
 
@@ -270,8 +252,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
-  min-height: 32px;
+  margin-bottom: 6px;
+  min-height: 28px;
 }
 
 .session-preview-switcher,
@@ -279,18 +261,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-radius: 999px;
   background: rgba(241, 245, 249, 0.92);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
 }
 
 .session-preview-switcher button,
 .table-preview-switcher button {
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
+  width: 23px;
+  height: 23px;
+  min-height: 23px;
   padding: 0;
   border-radius: 999px;
   font-size: 12px;
@@ -298,33 +280,36 @@
 }
 
 .session-preview h2 {
-  margin: 0 36px 12px 0;
+  margin: 0 34px 8px 0;
+  font-size: 18px;
+  line-height: 1.15;
 }
 
 .preview-meta-grid {
   display: grid;
-  gap: 7px;
-  margin: 12px 0;
+  gap: 4px;
+  margin: 8px 0;
   color: #334155;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .system-badge-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0;
+  gap: 5px;
+  margin: 7px 0;
 }
 
 .system-badge {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 5px 9px;
+  padding: 3px 7px;
   background: #e0e7ff;
   color: #3730a3;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
 }
 
@@ -334,11 +319,11 @@
 }
 
 .table-preview-box {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(241, 245, 249, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  margin-top: 8px;
+  padding: 9px;
+  border-radius: 12px;
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
 .table-preview-head {
@@ -346,35 +331,39 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
 }
 
 .table-preview-meta {
   display: grid;
-  gap: 5px;
+  gap: 3px;
   color: #334155;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .table-preview-players {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: #475569;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .preview-summary {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   color: #475569;
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .preview-close {
   margin-left: auto;
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
   padding: 0;
   border-radius: 999px;
   background: #e5e7eb;
@@ -387,15 +376,15 @@
 .location-preview > .preview-close,
 .player-preview > .preview-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
 }
 
 .preview-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 7px;
+  margin-top: 10px;
 }
 
 .preview-actions a,
@@ -403,10 +392,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
-  border-radius: 12px;
-  padding: 10px 16px;
-  font-size: 14px;
+  min-height: 34px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1;
   text-decoration: none;
@@ -484,21 +473,55 @@
     grid-template-columns: 1fr;
   }
 
-  .session-filter-select select {
-    min-width: 120px;
+  .session-preview {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 16px;
   }
 
-  .session-preview {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    width: auto;
-    border-radius: 18px;
+  .session-preview h2 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .session-preview-topbar {
+    min-height: 26px;
+    margin-bottom: 5px;
+  }
+
+  .panel-kicker {
+    font-size: 10px;
+  }
+
+  .preview-meta-grid {
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .table-preview-meta,
+  .table-preview-players {
+    font-size: 11px;
+  }
+
+  .preview-actions a,
+  .preview-actions button {
+    min-height: 32px;
+    padding: 7px 10px;
+    font-size: 11px;
   }
 
   .discovery-map-legend {
-    left: 12px;
-    bottom: 12px;
+    left: 10px;
+    bottom: 10px;
+    z-index: 80;
+    opacity: 0.52;
+    transform: scale(0.92);
+    transform-origin: left bottom;
   }
 
   .discovery-empty-state {

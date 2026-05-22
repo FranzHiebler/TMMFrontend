@@ -21,21 +21,12 @@ type Selection =
   | { type: "player"; id: string }
   | null;
 
-type CenterSource =
-  | "browser"
-  | "profile"
-  | "userSearch"
-  | "defaultLocation"
-  | "fallback";
-
-type SessionFilter = "all" | "mine" | "none";
+type CenterSource = "browser" | "defaultLocation" | "fallback";
 
 const DEFAULT_CENTER: [number, number] = [50.5558, 9.6808];
 
 const CENTER_SOURCE_LABEL: Record<CenterSource, string> = {
   browser: "aktueller Standort",
-  profile: "Profil-Standort",
-  userSearch: "Spieler-Standort",
   defaultLocation: "Standard-Location",
   fallback: "Fallback",
 };
@@ -84,14 +75,9 @@ function timeHint(startTimeUtc: string) {
 
   if (diffDays === 0) return "Heute";
   if (diffDays === 1) return "Morgen";
-  if (diffDays > 1 && diffDays < 7) {
-    return start.toLocaleDateString("de-DE", { weekday: "short" });
-  }
+  if (diffDays > 1 && diffDays < 7) return start.toLocaleDateString("de-DE", { weekday: "short" });
 
-  return start.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-  });
+  return start.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
 }
 
 function gameMarkerState(game: GameDiscoveryResponse) {
@@ -122,9 +108,7 @@ function systemLabelsFromSummary(summary: string) {
 function systemBadgesHtml(labels: string[]) {
   if (labels.length === 0) return `<span class="map-system-badge">?</span>`;
 
-  return labels
-    .map((label) => `<span class="map-system-badge">${label}</span>`)
-    .join("");
+  return labels.map((label) => `<span class="map-system-badge">${label}</span>`).join("");
 }
 
 function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number) {
@@ -150,8 +134,7 @@ function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number) {
 
 function locationMarkerIcon(location: LocationDiscoveryResponse) {
   const state = location.isOwnLocation ? "own-location-base" : "location";
-  const count =
-    location.upcomingGameCount > 0 ? location.upcomingGameCount.toString() : "";
+  const count = location.upcomingGameCount > 0 ? location.upcomingGameCount.toString() : "";
 
   return L.divIcon({
     className: "",
@@ -169,9 +152,7 @@ function locationMarkerIcon(location: LocationDiscoveryResponse) {
 function playerMarkerIcon(isMe: boolean) {
   return L.divIcon({
     className: "",
-    html: `<div class="player-marker ${
-      isMe ? "player-marker-me" : "player-marker-default"
-    }">👤</div>`,
+    html: `<div class="player-marker ${isMe ? "player-marker-me" : "player-marker-default"}">👤</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
   });
@@ -220,9 +201,11 @@ export default function MapDiscoveryPage() {
   const [timeWindowDays, setTimeWindowDays] = useState(7);
   const [radiusKm, setRadiusKm] = useState(80);
   const [filterCollapsed, setFilterCollapsed] = useState(false);
-  const [showLocations, setShowLocations] = useState(true);
-  const [showPlayers, setShowPlayers] = useState(true);
-  const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all");
+
+  const [showLocations, setShowLocations] = useState(false);
+  const [showPlayers, setShowPlayers] = useState(false);
+  const [showMySessions, setShowMySessions] = useState(true);
+  const [showAllSessions, setShowAllSessions] = useState(false);
 
   const [players, setPlayers] = useState<UserSearchResponse[]>([]);
   const [games, setGames] = useState<GameDiscoveryResponse[]>([]);
@@ -242,33 +225,11 @@ export default function MapDiscoveryPage() {
   const { from, to } = useMemo(() => rangeToDates(timeWindowDays), [timeWindowDays]);
 
   const resolveInitialCenter = useCallback(async () => {
-    setCenterReady(false);
-    setSelection(null);
-    setSelectedFullGame(null);
-    setSelectedTableIndex(0);
-
     try {
-      const [profile, myLocations, userSearchResults] = await Promise.all([
+      const [profile, myLocations] = await Promise.all([
         getCurrentUserProfile(user),
         getMyLocations(user),
-        searchUsers(""),
       ]);
-
-      if (profile.latitude != null && profile.longitude != null) {
-        setCenter([profile.latitude, profile.longitude]);
-        setCenterSource("profile");
-        return;
-      }
-
-      const searchUser = userSearchResults.find(
-        (candidate) => candidate.userId === user.userId
-      );
-
-      if (searchUser?.latitude != null && searchUser.longitude != null) {
-        setCenter([searchUser.latitude, searchUser.longitude]);
-        setCenterSource("userSearch");
-        return;
-      }
 
       const defaultLocation = myLocations.find(
         (location) =>
@@ -284,8 +245,6 @@ export default function MapDiscoveryPage() {
       }
     } catch {
       // fallback unten
-    } finally {
-      setCenterReady(true);
     }
 
     try {
@@ -311,10 +270,7 @@ export default function MapDiscoveryPage() {
 
     try {
       const [locationData, gameData, playerData] = await Promise.all([
-        getDiscoveryLocations(
-          { latitude: center[0], longitude: center[1], radiusKm },
-          user
-        ),
+        getDiscoveryLocations({ latitude: center[0], longitude: center[1], radiusKm }, user),
         getDiscoveryGames(
           {
             fromUtc: from.toISOString(),
@@ -333,10 +289,7 @@ export default function MapDiscoveryPage() {
       setPlayers(playerData);
 
       setSelection((current) => {
-        if (
-          current?.type === "game" &&
-          gameData.some((game) => game.gameId === current.id)
-        ) {
+        if (current?.type === "game" && gameData.some((game) => game.gameId === current.id)) {
           return current;
         }
 
@@ -347,17 +300,15 @@ export default function MapDiscoveryPage() {
           return current;
         }
 
-        if (
-          current?.type === "player" &&
-          playerData.some((player) => player.userId === current.id)
-        ) {
+        if (current?.type === "player" && playerData.some((player) => player.userId === current.id)) {
           return current;
         }
 
+        const firstOwnGame = gameData.find((game) => game.isHost || game.isParticipant);
+
+        if (firstOwnGame) return { type: "game", id: firstOwnGame.gameId };
         if (gameData[0]) return { type: "game", id: gameData[0].gameId };
-        if (locationData[0]) {
-          return { type: "location", id: locationData[0].locationId };
-        }
+        if (locationData[0]) return { type: "location", id: locationData[0].locationId };
 
         return null;
       });
@@ -375,7 +326,7 @@ export default function MapDiscoveryPage() {
   });
 
   useEffect(() => {
-    void resolveInitialCenter();
+    void resolveInitialCenter().finally(() => setCenterReady(true));
   }, [resolveInitialCenter]);
 
   useEffect(() => {
@@ -389,13 +340,14 @@ export default function MapDiscoveryPage() {
   }, [locations, showLocations]);
 
   const visibleGames = useMemo(() => {
-    if (sessionFilter === "none") return [];
+    if (showAllSessions) return games;
 
-    return games.filter((game) => {
-      if (sessionFilter === "mine") return game.isHost || game.isParticipant;
-      return true;
-    });
-  }, [games, sessionFilter]);
+    if (showMySessions) {
+      return games.filter((game) => game.isHost || game.isParticipant);
+    }
+
+    return [];
+  }, [games, showAllSessions, showMySessions]);
 
   const visiblePlayers = useMemo(() => {
     if (!showPlayers) return [];
@@ -503,8 +455,7 @@ export default function MapDiscoveryPage() {
     if (!table) return;
 
     const systemKey =
-      table.systems.length === 0 ||
-      table.systems.some((system) => system.toLowerCase() === "egal")
+      table.systems.length === 0 || table.systems.some((system) => system.toLowerCase() === "egal")
         ? undefined
         : table.systems[0];
 
@@ -663,18 +614,22 @@ export default function MapDiscoveryPage() {
                   Spieler
                 </label>
 
-                <label className="session-filter-select">
-                  <span>Sessions</span>
-                  <select
-                    value={sessionFilter}
-                    onChange={(event) =>
-                      setSessionFilter(event.target.value as SessionFilter)
-                    }
-                  >
-                    <option value="all">Alle</option>
-                    <option value="mine">Meine</option>
-                    <option value="none">Aus</option>
-                  </select>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showMySessions}
+                    onChange={(event) => setShowMySessions(event.target.checked)}
+                  />
+                  Meine Sessions
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showAllSessions}
+                    onChange={(event) => setShowAllSessions(event.target.checked)}
+                  />
+                  Alle Sessions
                 </label>
               </div>
 
@@ -691,27 +646,13 @@ export default function MapDiscoveryPage() {
         </aside>
 
         <div className="discovery-map-legend">
-          <span>
-            <i className="legend-dot location" /> Location
-          </span>
-          <span>
-            <i className="legend-dot own-location-base" /> Eigene Location
-          </span>
-          <span>
-            <i className="legend-dot event" /> Session
-          </span>
-          <span>
-            <i className="legend-dot participant" /> Meine Teilnahme
-          </span>
-          <span>
-            <i className="legend-dot host" /> Mein Host
-          </span>
-          <span>
-            <i className="legend-dot player" /> Spieler
-          </span>
-          <span>
-            <i className="legend-dot player-me" /> Ich
-          </span>
+          <span><i className="legend-dot location" /> Location</span>
+          <span><i className="legend-dot own-location-base" /> Eigene Location</span>
+          <span><i className="legend-dot event" /> Session</span>
+          <span><i className="legend-dot participant" /> Meine Teilnahme</span>
+          <span><i className="legend-dot host" /> Mein Host</span>
+          <span><i className="legend-dot player" /> Spieler</span>
+          <span><i className="legend-dot player-me" /> Ich</span>
         </div>
 
         {!isLoading && !banner && visibleGames.length === 0 && visibleLocations.length > 0 && (
@@ -727,15 +668,9 @@ export default function MapDiscoveryPage() {
 
               {selectedLocationGames.length > 1 && (
                 <div className="session-preview-switcher">
-                  <button type="button" onClick={() => selectGameAtOffset(-1)}>
-                    ←
-                  </button>
-                  <span>
-                    {selectedGameIndex + 1} / {selectedLocationGames.length}
-                  </span>
-                  <button type="button" onClick={() => selectGameAtOffset(1)}>
-                    →
-                  </button>
+                  <button type="button" onClick={() => selectGameAtOffset(-1)}>←</button>
+                  <span>{selectedGameIndex + 1} / {selectedLocationGames.length}</span>
+                  <button type="button" onClick={() => selectGameAtOffset(1)}>→</button>
                 </div>
               )}
 
@@ -753,9 +688,7 @@ export default function MapDiscoveryPage() {
 
             <div className="preview-meta-grid">
               <span>📅 {dateTimeText(selectedGame.startTimeUtc)}</span>
-              <span>
-                📍 {selectedGame.locationName}, {selectedGame.city}
-              </span>
+              <span>📍 {selectedGame.locationName}, {selectedGame.city}</span>
               <span>👥 {selectedGame.availableSeats} freie Plätze</span>
               <span>🎲 {selectedGame.status}</span>
             </div>
@@ -771,30 +704,19 @@ export default function MapDiscoveryPage() {
 
                   {selectedTables.length > 1 && (
                     <div className="table-preview-switcher">
-                      <button type="button" onClick={() => selectTableAtOffset(-1)}>
-                        ←
-                      </button>
-                      <span>
-                        {selectedTableIndex + 1} / {selectedTables.length}
-                      </span>
-                      <button type="button" onClick={() => selectTableAtOffset(1)}>
-                        →
-                      </button>
+                      <button type="button" onClick={() => selectTableAtOffset(-1)}>←</button>
+                      <span>{selectedTableIndex + 1} / {selectedTables.length}</span>
+                      <button type="button" onClick={() => selectTableAtOffset(1)}>→</button>
                     </div>
                   )}
                 </div>
 
                 <div className="table-preview-meta">
                   <span>
-                    🎲{" "}
-                    {selectedTable.systems.length > 0
-                      ? selectedTable.systems.join(", ")
-                      : "offen"}
+                    🎲 {selectedTable.systems.length > 0 ? selectedTable.systems.join(", ") : "offen"}
                   </span>
 
-                  {selectedTable.points != null && (
-                    <span>⚔️ {selectedTable.points} Punkte</span>
-                  )}
+                  {selectedTable.points != null && <span>⚔️ {selectedTable.points} Punkte</span>}
 
                   <span>
                     👥 {selectedTable.assignedPlayers.length} / {selectedTable.maxPlayers}
@@ -805,9 +727,7 @@ export default function MapDiscoveryPage() {
 
                 {selectedTable.assignedPlayers.length > 0 && (
                   <p className="table-preview-players">
-                    {selectedTable.assignedPlayers
-                      .map((player) => player.displayName)
-                      .join(", ")}
+                    {selectedTable.assignedPlayers.map((player) => player.displayName).join(", ")}
                   </p>
                 )}
               </section>
@@ -876,9 +796,7 @@ export default function MapDiscoveryPage() {
             </div>
 
             <div className="system-badge-row">
-              {renderSystemBadges(
-                selectedLocation.systemKeys.map(cleanSystemLabel).filter(Boolean)
-              )}
+              {renderSystemBadges(selectedLocation.systemKeys.map(cleanSystemLabel).filter(Boolean))}
             </div>
 
             <div className="preview-actions">
@@ -914,9 +832,7 @@ export default function MapDiscoveryPage() {
             </div>
 
             <div className="preview-actions">
-              <Link to={`/users/${encodeURIComponent(selectedPlayer.userId)}`}>
-                Profil öffnen
-              </Link>
+              <Link to={`/users/${encodeURIComponent(selectedPlayer.userId)}`}>Profil öffnen</Link>
             </div>
           </article>
         )}
