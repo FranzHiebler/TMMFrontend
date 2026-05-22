@@ -78,7 +78,7 @@
   }
 
   .app-nav {
-    position: static;
+    position: sticky;
     grid-template-columns: 1fr;
     grid-template-areas:
       "brand"
