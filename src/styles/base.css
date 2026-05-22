@@ -75,10 +75,12 @@ button:disabled {
 
 button[type="button"] {
   background: #374151;
+  color: #ffffff;
 }
 
 button[type="button"]:hover:not(:disabled) {
   background: #1f2937;
+  color: #ffffff;
 }
 
 .leaflet-container {

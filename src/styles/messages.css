@@ -44,7 +44,7 @@
 }
 
 .thread-toggle-meta {
-  color: #6b7280;
+  color: inherit;
   font-size: 13px;
   font-weight: 800;
 }
