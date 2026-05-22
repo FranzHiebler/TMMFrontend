@@ -458,7 +458,7 @@
     min-height: 560px;
   }
 
-  .discovery-panel {a
+  .discovery-panel {
     top: 10px;
     right: 10px;
     width: min(210px, calc(100vw - 20px));
