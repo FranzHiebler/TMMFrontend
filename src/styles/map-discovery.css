@@ -447,6 +447,7 @@
   }
 }
 
+
 @media (max-width: 760px) {
   .discovery-map-shell {
     min-height: calc(100vh - 64px);
@@ -458,19 +459,50 @@
   }
 
   .discovery-panel {
-    top: 12px;
-    right: 12px;
-    left: auto;
-    width: min(250px, calc(100vw - 24px));
-    padding: 12px;
+    top: 10px;
+    right: 10px;
+    width: min(210px, calc(100vw - 20px));
+    padding: 10px;
+    gap: 7px;
+    border-radius: 16px;
   }
 
   .discovery-panel-collapsed {
-    width: 145px;
+    width: 112px;
+    padding: 7px;
+  }
+
+  .discovery-panel-toggle {
+    min-height: 30px;
+    font-size: 11px;
+    border-radius: 9px;
+  }
+
+  .day-slider {
+    font-size: 11px;
+    gap: 3px;
   }
 
   .discovery-filter-box {
     grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 7px;
+    font-size: 11px;
+  }
+
+  .discovery-filter-box label {
+    min-height: 23px;
+  }
+
+  .session-filter-select select {
+    min-width: 105px;
+    height: 28px;
+    min-height: 28px;
+    font-size: 11px;
+  }
+
+  .discovery-count {
+    font-size: 10px;
   }
 
   .session-preview {
@@ -478,55 +510,106 @@
     right: 10px;
     bottom: 10px;
     width: auto;
-    max-height: 46vh;
+    max-height: 48vh;
     overflow-y: auto;
-    padding: 10px;
-    border-radius: 16px;
-  }
-
-  .session-preview h2 {
-    font-size: 16px;
-    margin-bottom: 6px;
+    border-radius: 18px;
+    padding: 14px;
   }
 
   .session-preview-topbar {
-    min-height: 26px;
+    min-height: 28px;
     margin-bottom: 5px;
+    gap: 7px;
   }
 
   .panel-kicker {
     font-size: 10px;
   }
 
-  .preview-meta-grid {
-    font-size: 11px;
-    gap: 3px;
+  .session-preview h2 {
+    margin: 0 34px 8px 0;
+    font-size: 20px;
+    line-height: 1.15;
   }
 
-  .table-preview-meta,
-  .table-preview-players {
+  .preview-meta-grid {
+    gap: 4px;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+
+  .system-badge-row {
+    gap: 5px;
+    margin: 8px 0;
+  }
+
+  .system-badge {
+    padding: 4px 8px;
     font-size: 11px;
+  }
+
+  .table-preview-box {
+    margin-top: 9px;
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .table-preview-head {
+    margin-bottom: 6px;
+  }
+
+  .table-preview-meta {
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .table-preview-players {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+
+  .session-preview-switcher,
+  .table-preview-switcher {
+    gap: 4px;
+    padding: 3px 5px;
+    font-size: 11px;
+  }
+
+  .session-preview-switcher button,
+  .table-preview-switcher button {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    font-size: 11px;
+  }
+
+  .preview-close {
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+
+  .preview-actions {
+    gap: 8px;
+    margin-top: 10px;
   }
 
   .preview-actions a,
   .preview-actions button {
-    min-height: 32px;
-    padding: 7px 10px;
-    font-size: 11px;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 36px;
+    padding: 9px 10px;
+    font-size: 12px;
   }
 
   .discovery-map-legend {
-    left: 10px;
-    bottom: 10px;
-    z-index: 80;
-    opacity: 0.52;
-    transform: scale(0.92);
-    transform-origin: left bottom;
+    display: none;
   }
 
   .discovery-empty-state {
-    left: 12px;
-    bottom: 92px;
-    width: calc(100vw - 24px);
+    left: 10px;
+    bottom: 82px;
+    width: calc(100vw - 20px);
   }
 }

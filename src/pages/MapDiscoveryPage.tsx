@@ -200,8 +200,8 @@ export default function MapDiscoveryPage() {
 
   const [timeWindowDays, setTimeWindowDays] = useState(7);
   const [radiusKm, setRadiusKm] = useState(80);
-  const [filterCollapsed, setFilterCollapsed] = useState(false);
-
+  const [filterCollapsed, setFilterCollapsed] = useState(true);
+  
   const [showLocations, setShowLocations] = useState(false);
   const [showPlayers, setShowPlayers] = useState(false);
   const [showMySessions, setShowMySessions] = useState(true);
