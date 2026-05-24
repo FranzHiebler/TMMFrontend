@@ -1,92 +1,90 @@
-import { Link, NavLink, Route, Routes } from "react-router-dom";
-import GamesPage from "./pages/GamesPage";
-import NearbyPage from "./pages/NearbyPage";
-import LocationsPage from "./pages/LocationPage";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import CalendarPage from "./pages/CalendarPage";
 import CreateGamePage from "./pages/CreateGamePage";
-import MyGamesPage from "./pages/MyGamesPage";
-import MapDiscoveryPage from "./pages/MapDiscoveryPage";
-import ProfilePage from "./pages/ProfilePage";
-import UserSwitcher from "./components/UserSwitcher";
 import DirectMessagesPage from "./pages/DirectMessagesPage";
-import NotificationBell from "./components/NotificationBell";
+import EventSeriesPage from "./pages/EventSeriesPage";
 import FriendsPage from "./pages/FriendsPage";
+import GamesPage from "./pages/GamesPage";
+import LocationsPage from "./pages/LocationPage";
+import MapDiscoveryPage from "./pages/MapDiscoveryPage";
+import MyGamesPage from "./pages/MyGamesPage";
+import NearbyPage from "./pages/NearbyPage";
+import PlayRequestsPage from "./pages/PlayRequestsPage";
+import ProfilePage from "./pages/ProfilePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
+import PublicSessionPage from "./pages/PublicSessionPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SystemsAdminPage from "./pages/SystemsAdminPage";
+import UserSwitcher from "./components/UserSwitcher";
 import { useUser } from "./context/UserContext";
 
 const adminUserIds = ["64f1a2b3c4d5e6f7890abc12"];
 
 function navClass({ isActive }: { isActive: boolean }) {
-  return isActive ? "nav-link active" : "nav-link";
+  return isActive ? "app-tab active" : "app-tab";
 }
 
 export default function App() {
   const user = useUser();
+  const location = useLocation();
   const isAdmin = adminUserIds.includes(user.userId);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const createRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setMenuOpen(false);
+      setCreateOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      const target = event.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) setMenuOpen(false);
+      if (createRef.current && !createRef.current.contains(target)) setCreateOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
 
   return (
     <>
-      <nav className="app-nav">
-        <Link className="nav-brand" to="/" aria-label="Zur Startseite">
+      <nav className="app-top-nav">
+        <Link className="nav-brand" to="/" aria-label="Zur Karte">
           <span className="nav-brand-mark">TMM</span>
           <span className="nav-brand-text">Tabletop Matchmaker</span>
         </Link>
 
-        <div className="nav-links">
-          <NavLink to="/my-games" className={navClass}>
-            Meine Spiele
-          </NavLink>
+        <div className="top-nav-actions" ref={menuRef}>
+          <button
+            type="button"
+            className="hamburger-button"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
 
-          <NavLink to="/messages" className={navClass}>
-            Nachrichten
-          </NavLink>
-        </div>
-
-        <div className="nav-actions">
-          <NavLink to="/games/create" className="nav-create-button">
-            + Spiel
-          </NavLink>
-
-          <details className="nav-more">
-            <summary>Mehr</summary>
-
-            <div className="nav-more-menu">
-              <NavLink to="/friends" className={navClass}>
-                Freunde
-              </NavLink>
-
-              <NavLink to="/locations" className={navClass}>
-                Meine Locations
-              </NavLink>
-
-              <NavLink to="/nearby" className={navClass}>
-                Locations suchen
-              </NavLink>
-
-              <NavLink to="/games" className={navClass}>
-                Alle Spiele
-              </NavLink>
-
-              <NavLink to="/profile" className={navClass}>
-                Profil
-              </NavLink>
-
-              {isAdmin && (
-                <NavLink to="/admin/systems" className={navClass}>
-                  Systeme verwalten
-                </NavLink>
-              )}
-
+          {menuOpen && (
+            <div className="hamburger-menu">
+              <Link to="/calendar">Kalender</Link>
+              <Link to="/locations">Meine Spielorte</Link>
+              <Link to="/series">Serien verwalten</Link>
               <div className="nav-more-divider" />
-
-              <div className="nav-user-switcher">
-                <UserSwitcher />
-              </div>
+              {isAdmin && <Link to="/admin/systems">Admin: Systeme verwalten</Link>}
+              <div className="nav-more-divider" />
+              <UserSwitcher />
             </div>
-          </details>
-
-          <NotificationBell />
+          )}
         </div>
       </nav>
 
@@ -99,11 +97,51 @@ export default function App() {
         <Route path="/locations" element={<LocationsPage />} />
         <Route path="/games/create" element={<CreateGamePage />} />
         <Route path="/messages" element={<DirectMessagesPage />} />
+        <Route path="/play-requests" element={<PlayRequestsPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/series" element={<EventSeriesPage />} />
+        <Route path="/public/sessions/:slugOrId" element={<PublicSessionPage />} />
         <Route path="/friends" element={<FriendsPage />} />
         <Route path="/users/:userId" element={<PublicProfilePage />} />
         <Route path="/profile" element={<ProfilePage />} />
         {isAdmin && <Route path="/admin/systems" element={<SystemsAdminPage />} />}
       </Routes>
+
+      <div className="app-bottom-nav" ref={createRef}>
+        <NavLink to="/my-games" className={navClass}>
+          <span className="app-icon app-icon-home" aria-hidden="true" />
+          Meine
+        </NavLink>
+        <NavLink to="/friends" className={navClass}>
+          <span className="app-icon app-icon-friends" aria-hidden="true" />
+          Freunde
+        </NavLink>
+        <NavLink to="/messages" className={navClass}>
+          <span className="app-icon app-icon-inbox" aria-hidden="true" />
+          Postfach
+        </NavLink>
+        <NavLink to="/profile" className={navClass}>
+          <span className="app-icon app-icon-profile" aria-hidden="true" />
+          Ich Profil
+        </NavLink>
+
+        <button
+          type="button"
+          className="app-tab app-tab-plus"
+          aria-expanded={createOpen}
+          onClick={() => setCreateOpen((open) => !open)}
+        >
+          +
+        </button>
+
+        {createOpen && (
+          <div className="create-sheet">
+            <Link to="/games/create">Spiel erstellen</Link>
+            <Link to="/play-requests">Spielgesuch erstellen</Link>
+            <Link to="/series">Wiederkehrendes Spiel erstellen</Link>
+          </div>
+        )}
+      </div>
     </>
   );
 }

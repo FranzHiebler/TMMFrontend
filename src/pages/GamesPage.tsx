@@ -111,13 +111,13 @@ export default function GamesPage() {
       <Message text={successMessage} type="success" />
       <Message text={errorMessage} type="error" />
       <Message text={error} type="error" />
-      {loading && <Message text="Lade Games..." type="info" />}
+      {loading && <Message text="Lade Spiele..." type="info" />}
 
       <div className="games-page-intro">
         <div className="page-header page-header-stack">
           <div>
             <h1 className="games-page-title">
-              Alle GameSessions ({filteredGames.length})
+              Alle Spiele ({filteredGames.length})
             </h1>
             <p className="page-subtitle">
               Finde offene Runden, filtere nach Ort und System und tritt direkt bei.

@@ -173,6 +173,11 @@
   border-color: #c7d2fe;
 }
 
+.conversation-list-item.active span {
+  color: #1d4ed8;
+  font-weight: 950;
+}
+
 .conversation-list-item small {
   color: #6b7280;
   overflow: hidden;
@@ -185,6 +190,23 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.shared-games-strip,
+.message-proposal-box {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.shared-games-strip a {
+  color: #1d4ed8;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .notification-bell {

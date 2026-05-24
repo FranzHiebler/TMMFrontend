@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { getAllGames } from "../api/gamesApi";
 import {
   getConversation,
   getConversations,
@@ -7,9 +8,10 @@ import {
   sendDirectMessage,
 } from "../api/messagesApi";
 import MessageThreadPanel from "../components/MessageThreadPanel";
+import NotificationBell from "../components/NotificationBell";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
-import type { ConversationDto, MessageDto } from "../types/game";
+import type { ConversationDto, GameResponse, MessageDto } from "../types/game";
 
 export default function DirectMessagesPage() {
   const user = useUser();
@@ -22,6 +24,12 @@ export default function DirectMessagesPage() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [recipientId, setRecipientId] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [games, setGames] = useState<GameResponse[]>([]);
+  const [proposalOpen, setProposalOpen] = useState(false);
+  const [proposalSystem, setProposalSystem] = useState("");
+  const [proposalTime, setProposalTime] = useState("");
+  const [proposalLocation, setProposalLocation] = useState("");
+  const [now, setNow] = useState(() => Date.now());
 
   const selectedConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === selectedId) ?? null,
@@ -35,6 +43,22 @@ export default function DirectMessagesPage() {
         .join(", ") || "Direktnachricht"
     : "Neue Direktnachricht";
 
+  const chatPartner =
+    selectedConversation?.participants.find((participant) => participant.userId !== user.userId) ?? null;
+
+  const sharedFutureGames = useMemo(() => {
+    if (!chatPartner) return [];
+    return games
+      .filter((game) => new Date(game.startTimeUtc).getTime() >= now)
+      .filter((game) =>
+        game.tables.some((table) =>
+          table.assignedPlayers.some((player) => player.userId === user.userId) &&
+          table.assignedPlayers.some((player) => player.userId === chatPartner.userId)
+        )
+      )
+      .slice(0, 3);
+  }, [chatPartner, games, now, user.userId]);
+
   const loadConversations = useCallback(async () => {
     setLoadingList(true);
     try {
@@ -42,7 +66,7 @@ export default function DirectMessagesPage() {
       setConversations(next);
       setSelectedId((current) => current ?? next[0]?.id ?? null);
     } catch (error) {
-      showToast("error", error instanceof Error ? error.message : "Conversations konnten nicht geladen werden");
+      showToast("error", error instanceof Error ? error.message : "Chats konnten nicht geladen werden");
     } finally {
       setLoadingList(false);
     }
@@ -75,6 +99,14 @@ export default function DirectMessagesPage() {
   }, [loadConversations]);
 
   useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setNow(Date.now());
+      void getAllGames().then(setGames).catch(() => setGames([]));
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
     const conversationId = searchParams.get("conversationId");
     if (conversationId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -83,14 +115,24 @@ export default function DirectMessagesPage() {
   }, [searchParams]);
 
   async function send(body: string) {
+    const proposalText = proposalOpen && (proposalSystem || proposalTime || proposalLocation)
+      ? [
+          "",
+          "Spielvorschlag:",
+          proposalSystem ? `System: ${proposalSystem}` : null,
+          proposalTime ? `Zeit: ${proposalTime}` : null,
+          proposalLocation ? `Spielort: ${proposalLocation}` : null,
+        ].filter(Boolean).join("\n")
+      : "";
+
     const request = selectedId
-      ? { conversationId: selectedId, recipients: [], body }
+      ? { conversationId: selectedId, recipients: [], body: `${body}${proposalText}` }
       : {
           recipients: [{
             userId: recipientId.trim(),
             displayName: recipientName.trim() || recipientId.trim(),
           }],
-          body,
+          body: `${body}${proposalText}`,
         };
 
     const created = await sendDirectMessage(request, user);
@@ -102,6 +144,11 @@ export default function DirectMessagesPage() {
       setRecipientName("");
       await loadConversations();
     }
+
+    setProposalOpen(false);
+    setProposalSystem("");
+    setProposalTime("");
+    setProposalLocation("");
   }
 
   return (
@@ -111,12 +158,13 @@ export default function DirectMessagesPage() {
           <h1>Nachrichten</h1>
           <p className="page-subtitle">Direkte Absprachen und Spielrunden-Kommunikation an einem Ort.</p>
         </div>
+        <NotificationBell />
       </div>
 
       <div className="messages-layout">
         <aside className="conversation-list-panel">
           <div className="conversation-list-header">
-            <b>Conversations</b>
+            <b>Chats</b>
             <button type="button" onClick={() => {
               setSelectedId(null);
               setMessages([]);
@@ -125,7 +173,7 @@ export default function DirectMessagesPage() {
             </button>
           </div>
 
-          {loadingList && <div className="thread-empty">Lade Conversations...</div>}
+          {loadingList && <div className="thread-empty">Lade Chats...</div>}
           {!loadingList && conversations.length === 0 && (
             <div className="thread-empty">Noch keine Direktnachrichten.</div>
           )}
@@ -134,7 +182,7 @@ export default function DirectMessagesPage() {
             const title = conversation.participants
               .filter((participant) => participant.userId !== user.userId)
               .map((participant) => participant.displayName)
-              .join(", ") || "Conversation";
+              .join(", ") || "Chat";
 
             return (
               <button
@@ -181,6 +229,32 @@ export default function DirectMessagesPage() {
             onLoad={loadThread}
             onSend={send}
           />
+
+          {chatPartner && (
+            <section className="shared-games-strip">
+              <b>Gemeinsame kommende Spiele mit {chatPartner.displayName}</b>
+              {sharedFutureGames.length === 0 && <span>Keine kommenden gemeinsamen Spiele.</span>}
+              {sharedFutureGames.map((game) => (
+                <Link key={game.id} to={`/sessions/${game.id}`}>
+                  {game.title} · {game.timeLabel || new Date(game.startTimeUtc).toLocaleDateString("de-DE")} · {game.location.name}
+                </Link>
+              ))}
+            </section>
+          )}
+
+          <section className="message-proposal-box">
+            <button type="button" onClick={() => setProposalOpen((open) => !open)}>
+              {proposalOpen ? "Spielvorschlag ausblenden" : "+ Spielvorschlag anhängen"}
+            </button>
+            {proposalOpen && (
+              <div className="form-row-2">
+                <input value={proposalSystem} onChange={(e) => setProposalSystem(e.target.value)} placeholder="System" />
+                <input value={proposalTime} onChange={(e) => setProposalTime(e.target.value)} placeholder="Datum / grobe Zeit" />
+                <input value={proposalLocation} onChange={(e) => setProposalLocation(e.target.value)} placeholder="Spielort" />
+                <small className="field-hint">MVP: Der Vorschlag wird strukturiert an die Nachricht angehängt. Annehmen/Ablehnen folgt später als echte Aktion.</small>
+              </div>
+            )}
+          </section>
         </section>
       </div>
     </main>

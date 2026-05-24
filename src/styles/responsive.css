@@ -1,18 +1,10 @@
 @media (max-width: 1100px) {
   .app-nav {
-    grid-template-columns: auto 1fr;
-    grid-template-areas:
-      "brand actions"
-      "links links";
+    flex-wrap: wrap;
     gap: 10px 16px;
   }
 
-  .nav-brand {
-    grid-area: brand;
-  }
-
   .nav-links {
-    grid-area: links;
     justify-content: flex-start;
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -20,7 +12,6 @@
   }
 
   .nav-actions {
-    grid-area: actions;
     justify-content: flex-end;
     flex-wrap: nowrap;
   }
@@ -79,17 +70,9 @@
 
   .app-nav {
     position: sticky;
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "brand"
-      "links"
-      "actions";
+    align-items: flex-start;
     padding: 12px;
     gap: 10px;
-  }
-
-  .nav-brand {
-    grid-area: brand;
   }
 
   .nav-brand-text {
@@ -97,7 +80,6 @@
   }
 
   .nav-links {
-    grid-area: links;
     justify-content: flex-start;
     flex-wrap: wrap;
     overflow-x: visible;
@@ -105,7 +87,6 @@
   }
 
   .nav-actions {
-    grid-area: actions;
     justify-content: flex-start;
     flex-wrap: wrap;
   }

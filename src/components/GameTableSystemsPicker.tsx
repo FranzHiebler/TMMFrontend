@@ -46,7 +46,7 @@ export default function GameTableSystemsPicker({
 
             {locationSystems.length === 0 && (
                 <div className="message message-info">
-                    Für diese Location sind noch keine Systeme ausgewählt.
+                    Für diesen Spielort sind noch keine Systeme ausgewählt.
                 </div>
             )}
 

@@ -20,7 +20,7 @@ export default function LocationsPage() {
       const data = await getMyLocations(user);
       setLocations(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Locations konnten nicht geladen werden.");
+      setError(err instanceof Error ? err.message : "Spielorte konnten nicht geladen werden.");
       setLocations([]);
     } finally {
       setLoading(false);
@@ -35,14 +35,14 @@ export default function LocationsPage() {
   return (
     <div className="container">
       <div className="page-header">
-        <h1>Meine Locations ({locations.length})</h1>
+        <h1>Meine Spielorte ({locations.length})</h1>
 
         <button type="button" onClick={() => setShowModal(true)}>
-          + Neue Location
+          + Neuer Spielort
         </button>
       </div>
 
-      <Message text={loading ? "Lade Locations..." : ""} type="info" />
+      <Message text={loading ? "Lade Spielorte..." : ""} type="info" />
       <Message text={error} type="error" />
 
       {!loading && !error && (

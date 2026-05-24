@@ -13,7 +13,7 @@ export async function getConversations(user: User): Promise<ConversationDto[]> {
   const res = await fetch(`${API}/Messages/conversations`, {
     headers: authHeaders(user),
   });
-  return handleResponse<ConversationDto[]>(res, "Conversations laden fehlgeschlagen");
+  return handleResponse<ConversationDto[]>(res, "Chats laden fehlgeschlagen");
 }
 
 export async function getConversation(

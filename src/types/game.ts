@@ -1,6 +1,11 @@
 export type GameSessionState = "Open" | "Full" | "Closed" | "Cancelled";
 export type ApplicationStatus = "Pending" | "Accepted" | "Rejected" | "Withdrawn";
 export type ChangeProposalStatus = "Pending" | "Accepted" | "Rejected";
+export type SessionTimingMode = "Fixed" | "Rough" | "Open";
+export type SessionInvitationStatus = "Pending" | "Accepted" | "Rejected";
+export type GameResultKind = "Matrix20" | "Matrix6" | "Score" | "FreeText";
+export type PlayRequestStatus = "Open" | "Converted" | "Closed";
+export type EventRecurrenceKind = "Weekly" | "BiWeekly" | "MonthlyFirstWeekday";
 export type LocationRole = "Owner" | "Admin" | "Manager" | "Member" | "Applicant";
 export type ProfileFieldVisibility = "Public" | "FriendsOnly" | "Private";
 
@@ -73,9 +78,17 @@ export interface GameResponse {
   location: LocationSnapshotDto;
   clubId?: string | null;
   startTimeUtc: string;
+  timingMode: SessionTimingMode;
+  timeLabel?: string | null;
   description?: string | null;
   tables: GameTableDto[];
   changeProposals: GameChangeProposalDto[];
+  dateOptions: SessionDateOptionDto[];
+  invitations: SessionInvitationDto[];
+  waitlist: WaitlistEntryDto[];
+  result?: GameResultDto | null;
+  publicSlug?: string | null;
+  seriesId?: string | null;
   maxPlayers: number;
   assignedPlayers: number;
   openSlots: number;
@@ -96,6 +109,8 @@ export interface CreateGameRequest {
   locationId: string;
   clubId?: string | null;
   startTimeUtc: string;
+  timingMode?: SessionTimingMode;
+  timeLabel?: string | null;
   description?: string | null;
   joinMode: GameJoinMode;
   tables: CreateGameTableRequest[];
@@ -152,6 +167,8 @@ export interface GameDiscoveryResponse {
   gameId: string;
   title: string;
   startTimeUtc: string;
+  timingMode: SessionTimingMode;
+  timeLabel?: string | null;
   locationId: string;
   locationName: string;
   city: string;
@@ -228,6 +245,21 @@ export interface UserSearchResponse {
   city?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  favoriteSystemKeys: string[];
+  lookingForGame: LookingForGameStatusDto;
+}
+
+export interface UserArmyProfileDto {
+  systemKey: string;
+  armyName: string;
+}
+
+export interface LookingForGameStatusDto {
+  isActive: boolean;
+  systemKey?: string | null;
+  radiusKm?: number | null;
+  timeNote?: string | null;
+  updatedAtUtc?: string | null;
 }
 
 export interface LocationJoinRequestResponse {
@@ -268,9 +300,15 @@ export interface UserProfileResponse {
   profileImageUrl?: string | null;
   defaultLocationId?: string | null;
   canBeContacted: boolean;
+  hideProfile: boolean;
+  hideOnMap: boolean;
+  hideParticipation: boolean;
   visibility: UserProfileVisibility;
   latitude?: number | null;
   longitude?: number | null;
+  favoriteSystemKeys: string[];
+  armies: UserArmyProfileDto[];
+  lookingForGame: LookingForGameStatusDto;
 }
 
 export interface UpdateUserProfileRequest {
@@ -288,9 +326,15 @@ export interface UpdateUserProfileRequest {
   profileImageUrl?: string | null;
   defaultLocationId?: string | null;
   canBeContacted: boolean;
+  hideProfile: boolean;
+  hideOnMap: boolean;
+  hideParticipation: boolean;
   visibility: UserProfileVisibility;
   latitude?: number | null;
   longitude?: number | null;
+  favoriteSystemKeys: string[];
+  armies: UserArmyProfileDto[];
+  lookingForGame: LookingForGameStatusDto;
 }
 
 export interface UpdateGameSessionRequest {
@@ -317,7 +361,17 @@ export type NotificationKind =
   | "ApplicationAccepted"
   | "ApplicationRejected"
   | "FriendRequest"
-  | "FriendAccepted";
+  | "FriendAccepted"
+  | "SessionInvitation"
+  | "SessionInvitationAccepted"
+  | "SessionInvitationRejected"
+  | "WaitlistJoined"
+  | "WaitlistPromoted"
+  | "DateOptionAdded"
+  | "DateOptionSelected"
+  | "SessionClosed"
+  | "PlayRequestCreated"
+  | "MailDigestPending";
 
 export type FriendshipStatus = "Pending" | "Accepted" | "Rejected" | "Blocked";
 
@@ -409,6 +463,137 @@ export interface PublicUserProfileResponse {
   bestSportsPairings?: string | null;
   profileImageUrl?: string | null;
   canBeContacted: boolean;
+  hideProfile: boolean;
   isFriend: boolean;
   hiddenFields: string[];
+  favoriteSystemKeys: string[];
+  armies: UserArmyProfileDto[];
+  lookingForGame: LookingForGameStatusDto;
+}
+
+export interface SessionDateOptionDto {
+  id: string;
+  startTimeUtc: string;
+  label?: string | null;
+  votes: ParticipantDto[];
+  createdAtUtc: string;
+}
+
+export interface SessionInvitationDto {
+  id: string;
+  user: ParticipantDto;
+  status: SessionInvitationStatus;
+  createdAtUtc: string;
+  respondedAtUtc?: string | null;
+}
+
+export interface WaitlistEntryDto {
+  id: string;
+  tableId?: string | null;
+  player: ParticipantDto;
+  systemKey?: string | null;
+  message?: string | null;
+  createdAtUtc: string;
+}
+
+export interface GameResultDto {
+  kind: GameResultKind;
+  value: string;
+  notes?: string | null;
+  recordedBy: ParticipantDto;
+  recordedAtUtc: string;
+}
+
+export interface AddDateOptionRequest {
+  startTimeUtc: string;
+  label?: string | null;
+}
+
+export interface InviteFriendToSessionRequest {
+  userId: string;
+  displayName: string;
+}
+
+export interface JoinWaitlistRequest {
+  tableId?: string | null;
+  systemKey?: string | null;
+  message?: string | null;
+}
+
+export interface CloseGameRequest {
+  kind: GameResultKind;
+  value: string;
+  notes?: string | null;
+}
+
+export interface PublicGameResponse {
+  id: string;
+  title: string;
+  status: GameSessionState;
+  startTimeUtc: string;
+  timingMode: SessionTimingMode;
+  timeLabel?: string | null;
+  location: LocationSnapshotDto;
+  description?: string | null;
+  tables: GameTableDto[];
+  openSlots: number;
+}
+
+export interface CalendarItemResponse {
+  id: string;
+  title: string;
+  kind: string;
+  startTimeUtc?: string | null;
+  timingMode?: SessionTimingMode | null;
+  timeLabel?: string | null;
+  locationName?: string | null;
+  status?: string | null;
+}
+
+export interface CreatePlayRequestRequest {
+  systemKey: string;
+  locationId?: string | null;
+  timeNote?: string | null;
+  exactTimeUtc?: string | null;
+  radiusKm?: number | null;
+  note?: string | null;
+}
+
+export interface PlayRequestDto extends CreatePlayRequestRequest {
+  id: string;
+  owner: ParticipantDto;
+  locationName?: string | null;
+  city?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  status: PlayRequestStatus;
+  convertedGameId?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  isMine: boolean;
+}
+
+export interface ConvertPlayRequestRequest {
+  locationId: string;
+  maxPlayers: number;
+  startTimeUtc: string;
+}
+
+export interface CreateEventSeriesRequest {
+  title: string;
+  locationId: string;
+  systemKeys: string[];
+  recurrenceKind: EventRecurrenceKind;
+  dayOfWeek: string | number;
+  timeLabel?: string | null;
+  startHour: number;
+  defaultMaxPlayers: number;
+  description?: string | null;
+}
+
+export interface EventSeriesDto extends CreateEventSeriesRequest {
+  id: string;
+  host: ParticipantDto;
+  location: LocationSnapshotDto;
+  upcomingStartTimesUtc: string[];
 }

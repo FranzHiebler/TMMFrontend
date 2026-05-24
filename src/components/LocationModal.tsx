@@ -135,16 +135,16 @@ export default function LocationModal({ onClose, onCreated, location, inline = f
 
   const content = (
     <div className={inline ? "inline-location-editor" : "modal"}>
-      <h2>{location ? "Location bearbeiten" : "Neue Location"}</h2>
+      <h2>{location ? "Spielort bearbeiten" : "Neuer Spielort"}</h2>
 
       {error && <div className="message message-error">{error}</div>}
 
       <form onSubmit={handleSubmit} className="form">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name der Location" />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name des Spielorts" />
         <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Stadt" />
 
         <div>
-          <b>Systeme in dieser Location</b>
+          <b>Systeme an diesem Spielort</b>
           {systems.map((system) => (
             <label key={system.key}>
               <input

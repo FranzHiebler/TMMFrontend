@@ -1,11 +1,17 @@
 import type {
   ApplyToGameRequest,
+  AddDateOptionRequest,
+  CalendarItemResponse,
+  CloseGameRequest,
   CreateChangeProposalRequest,
   DiscoveryGamesRequest,
   GameDiscoveryResponse,
   CreateGameRequest,
   GameResponse,
   JoinTableRequest,
+  InviteFriendToSessionRequest,
+  JoinWaitlistRequest,
+  PublicGameResponse,
   SearchNearbyGamesRequest,
   UpdateGameSessionRequest,
   UpdateGameTableRequest,
@@ -31,6 +37,16 @@ export async function createGame(request: CreateGameRequest, user: User): Promis
 export async function getGameById(gameId: string): Promise<GameResponse> {
   const res = await fetch(`${API}/Games/${gameId}`);
   return handleResponse<GameResponse>(res, "Game laden fehlgeschlagen");
+}
+
+export async function getPublicGame(slugOrId: string): Promise<PublicGameResponse> {
+  const res = await fetch(`${API}/Games/public/${encodeURIComponent(slugOrId)}`);
+  return handleResponse<PublicGameResponse>(res, "Öffentliche Session laden fehlgeschlagen");
+}
+
+export async function getCalendar(user: User): Promise<CalendarItemResponse[]> {
+  const res = await fetch(`${API}/Games/calendar`, { headers: authHeaders(user) });
+  return handleResponse<CalendarItemResponse[]>(res, "Kalender laden fehlgeschlagen");
 }
 
 export async function joinTable(
@@ -218,4 +234,94 @@ export async function updateGameTable(
   });
 
   return handleResponse<GameResponse>(res, "Tisch aktualisieren fehlgeschlagen");
+}
+
+export async function addDateOption(
+  gameId: string,
+  request: AddDateOptionRequest,
+  user: User
+): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/date-options`, {
+    method: "POST",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<GameResponse>(res, "Terminvorschlag konnte nicht erstellt werden");
+}
+
+export async function voteDateOption(gameId: string, optionId: string, user: User): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/date-options/${optionId}/vote`, {
+    method: "POST",
+    headers: authHeaders(user),
+  });
+  return handleResponse<GameResponse>(res, "Abstimmung fehlgeschlagen");
+}
+
+export async function selectDateOption(gameId: string, optionId: string, user: User): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/date-options/${optionId}/select`, {
+    method: "POST",
+    headers: authHeaders(user),
+  });
+  return handleResponse<GameResponse>(res, "Termin konnte nicht übernommen werden");
+}
+
+export async function inviteFriendToSession(
+  gameId: string,
+  request: InviteFriendToSessionRequest,
+  user: User
+): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/invitations`, {
+    method: "POST",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<GameResponse>(res, "Einladung fehlgeschlagen");
+}
+
+export async function respondInvitation(
+  gameId: string,
+  invitationId: string,
+  accept: boolean,
+  user: User
+): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/invitations/${invitationId}/${accept ? "accept" : "reject"}`, {
+    method: "POST",
+    headers: authHeaders(user),
+  });
+  return handleResponse<GameResponse>(res, "Einladung konnte nicht beantwortet werden");
+}
+
+export async function joinWaitlist(
+  gameId: string,
+  request: JoinWaitlistRequest,
+  user: User
+): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/waitlist`, {
+    method: "POST",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<GameResponse>(res, "Warteliste fehlgeschlagen");
+}
+
+export async function promoteWaitlist(
+  gameId: string,
+  entryId: string,
+  tableId: string,
+  user: User
+): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/waitlist/${entryId}/promote?tableId=${encodeURIComponent(tableId)}`, {
+    method: "POST",
+    headers: authHeaders(user),
+  });
+  return handleResponse<GameResponse>(res, "Nachrücken fehlgeschlagen");
+}
+
+export async function closeGame(gameId: string, request: CloseGameRequest, user: User): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/close`, {
+    method: "POST",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<GameResponse>(res, "Session abschließen fehlgeschlagen");
 }

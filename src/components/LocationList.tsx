@@ -1,7 +1,10 @@
-import type { LocationResponse } from "../types/game";
+import { useEffect, useState } from "react";
+import { getSystems } from "../api/systemsApi";
+import type { LocationResponse, SystemOption } from "../types/game";
 import LocationModal from "./LocationModal";
 import LocationMembersPanel from "./LocationMembersPanel";
 import { locationMembershipLabel } from "../helpers/locationLabels";
+import { systemNames } from "../helpers/systemLabels";
 
 type Props = {
   locations: LocationResponse[];
@@ -12,6 +15,14 @@ type Props = {
 };
 
 export default function LocationList({ locations, onEdit, editLocation, onEditDone, onEditCancel }: Props) {
+  const [systems, setSystems] = useState<SystemOption[]>([]);
+
+  useEffect(() => {
+    getSystems()
+      .then(setSystems)
+      .catch(() => setSystems([]));
+  }, []);
+
   return (
     <div className="location-list">
       {locations.map((loc) => (
@@ -23,7 +34,7 @@ export default function LocationList({ locations, onEdit, editLocation, onEditDo
             
             <small>{locationMembershipLabel(loc)}</small>
             {(loc.systemKeys ?? []).length > 0 && (
-              <p>Systeme: {(loc.systemKeys ?? []).join(", ")}</p>
+              <p>Systeme: {systemNames(loc.systemKeys, systems).join(", ")}</p>
             )}
 
             <div className="location-actions">

@@ -16,7 +16,7 @@ export default function LocationSelect({
   return (
     <div className="location-select-row">
       <select value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">Location wählen</option>
+        <option value="">Spielort wählen</option>
 
         {locations.map((l) => (
           <option key={l.id} value={l.id}>
@@ -28,7 +28,7 @@ export default function LocationSelect({
       </select>
 
       <button type="button" onClick={onCreateClick}>
-        + Neue Location
+        + Neuer Spielort
       </button>
     </div>
   );

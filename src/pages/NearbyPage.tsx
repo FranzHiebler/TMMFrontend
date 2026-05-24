@@ -8,6 +8,7 @@ import type { LocationResponse, SystemOption } from "../types/game";
 import { useUser } from "../context/UserContext";
 import LocationPicker from "../components/LocationPicker";
 import Message from "../components/Message";
+import { systemNames } from "../helpers/systemLabels";
 
 export default function NearbyPage() {
   const [address, setAddress] = useState("");
@@ -86,7 +87,7 @@ export default function NearbyPage() {
       setLocations(data);
     } catch (err) {
       setMessageType("error");
-      setMessage(err instanceof Error ? err.message : "Fehler bei Nearby Search");
+      setMessage(err instanceof Error ? err.message : "Fehler bei der Spielort-Suche");
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ export default function NearbyPage() {
 
   return (
     <div className="container">
-      <h1>Locations in der Nähe</h1>
+      <h1>Spielorte in der Nähe</h1>
 
       <Message text={message} type={messageType} />
 
@@ -152,12 +153,12 @@ export default function NearbyPage() {
         </select>
 
         <button type="submit" disabled={loading}>
-          {loading ? "Suche..." : "Locations suchen"}
+          {loading ? "Suche..." : "Spielorte suchen"}
         </button>
       </form>
 
       {!loading && locations.length === 0 && (
-        <p>Keine unbekannten Locations gefunden.</p>
+        <p>Keine unbekannten Spielorte gefunden.</p>
       )}
 
       <div className="location-list">
@@ -167,7 +168,7 @@ export default function NearbyPage() {
             <p>{location.city}</p>
             {location.address && <p>{location.address}</p>}
             {(location.systemKeys ?? []).length > 0 && (
-              <p>Systeme: {(location.systemKeys ?? []).join(", ")}</p>
+              <p>Systeme: {systemNames(location.systemKeys, systems).join(", ")}</p>
             )}
             <button
               type="button"

@@ -1,7 +1,7 @@
 import type { User } from "../context/UserContext";
 import { readApiError } from "./apiError";
 
-export const API = import.meta.env.VITE_API_BASE_URL;
+export const API = import.meta.env.VITE_API_BASE_URL || "https://localhost:7173/api";
 
 export function authHeaders(user?: User): HeadersInit {
   return {

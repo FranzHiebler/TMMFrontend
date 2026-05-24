@@ -1,17 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Link, useNavigate } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { getDiscoveryGames, getGameById } from "../api/gamesApi";
 import { getDiscoveryLocations, getMyLocations } from "../api/locationsApi";
+import { getPlayRequests } from "../api/playRequestsApi";
+import { getSystems } from "../api/systemsApi";
 import { getCurrentUserProfile, searchUsers } from "../api/usersApi";
-import { useJoinGame } from "../api/useJoinGame";
 import { useUser } from "../context/UserContext";
+import { systemName, systemNames } from "../helpers/systemLabels";
 import type {
   GameDiscoveryResponse,
   GameResponse,
   LocationDiscoveryResponse,
+  PlayRequestDto,
+  SystemOption,
   UserSearchResponse,
 } from "../types/game";
 
@@ -19,17 +23,10 @@ type Selection =
   | { type: "game"; id: string }
   | { type: "location"; id: string }
   | { type: "player"; id: string }
+  | { type: "playRequest"; id: string }
   | null;
 
-type CenterSource = "browser" | "defaultLocation" | "fallback";
-
 const DEFAULT_CENTER: [number, number] = [50.5558, 9.6808];
-
-const CENTER_SOURCE_LABEL: Record<CenterSource, string> = {
-  browser: "aktueller Standort",
-  defaultLocation: "Standard-Location",
-  fallback: "Fallback",
-};
 
 function MapCenterController({ center }: { center: [number, number] }) {
   const map = useMap();
@@ -121,7 +118,7 @@ function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number) {
     html: `
       <div class="discovery-marker discovery-marker-${state}" style="transform: translate(${offset}px, -${offset}px)">
         <div class="marker-main-row">
-          <span class="marker-symbol">🎲</span>
+          <span class="marker-symbol">S</span>
           <span>${timeHint(game.startTimeUtc)}</span>
         </div>
         <div class="marker-system-row">${systemBadgesHtml(systems)}</div>
@@ -140,7 +137,7 @@ function locationMarkerIcon(location: LocationDiscoveryResponse) {
     className: "",
     html: `
       <div class="location-marker location-marker-${state}">
-        <span class="marker-symbol">📍</span>
+        <span class="marker-symbol">O</span>
         ${count ? `<strong>${count}</strong>` : ""}
       </div>
     `,
@@ -149,12 +146,28 @@ function locationMarkerIcon(location: LocationDiscoveryResponse) {
   });
 }
 
-function playerMarkerIcon(isMe: boolean) {
+function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
+  const isLooking = player.lookingForGame?.isActive;
+  const classes = [
+    "player-marker",
+    isMe ? "player-marker-me" : "player-marker-default",
+    isLooking ? "player-marker-looking" : "",
+  ].filter(Boolean).join(" ");
+
   return L.divIcon({
     className: "",
-    html: `<div class="player-marker ${isMe ? "player-marker-me" : "player-marker-default"}">👤</div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
+    html: `<div class="${classes}">${isLooking ? "Sucht" : "User"}</div>`,
+    iconSize: isLooking ? [36, 36] : [30, 30],
+    iconAnchor: isLooking ? [18, 18] : [15, 15],
+  });
+}
+
+function playRequestMarkerIcon() {
+  return L.divIcon({
+    className: "",
+    html: `<div class="player-marker player-marker-looking">Gesuch</div>`,
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
   });
 }
 
@@ -172,11 +185,10 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   return 2 * r * Math.asin(Math.sqrt(h));
 }
 
-function statusText(game: GameDiscoveryResponse) {
-  if (game.isHost) return "Du hostest";
-  if (game.isParticipant) return "Du nimmst teil";
-  if (game.applicationStatus) return `Bewerbung: ${game.applicationStatus}`;
-  return "Session";
+function compactTimeText(game: GameDiscoveryResponse) {
+  if (game.timingMode === "Open") return "offen";
+  if (game.timeLabel) return game.timeLabel;
+  return timeHint(game.startTimeUtc);
 }
 
 function getBrowserPosition(): Promise<[number, number]> {
@@ -201,6 +213,7 @@ export default function MapDiscoveryPage() {
   const [timeWindowDays, setTimeWindowDays] = useState(7);
   const [radiusKm, setRadiusKm] = useState(80);
   const [filterCollapsed, setFilterCollapsed] = useState(true);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
   
   const [showLocations, setShowLocations] = useState(false);
   const [showPlayers, setShowPlayers] = useState(false);
@@ -210,16 +223,17 @@ export default function MapDiscoveryPage() {
   const [players, setPlayers] = useState<UserSearchResponse[]>([]);
   const [games, setGames] = useState<GameDiscoveryResponse[]>([]);
   const [locations, setLocations] = useState<LocationDiscoveryResponse[]>([]);
+  const [playRequests, setPlayRequests] = useState<PlayRequestDto[]>([]);
+  const [systems, setSystems] = useState<SystemOption[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
   const [selectedFullGame, setSelectedFullGame] = useState<GameResponse | null>(null);
-  const [selectedTableIndex, setSelectedTableIndex] = useState(0);
 
   const [loadingGames, setLoadingGames] = useState(true);
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
+  const [loadingPlayRequests, setLoadingPlayRequests] = useState(true);
   const [banner, setBanner] = useState("");
   const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
-  const [centerSource, setCenterSource] = useState<CenterSource>("fallback");
   const [centerReady, setCenterReady] = useState(false);
 
   const { from, to } = useMemo(() => rangeToDates(timeWindowDays), [timeWindowDays]);
@@ -240,7 +254,6 @@ export default function MapDiscoveryPage() {
 
       if (defaultLocation?.latitude != null && defaultLocation.longitude != null) {
         setCenter([defaultLocation.latitude, defaultLocation.longitude]);
-        setCenterSource("defaultLocation");
         return;
       }
     } catch {
@@ -250,14 +263,12 @@ export default function MapDiscoveryPage() {
     try {
       const browserCenter = await getBrowserPosition();
       setCenter(browserCenter);
-      setCenterSource("browser");
       return;
     } catch {
       // fallback unten
     }
 
     setCenter(DEFAULT_CENTER);
-    setCenterSource("fallback");
   }, [user]);
 
   const loadDiscovery = useCallback(async () => {
@@ -267,9 +278,10 @@ export default function MapDiscoveryPage() {
     setLoadingGames(true);
     setLoadingLocations(true);
     setLoadingPlayers(true);
+    setLoadingPlayRequests(true);
 
     try {
-      const [locationData, gameData, playerData] = await Promise.all([
+      const [locationData, gameData, playerData, playRequestData] = await Promise.all([
         getDiscoveryLocations({ latitude: center[0], longitude: center[1], radiusKm }, user),
         getDiscoveryGames(
           {
@@ -282,11 +294,13 @@ export default function MapDiscoveryPage() {
           user
         ),
         searchUsers(""),
+        getPlayRequests(user),
       ]);
 
       setLocations(locationData);
       setGames(gameData);
       setPlayers(playerData);
+      setPlayRequests(playRequestData);
 
       setSelection((current) => {
         if (current?.type === "game" && gameData.some((game) => game.gameId === current.id)) {
@@ -318,19 +332,24 @@ export default function MapDiscoveryPage() {
       setLoadingGames(false);
       setLoadingLocations(false);
       setLoadingPlayers(false);
+      setLoadingPlayRequests(false);
     }
   }, [center, centerReady, from, radiusKm, to, user]);
 
-  const { join, joiningKey } = useJoinGame({
-    onGameUpdated: () => void loadDiscovery(),
-  });
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void resolveInitialCenter().finally(() => setCenterReady(true));
   }, [resolveInitialCenter]);
 
   useEffect(() => {
+    getSystems()
+      .then(setSystems)
+      .catch(() => setSystems([]));
+  }, []);
+
+  useEffect(() => {
     if (!centerReady) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadDiscovery();
   }, [centerReady, loadDiscovery]);
 
@@ -384,6 +403,11 @@ export default function MapDiscoveryPage() {
       ? visiblePlayers.find((player) => player.userId === selection.id) ?? null
       : null;
 
+  const selectedPlayRequest =
+    selection?.type === "playRequest"
+      ? playRequests.find((request) => request.id === selection.id) ?? null
+      : null;
+
   const selectedLocationGames = useMemo(() => {
     if (!selectedGame) return [];
 
@@ -399,13 +423,15 @@ export default function MapDiscoveryPage() {
     ? selectedLocationGames.findIndex((game) => game.gameId === selectedGame.gameId)
     : -1;
 
-  const selectedTables = selectedFullGame?.tables ?? [];
-  const selectedTable = selectedTables[selectedTableIndex] ?? null;
+  const selectedOccupiedSeats = selectedFullGame?.assignedPlayers ?? 0;
+  const selectedMaxSeats =
+    selectedFullGame?.maxPlayers ?? (selectedGame ? selectedGame.availableSeats : 0);
+  const selectedHostName = selectedFullGame?.host.displayName ?? null;
 
   useEffect(() => {
     if (!selectedGame) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedFullGame(null);
-      setSelectedTableIndex(0);
       return;
     }
 
@@ -413,11 +439,9 @@ export default function MapDiscoveryPage() {
       void getGameById(selectedGame.gameId)
         .then((game) => {
           setSelectedFullGame(game);
-          setSelectedTableIndex(0);
         })
         .catch(() => {
           setSelectedFullGame(null);
-          setSelectedTableIndex(0);
         });
     }, 0);
 
@@ -437,30 +461,7 @@ export default function MapDiscoveryPage() {
     });
   }
 
-  function selectTableAtOffset(offset: number) {
-    if (selectedTables.length === 0) return;
-
-    const nextIndex =
-      (selectedTableIndex + offset + selectedTables.length) % selectedTables.length;
-
-    setSelectedTableIndex(nextIndex);
-  }
-
-  const isLoading = loadingGames || loadingLocations || loadingPlayers || !centerReady;
-
-  async function quickJoin(game: GameDiscoveryResponse) {
-    const fullGame = await getGameById(game.gameId);
-    const table = fullGame.tables.find((candidate) => candidate.openSlots > 0);
-
-    if (!table) return;
-
-    const systemKey =
-      table.systems.length === 0 || table.systems.some((system) => system.toLowerCase() === "egal")
-        ? undefined
-        : table.systems[0];
-
-    await join(fullGame.id, table.id, fullGame.joinMode, systemKey);
-  }
+  const isLoading = loadingGames || loadingLocations || loadingPlayers || loadingPlayRequests || !centerReady;
 
   function createAtLocation(locationId: string) {
     navigate(`/games/create?locationId=${encodeURIComponent(locationId)}`);
@@ -542,8 +543,8 @@ export default function MapDiscoveryPage() {
             <Marker
               key={player.userId}
               position={[player.latitude!, player.longitude!]}
-              icon={playerMarkerIcon(player.userId === user.userId)}
-              zIndexOffset={300}
+              icon={playerMarkerIcon(player, player.userId === user.userId)}
+              zIndexOffset={player.lookingForGame?.isActive ? 420 : 300}
               eventHandlers={{
                 click: () => setSelection({ type: "player", id: player.userId }),
               }}
@@ -555,6 +556,20 @@ export default function MapDiscoveryPage() {
               </Popup>
             </Marker>
           ))}
+
+          {playRequests
+            .filter((request) => request.latitude != null && request.longitude != null)
+            .map((request) => (
+              <Marker
+                key={request.id}
+                position={[request.latitude!, request.longitude!]}
+                icon={playRequestMarkerIcon()}
+                zIndexOffset={430}
+                eventHandlers={{
+                  click: () => setSelection({ type: "playRequest", id: request.id }),
+                }}
+              />
+            ))}
         </MapContainer>
 
         <aside
@@ -596,40 +611,40 @@ export default function MapDiscoveryPage() {
               </label>
 
               <div className="discovery-filter-box discovery-filter-box-compact">
-                <label>
+                <label title="Spielorte im gewählten Umkreis">
                   <input
                     type="checkbox"
                     checked={showLocations}
                     onChange={(event) => setShowLocations(event.target.checked)}
                   />
-                  Locations
+                  <span>Spielorte</span>
                 </label>
 
-                <label>
+                <label title="Spieler mit sichtbarem Profil im Umkreis">
                   <input
                     type="checkbox"
                     checked={showPlayers}
                     onChange={(event) => setShowPlayers(event.target.checked)}
                   />
-                  Spieler
+                  <span>Spieler</span>
                 </label>
 
-                <label>
+                <label title="Sessions, die du veranstaltest oder an denen du teilnimmst">
                   <input
                     type="checkbox"
                     checked={showMySessions}
                     onChange={(event) => setShowMySessions(event.target.checked)}
                   />
-                  Meine Sessions
+                  <span>Meine</span>
                 </label>
 
-                <label>
+                <label title="Alle sichtbaren Sessions im Umkreis">
                   <input
                     type="checkbox"
                     checked={showAllSessions}
                     onChange={(event) => setShowAllSessions(event.target.checked)}
                   />
-                  Alle Sessions
+                  <span>Öffentlich</span>
                 </label>
               </div>
 
@@ -637,40 +652,48 @@ export default function MapDiscoveryPage() {
               {isLoading && <div className="discovery-skeleton" />}
               {!isLoading && !banner && (
                 <p className="discovery-count">
-                  {visibleLocations.length} Locations · {visibleGames.length} Sessions ·{" "}
-                  {visiblePlayers.length} Spieler · {CENTER_SOURCE_LABEL[centerSource]}
+                  {visibleLocations.length} Spielorte · {visiblePlayers.length} Spieler ·{" "}
+                  {visibleGames.length} {visibleGames.length === 1 ? "Session" : "Sessions"}
                 </p>
               )}
             </>
           )}
         </aside>
 
-        <div className="discovery-map-legend">
-          <span><i className="legend-dot location" /> Location</span>
-          <span><i className="legend-dot own-location-base" /> Eigene Location</span>
-          <span><i className="legend-dot event" /> Session</span>
-          <span><i className="legend-dot participant" /> Meine Teilnahme</span>
-          <span><i className="legend-dot host" /> Mein Host</span>
-          <span><i className="legend-dot player" /> Spieler</span>
-          <span><i className="legend-dot player-me" /> Ich</span>
+        <div className={`discovery-map-legend ${legendCollapsed ? "legend-collapsed" : ""}`}>
+          <button type="button" onClick={() => setLegendCollapsed((value) => !value)}>
+            {legendCollapsed ? "Legende" : "Legende ausblenden"}
+          </button>
+          {!legendCollapsed && (
+            <>
+              <span><i className="legend-dot location" /> Spielort</span>
+              <span><i className="legend-dot own-location-base" /> Eigener Spielort</span>
+              <span><i className="legend-dot event" /> Spiel</span>
+              <span><i className="legend-dot participant" /> Teilnahme</span>
+              <span><i className="legend-dot host" /> Host</span>
+              <span><i className="legend-dot player" /> Spieler</span>
+              <span><i className="legend-dot player-looking" /> Sucht</span>
+              <span><i className="legend-dot player-me" /> Ich</span>
+            </>
+          )}
         </div>
 
         {!isLoading && !banner && visibleGames.length === 0 && visibleLocations.length > 0 && (
           <div className="discovery-empty-state">
-            Keine kommenden Sessions im Zeitraum. Locations werden angezeigt.
+            Keine kommenden Spiele im Zeitraum. Spielorte werden angezeigt.
           </div>
         )}
 
         {selectedGame && (
           <article className="session-preview">
-            <div className="session-preview-topbar">
-              <p className="panel-kicker">{statusText(selectedGame)}</p>
+            <div className="session-preview-topbar compact-preview-topbar">
+              <time>{compactTimeText(selectedGame)}</time>
 
               {selectedLocationGames.length > 1 && (
                 <div className="session-preview-switcher">
-                  <button type="button" onClick={() => selectGameAtOffset(-1)}>←</button>
+                  <button type="button" onClick={() => selectGameAtOffset(-1)} aria-label="Vorheriges Spiel">&lt;</button>
                   <span>{selectedGameIndex + 1} / {selectedLocationGames.length}</span>
-                  <button type="button" onClick={() => selectGameAtOffset(1)}>→</button>
+                  <button type="button" onClick={() => selectGameAtOffset(1)} aria-label="Nächstes Spiel">&gt;</button>
                 </div>
               )}
 
@@ -686,81 +709,22 @@ export default function MapDiscoveryPage() {
 
             <h2>{selectedGame.title}</h2>
 
-            <div className="preview-meta-grid">
-              <span>📅 {dateTimeText(selectedGame.startTimeUtc)}</span>
-              <span>📍 {selectedGame.locationName}, {selectedGame.city}</span>
-              <span>👥 {selectedGame.availableSeats} freie Plätze</span>
-              <span>🎲 {selectedGame.status}</span>
+            {selectedHostName && <p className="preview-host">von {selectedHostName}</p>}
+
+            <div className="compact-session-preview">
+              <span>
+                {systemLabelsFromSummary(selectedGame.tablesSummary).join(", ") || "System offen"}
+                {" · "}
+                {selectedGame.city || selectedGame.locationName}
+                {" · "}
+                {selectedOccupiedSeats}/{selectedMaxSeats}
+              </span>
             </div>
-
-            <div className="system-badge-row">
-              {renderSystemBadges(systemLabelsFromSummary(selectedGame.tablesSummary))}
-            </div>
-
-            {selectedTable && (
-              <section className="table-preview-box">
-                <div className="table-preview-head">
-                  <strong>{selectedTable.name}</strong>
-
-                  {selectedTables.length > 1 && (
-                    <div className="table-preview-switcher">
-                      <button type="button" onClick={() => selectTableAtOffset(-1)}>←</button>
-                      <span>{selectedTableIndex + 1} / {selectedTables.length}</span>
-                      <button type="button" onClick={() => selectTableAtOffset(1)}>→</button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="table-preview-meta">
-                  <span>
-                    🎲 {selectedTable.systems.length > 0 ? selectedTable.systems.join(", ") : "offen"}
-                  </span>
-
-                  {selectedTable.points != null && <span>⚔️ {selectedTable.points} Punkte</span>}
-
-                  <span>
-                    👥 {selectedTable.assignedPlayers.length} / {selectedTable.maxPlayers}
-                  </span>
-
-                  {selectedTable.scenario && <span>📘 {selectedTable.scenario}</span>}
-                </div>
-
-                {selectedTable.assignedPlayers.length > 0 && (
-                  <p className="table-preview-players">
-                    {selectedTable.assignedPlayers.map((player) => player.displayName).join(", ")}
-                  </p>
-                )}
-              </section>
-            )}
-
-            {!selectedTable && selectedGame.tablesSummary && (
-              <p className="preview-summary">{selectedGame.tablesSummary}</p>
-            )}
 
             <div className="preview-actions">
               <Link to={`/sessions/${encodeURIComponent(selectedGame.gameId)}`}>
-                Zur Session
+                Öffnen
               </Link>
-
-              <Link to={`/sessions/${encodeURIComponent(selectedGame.gameId)}?messages=1`}>
-                Nachrichten
-              </Link>
-
-              {!selectedGame.isHost && !selectedGame.isParticipant && (
-                <button
-                  type="button"
-                  disabled={joiningKey?.startsWith(selectedGame.gameId)}
-                  onClick={() => quickJoin(selectedGame)}
-                >
-                  {selectedGame.joinMode === "ApprovalRequired" ? "Bewerben" : "Beitreten"}
-                </button>
-              )}
-
-              {selectedGame.canEdit && (
-                <Link to={`/sessions/${encodeURIComponent(selectedGame.gameId)}`}>
-                  Bearbeiten
-                </Link>
-              )}
             </div>
           </article>
         )}
@@ -778,32 +742,30 @@ export default function MapDiscoveryPage() {
 
             <p className="panel-kicker">
               {selectedLocation.isOwnLocation
-                ? `Eigene Location${selectedLocation.role ? ` · ${selectedLocation.role}` : ""}`
-                : "Location"}
+                ? `Eigener Spielort${selectedLocation.role ? ` · ${selectedLocation.role}` : ""}`
+                : "Spielort"}
             </p>
 
             <h2>{selectedLocation.name}</h2>
 
             <div className="preview-meta-grid">
-              <span>
-                📍 {selectedLocation.city}
-                {selectedLocation.address ? `, ${selectedLocation.address}` : ""}
-              </span>
-              <span>🎲 {selectedLocation.upcomingGameCount} kommende Sessions</span>
+              <span>{selectedLocation.city}</span>
+              {selectedLocation.address && <span>{selectedLocation.address}</span>}
+              <span>{selectedLocation.upcomingGameCount} kommende Spiele</span>
               {selectedLocation.nextGameStartTimeUtc && (
-                <span>📅 nächste: {dateTimeText(selectedLocation.nextGameStartTimeUtc)}</span>
+                <span>nächste: {dateTimeText(selectedLocation.nextGameStartTimeUtc)}</span>
               )}
             </div>
 
             <div className="system-badge-row">
-              {renderSystemBadges(selectedLocation.systemKeys.map(cleanSystemLabel).filter(Boolean))}
+              {renderSystemBadges(systemNames(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean))}
             </div>
 
             <div className="preview-actions">
               <Link to="/locations">Details</Link>
 
               <button type="button" onClick={() => createAtLocation(selectedLocation.locationId)}>
-                Session hier erstellen
+                Spiel hier erstellen
               </button>
 
               {selectedLocation.isOwnLocation && <Link to="/locations">Mitglieder</Link>}
@@ -826,9 +788,19 @@ export default function MapDiscoveryPage() {
             <h2>{selectedPlayer.displayName}</h2>
 
             <div className="preview-meta-grid">
-              {selectedPlayer.city && <span>📍 {selectedPlayer.city}</span>}
-              {selectedPlayer.streetAddress && <span>🏠 {selectedPlayer.streetAddress}</span>}
-              {selectedPlayer.postalCode && <span>✉️ {selectedPlayer.postalCode}</span>}
+              {selectedPlayer.city && <span>Ort: {selectedPlayer.city}</span>}
+              {selectedPlayer.streetAddress && <span>Adresse: {selectedPlayer.streetAddress}</span>}
+              {selectedPlayer.postalCode && <span>PLZ: {selectedPlayer.postalCode}</span>}
+              {selectedPlayer.lookingForGame?.isActive && (
+                <span>
+                  Sucht Spiel
+                  {selectedPlayer.lookingForGame.systemKey ? `: ${systemName(selectedPlayer.lookingForGame.systemKey, systems)}` : ""}
+                  {selectedPlayer.lookingForGame.timeNote ? ` · ${selectedPlayer.lookingForGame.timeNote}` : ""}
+                </span>
+              )}
+              {(selectedPlayer.favoriteSystemKeys ?? []).length > 0 && (
+                <span>Systeme: {systemNames(selectedPlayer.favoriteSystemKeys, systems).join(", ")}</span>
+              )}
             </div>
 
             <div className="preview-actions">
@@ -836,7 +808,29 @@ export default function MapDiscoveryPage() {
             </div>
           </article>
         )}
+
+        {selectedPlayRequest && (
+          <article className="session-preview player-preview">
+            <button className="preview-close" type="button" onClick={() => setSelection(null)} aria-label="Vorschau schließen">
+              ×
+            </button>
+            <p className="panel-kicker">Spielgesuch</p>
+            <h2>{selectedPlayRequest.owner.displayName}</h2>
+            <div className="preview-meta-grid">
+              <span>System: {systemName(selectedPlayRequest.systemKey, systems)}</span>
+              {selectedPlayRequest.timeNote && <span>{selectedPlayRequest.timeNote}</span>}
+              {selectedPlayRequest.city && <span>{selectedPlayRequest.city}</span>}
+              {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}
+            </div>
+            <div className="preview-actions">
+              <Link to="/play-requests">Gesuche öffnen</Link>
+              <Link to={`/users/${encodeURIComponent(selectedPlayRequest.owner.userId)}`}>Profil öffnen</Link>
+            </div>
+          </article>
+        )}
       </section>
     </div>
   );
 }
+
+

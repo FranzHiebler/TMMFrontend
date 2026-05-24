@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { getSystems } from "../api/systemsApi";
 import { getPublicUserProfile } from "../api/usersApi";
 import DirectMessageButton from "../components/DirectMessageButton";
 import Message from "../components/Message";
 import { useUser } from "../context/UserContext";
-import type { PublicUserProfileResponse } from "../types/game";
+import { listLabel, systemName, systemNames } from "../helpers/systemLabels";
+import type { PublicUserProfileResponse, SystemOption } from "../types/game";
 
 function getUsername(value: string) {
     const trimmed = value.trim();
@@ -64,6 +66,7 @@ export default function PublicProfilePage() {
     const user = useUser();
 
     const [profile, setProfile] = useState<PublicUserProfileResponse | null>(null);
+    const [systems, setSystems] = useState<SystemOption[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
@@ -82,7 +85,13 @@ export default function PublicProfilePage() {
 
             try {
                 setError("");
-                setProfile(await getPublicUserProfile(userId, user));
+                const [profileData, systemData] = await Promise.all([
+                    getPublicUserProfile(userId, user),
+                    getSystems().catch(() => [] as SystemOption[]),
+                ]);
+
+                setProfile(profileData);
+                setSystems(systemData);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Profil konnte nicht geladen werden.");
             } finally {
@@ -136,6 +145,31 @@ export default function PublicProfilePage() {
                         <ProfileValue label="Straße" value={profile.streetAddress} hidden={hiddenFields.has("streetAddress")} />
                         <ProfileValue label="PLZ" value={profile.postalCode} hidden={hiddenFields.has("postalCode")} />
                         <ProfileValue label="Ort" value={profile.city} hidden={hiddenFields.has("city")} />
+                    </div>
+
+                    <h2>Spielprofil</h2>
+                    <div className="public-profile-grid">
+                        <div className="public-profile-row">
+                            <span>Lieblingssysteme</span>
+                            <b>{listLabel(systemNames(profile.favoriteSystemKeys, systems))}</b>
+                        </div>
+
+                        <div className="public-profile-row">
+                            <span>Suchstatus</span>
+                            <b>
+                                {profile.lookingForGame?.isActive
+                                    ? `Sucht Spiel${profile.lookingForGame.systemKey ? `: ${systemName(profile.lookingForGame.systemKey, systems)}` : ""}`
+                                    : "Sucht aktuell nicht aktiv"}
+                            </b>
+                            {profile.lookingForGame?.timeNote && <small>{profile.lookingForGame.timeNote}</small>}
+                        </div>
+
+                        {(profile.armies ?? []).map((army, index) => (
+                            <div key={`${army.systemKey}-${army.armyName}-${index}`} className="public-profile-row">
+                                <span>{systemName(army.systemKey, systems)}</span>
+                                <b>{army.armyName}</b>
+                            </div>
+                        ))}
                     </div>
 
                     <h2>Tabletop-Profile</h2>

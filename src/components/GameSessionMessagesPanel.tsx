@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { Link } from "react-router-dom";
 import { getGameMessages, sendGameMessage } from "../api/messagesApi";
 import { useUser } from "../context/UserContext";
 import type { MessageDto } from "../types/game";
@@ -28,12 +29,17 @@ export default function GameSessionMessagesPanel({ gameId }: Props) {
   }, [gameId, user]);
 
   return (
-    <MessageThreadPanel
-      title="Session-Nachrichten"
-      messages={messages}
-      loading={loading}
-      onLoad={load}
-      onSend={send}
-    />
+    <>
+      <MessageThreadPanel
+        title="Session-Nachrichten"
+        messages={messages}
+        loading={loading}
+        onLoad={load}
+        onSend={send}
+      />
+      <div className="button-row">
+        <Link to={`/sessions/${gameId}`}>Termin / Einladungen verwalten</Link>
+      </div>
+    </>
   );
 }

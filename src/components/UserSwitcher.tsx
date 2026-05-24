@@ -26,7 +26,7 @@ export default function UserSwitcher() {
   const user = useUser();
   const fallbackUsers = useMemo(
     () => mergeUsers(user, []),
-    [user.userId, user.displayName]
+    [user]
   );
   const [users, setUsers] = useState<User[]>(fallbackUsers);
 
@@ -52,6 +52,7 @@ export default function UserSwitcher() {
       }
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUsers(fallbackUsers);
     void loadUsers();
 

@@ -13,6 +13,7 @@
   width: 100%;
   height: calc(100vh - 72px);
   min-height: 620px;
+  padding-bottom: 86px;
   z-index: 0;
 }
 
@@ -27,19 +28,19 @@
 }
 
 .discovery-panel {
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
   left: auto;
-  width: 260px;
+  width: 230px;
   border-radius: 18px;
-  padding: 12px;
+  padding: 10px;
   display: grid;
-  gap: 9px;
+  gap: 7px;
 }
 
 .discovery-panel-collapsed {
-  width: 150px;
-  padding: 8px;
+  width: 116px;
+  padding: 7px;
 }
 
 .discovery-panel-toggle {
@@ -74,25 +75,35 @@
 
 .discovery-filter-box {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 8px;
-  padding: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 5px;
+  padding: 7px;
   border-radius: 12px;
   background: rgba(241, 245, 249, 0.88);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
 }
 
 .discovery-filter-box label {
   display: flex;
   align-items: center;
-  gap: 7px;
-  min-height: 26px;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 5px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .discovery-filter-box input {
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.discovery-filter-box label span {
+  min-width: 0;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 .discovery-count {
@@ -106,11 +117,11 @@
 .discovery-map-legend {
   position: absolute;
   left: 16px;
-  bottom: 16px;
+  bottom: 90px;
   z-index: 80;
   display: grid;
   gap: 5px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -120,6 +131,20 @@
   font-weight: 800;
   opacity: 0.72;
   pointer-events: none;
+}
+
+.discovery-map-legend button {
+  pointer-events: auto;
+  min-height: 24px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.discovery-map-legend.legend-collapsed {
+  opacity: 0.9;
+  padding: 4px;
+  gap: 0;
 }
 
 .legend-dot {
@@ -158,6 +183,11 @@
 .legend-dot.player,
 .player-marker-default {
   background: #db2777;
+}
+
+.legend-dot.player-looking,
+.player-marker-looking {
+  background: #0891b2;
 }
 
 .legend-dot.player-me,
@@ -228,16 +258,48 @@
 .player-marker {
   width: 30px;
   height: 30px;
-  font-size: 14px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.player-marker-looking {
+  width: 36px;
+  height: 36px;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.24), 0 10px 24px rgba(15, 23, 42, 0.28);
 }
 
 .session-preview {
   right: 24px;
-  bottom: 24px;
-  width: min(420px, calc(100vw - 48px));
-  border-radius: 16px;
-  padding: 12px;
+  bottom: 92px;
+  width: min(300px, calc(100vw - 48px));
+  border-radius: 12px;
+  padding: 8px;
   animation: preview-in 180ms ease-out;
+}
+
+.session-preview h2 {
+  margin: 2px 30px 3px 0;
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.compact-preview-topbar {
+  min-height: 24px;
+}
+
+.compact-session-preview {
+  display: block;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.compact-session-preview span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .location-preview {
@@ -251,9 +313,18 @@
 .session-preview-topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-  min-height: 28px;
+  gap: 8px;
+  margin-bottom: 3px;
+  min-height: 24px;
+}
+
+.session-preview-topbar time {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1e3a8a;
+  font-size: 11px;
+  font-weight: 950;
 }
 
 .session-preview-switcher,
@@ -279,10 +350,11 @@
   line-height: 1;
 }
 
-.session-preview h2 {
-  margin: 0 34px 8px 0;
-  font-size: 18px;
-  line-height: 1.15;
+.preview-host {
+  margin: 0 0 5px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .preview-meta-grid {
@@ -320,7 +392,7 @@
 
 .table-preview-box {
   margin-top: 8px;
-  padding: 9px;
+  padding: 8px;
   border-radius: 12px;
   background: rgba(241, 245, 249, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.3);
@@ -361,9 +433,9 @@
 
 .preview-close {
   margin-left: auto;
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
   padding: 0;
   border-radius: 999px;
   background: #e5e7eb;
@@ -383,8 +455,8 @@
 .preview-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 9px;
 }
 
 .preview-actions a,
@@ -392,13 +464,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 12px;
+  min-height: 30px;
+  border-radius: 9px;
+  padding: 7px 10px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1;
   text-decoration: none;
+}
+
+.session-preview:not(.location-preview):not(.player-preview) .preview-actions a {
+  flex: 1 1 auto;
 }
 
 .preview-actions a {
@@ -508,12 +584,12 @@
   .session-preview {
     left: 10px;
     right: 10px;
-    bottom: 10px;
+    bottom: 84px;
     width: auto;
-    max-height: 48vh;
+    max-height: 42vh;
     overflow-y: auto;
-    border-radius: 18px;
-    padding: 14px;
+    border-radius: 16px;
+    padding: 11px;
   }
 
   .session-preview-topbar {
@@ -528,7 +604,7 @@
 
   .session-preview h2 {
     margin: 0 34px 8px 0;
-    font-size: 20px;
+    font-size: 17px;
     line-height: 1.15;
   }
 
@@ -604,7 +680,10 @@
   }
 
   .discovery-map-legend {
-    display: none;
+    left: 10px;
+    bottom: 84px;
+    max-width: calc(100vw - 20px);
+    font-size: 10px;
   }
 
   .discovery-empty-state {

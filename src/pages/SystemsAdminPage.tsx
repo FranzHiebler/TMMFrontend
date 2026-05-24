@@ -1,60 +1,70 @@
 import { useEffect, useState } from "react";
-import { createSystem, getSystems } from "../api/systemsApi";
+import { createSystem, getSystems, updateSystem } from "../api/systemsApi";
 import Message from "../components/Message";
 import { useUser } from "../context/UserContext";
 import type { SystemOption } from "../types/game";
 
+const emptySystem: SystemOption = {
+  key: "",
+  name: "",
+  shortCode: "",
+  color: "",
+  markerColor: "",
+};
+
 export default function SystemsAdminPage() {
   const user = useUser();
-
   const [systems, setSystems] = useState<SystemOption[]>([]);
-  const [key, setKey] = useState("");
-  const [name, setName] = useState("");
-  const [shortCode, setShortCode] = useState("");
-  const [color, setColor] = useState("");
-  const [markerColor, setMarkerColor] = useState("");
+  const [draft, setDraft] = useState<SystemOption>(emptySystem);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
 
   async function loadSystems() {
     setSystems(await getSystems());
   }
 
   useEffect(() => {
-    void loadSystems().catch((err: Error) => setError(err.message));
+    const timeout = window.setTimeout(() => {
+      void loadSystems().catch((err: Error) => setError(err.message));
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
+  function updateRow(key: string, patch: Partial<SystemOption>) {
+    setSystems((prev) =>
+      prev.map((system) => (system.key === key ? { ...system, ...patch } : system))
+    );
+  }
 
+  async function save(system: SystemOption) {
     try {
-      setSaving(true);
+      setSavingKey(system.key);
       setError("");
       setMessage("");
-
-      await createSystem(
-        {
-          key,
-          name,
-          shortCode: shortCode || null,
-          color: color || null,
-          markerColor: markerColor || null,
-        },
-        user
-      );
-
-      setKey("");
-      setName("");
-      setShortCode("");
-      setColor("");
-      setMarkerColor("");
+      await updateSystem(system.key, system, user);
       setMessage("System gespeichert.");
       await loadSystems();
     } catch (err) {
       setError(err instanceof Error ? err.message : "System konnte nicht gespeichert werden.");
     } finally {
-      setSaving(false);
+      setSavingKey(null);
+    }
+  }
+
+  async function addSystem() {
+    try {
+      setSavingKey("__new");
+      setError("");
+      setMessage("");
+      await createSystem(draft, user);
+      setDraft(emptySystem);
+      setMessage("System angelegt.");
+      await loadSystems();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "System konnte nicht angelegt werden.");
+    } finally {
+      setSavingKey(null);
     }
   }
 
@@ -62,57 +72,50 @@ export default function SystemsAdminPage() {
     <main className="container">
       <div className="page-header">
         <div>
-          <h1>Systeme verwalten</h1>
-          <p className="page-subtitle">Adminbereich für Spielsysteme und Markerfarben.</p>
+          <h1>Systeme</h1>
+          <p className="page-subtitle">Admin-Tabelle für Spielsysteme und Markerfarben.</p>
         </div>
       </div>
 
       <Message text={message} type="success" />
       <Message text={error} type="error" />
 
-      <form className="card form-grid" onSubmit={submit}>
-        <div className="field">
-          <label>Key</label>
-          <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="wh40k" />
-        </div>
+      <section className="card systems-table-card">
+        <div className="systems-table">
+          <div className="systems-table-head">
+            <span>Name</span>
+            <span>Key</span>
+            <span>Kürzel</span>
+            <span>Farbe</span>
+            <span>Marker</span>
+            <span />
+          </div>
 
-        <div className="field">
-          <label>Name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Warhammer 40.000" />
-        </div>
-
-        <div className="field">
-          <label>Kürzel</label>
-          <input value={shortCode} onChange={(e) => setShortCode(e.target.value)} placeholder="40K" />
-        </div>
-
-        <div className="field">
-          <label>Farbe</label>
-          <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="#334155" />
-        </div>
-
-        <div className="field">
-          <label>Markerfarbe</label>
-          <input value={markerColor} onChange={(e) => setMarkerColor(e.target.value)} placeholder="#f97316" />
-        </div>
-
-        <button type="submit" disabled={saving}>
-          {saving ? "Speichert..." : "System speichern"}
-        </button>
-      </form>
-
-      <div className="card">
-        <h2>Vorhandene Systeme</h2>
-        {systems.length === 0 && <p>Noch keine Systeme vorhanden.</p>}
-
-        <div className="system-badge-row">
           {systems.map((system) => (
-            <span key={system.key} className="system-badge">
-              {system.shortCode || system.name} ({system.key})
-            </span>
+            <div key={system.key} className="systems-table-row">
+              <input value={system.name} onChange={(e) => updateRow(system.key, { name: e.target.value })} />
+              <input value={system.key} disabled />
+              <input value={system.shortCode ?? ""} onChange={(e) => updateRow(system.key, { shortCode: e.target.value })} />
+              <input value={system.color ?? ""} onChange={(e) => updateRow(system.key, { color: e.target.value })} placeholder="#334155" />
+              <input value={system.markerColor ?? ""} onChange={(e) => updateRow(system.key, { markerColor: e.target.value })} placeholder="#f97316" />
+              <button type="button" title="Speichern" disabled={savingKey === system.key} onClick={() => save(system)}>
+                💾
+              </button>
+            </div>
           ))}
+
+          <div className="systems-table-row systems-table-new">
+            <input value={draft.name} onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))} placeholder="Name" />
+            <input value={draft.key} onChange={(e) => setDraft((prev) => ({ ...prev, key: e.target.value }))} placeholder="key" />
+            <input value={draft.shortCode ?? ""} onChange={(e) => setDraft((prev) => ({ ...prev, shortCode: e.target.value }))} placeholder="Kürzel" />
+            <input value={draft.color ?? ""} onChange={(e) => setDraft((prev) => ({ ...prev, color: e.target.value }))} placeholder="#334155" />
+            <input value={draft.markerColor ?? ""} onChange={(e) => setDraft((prev) => ({ ...prev, markerColor: e.target.value }))} placeholder="#f97316" />
+            <button type="button" title="Neues System" disabled={savingKey === "__new"} onClick={addSystem}>
+              +
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

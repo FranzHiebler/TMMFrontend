@@ -16,3 +16,13 @@ export async function createSystem(request: SystemOption, user: User): Promise<S
 
   return handleResponse<SystemOption>(res, "System konnte nicht angelegt werden");
 }
+
+export async function updateSystem(key: string, request: SystemOption, user: User): Promise<SystemOption> {
+  const res = await fetch(`${API}/Systems/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+
+  return handleResponse<SystemOption>(res, "System konnte nicht gespeichert werden");
+}

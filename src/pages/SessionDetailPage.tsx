@@ -4,6 +4,7 @@ import { getGameById } from "../api/gamesApi";
 import { useJoinGame } from "../api/useJoinGame";
 import GameCard from "../components/GameCard";
 import Message from "../components/Message";
+import SessionPlanningPanel from "../components/SessionPlanningPanel";
 import { useUser } from "../context/UserContext";
 import type { GameResponse } from "../types/game";
 
@@ -115,7 +116,7 @@ export default function SessionDetailPage() {
       <div className="page-header">
         <div>
           <h1>Session</h1>
-          <p className="page-subtitle">Detailansicht für genau eine GameSession.</p>
+          <p className="page-subtitle">Detailansicht für genau ein Spiel.</p>
         </div>
 
         <Link className="nav-create-button" to="/">
@@ -177,6 +178,8 @@ export default function SessionDetailPage() {
             onJoin={join}
             onGameUpdated={setGame}
           />
+
+          <SessionPlanningPanel game={game} onGameUpdated={setGame} />
         </>
       )}
     </main>

@@ -55,7 +55,7 @@ export default function LocationMemberList({
               <DirectMessageButton
                 recipientUserId={m.userId}
                 recipientDisplayName={m.displayName || m.userId}
-                contextLabel="aus der Location"
+                contextLabel="aus dem Spielort"
                 compact
               />
             </>
@@ -65,7 +65,7 @@ export default function LocationMemberList({
               <DirectMessageButton
                 recipientUserId={m.userId}
                 recipientDisplayName={m.displayName || m.userId}
-                contextLabel="aus der Location"
+                contextLabel="aus dem Spielort"
                 compact
               />
             </>

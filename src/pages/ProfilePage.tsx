@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { getMyLocations } from "../api/locationsApi";
+import { getCalendar } from "../api/gamesApi";
 import { getCurrentUserProfile, updateCurrentUserProfile } from "../api/usersApi";
+import { getSystems } from "../api/systemsApi";
 import Message from "../components/Message";
 import LocationPicker from "../components/LocationPicker";
 import { useUser } from "../context/UserContext";
 import type {
   LocationResponse,
   ProfileFieldVisibility,
+  SystemOption,
   UserProfileResponse,
   UserProfileVisibility,
+  UserArmyProfileDto,
+  CalendarItemResponse,
 } from "../types/game";
 import "leaflet/dist/leaflet.css";
 
@@ -75,6 +80,8 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [locations, setLocations] = useState<LocationResponse[]>([]);
+  const [calendarItems, setCalendarItems] = useState<CalendarItemResponse[]>([]);
+  const [systems, setSystems] = useState<SystemOption[]>([]);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -91,7 +98,18 @@ export default function ProfilePage() {
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [defaultLocationId, setDefaultLocationId] = useState("");
   const [canBeContacted, setCanBeContacted] = useState(true);
+  const [hideProfile, setHideProfile] = useState(false);
+  const [hideOnMap, setHideOnMap] = useState(false);
+  const [hideParticipation, setHideParticipation] = useState(false);
   const [visibility, setVisibility] = useState<UserProfileVisibility>(defaultVisibility);
+  const [favoriteSystemKeys, setFavoriteSystemKeys] = useState<string[]>([]);
+  const [armies, setArmies] = useState<UserArmyProfileDto[]>([]);
+  const [armySystemKey, setArmySystemKey] = useState("");
+  const [armyName, setArmyName] = useState("");
+  const [lookingActive, setLookingActive] = useState(false);
+  const [lookingSystemKey, setLookingSystemKey] = useState("");
+  const [lookingRadiusKm, setLookingRadiusKm] = useState("");
+  const [lookingTimeNote, setLookingTimeNote] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [resolvingPosition, setResolvingPosition] = useState(false);
@@ -102,13 +120,17 @@ export default function ProfilePage() {
     try {
       setError("");
 
-      const [profileData, locationData] = await Promise.all([
+      const [profileData, locationData, systemData, calendarData] = await Promise.all([
         getCurrentUserProfile(user),
         getMyLocations(user),
+        getSystems(),
+        getCalendar(user).catch(() => []),
       ]);
 
       setProfile(profileData);
       setLocations(locationData);
+      setSystems(systemData);
+      setCalendarItems(calendarData);
       setDisplayName(profileData.displayName);
       setEmail(profileData.email ?? "");
       setPhoneNumber(profileData.phoneNumber ?? "");
@@ -125,7 +147,16 @@ export default function ProfilePage() {
       setProfileImageUrl(profileData.profileImageUrl ?? "");
       setDefaultLocationId(profileData.defaultLocationId ?? "");
       setCanBeContacted(profileData.canBeContacted ?? true);
+      setHideProfile(profileData.hideProfile ?? false);
+      setHideOnMap(profileData.hideOnMap ?? false);
+      setHideParticipation(profileData.hideParticipation ?? false);
       setVisibility({ ...defaultVisibility, ...(profileData.visibility ?? {}) });
+      setFavoriteSystemKeys(profileData.favoriteSystemKeys ?? []);
+      setArmies(profileData.armies ?? []);
+      setLookingActive(profileData.lookingForGame?.isActive ?? false);
+      setLookingSystemKey(profileData.lookingForGame?.systemKey ?? "");
+      setLookingRadiusKm(profileData.lookingForGame?.radiusKm?.toString() ?? "");
+      setLookingTimeNote(profileData.lookingForGame?.timeNote ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Profil konnte nicht geladen werden.");
     } finally {
@@ -154,6 +185,28 @@ export default function ProfilePage() {
 
   function updateVisibility(key: keyof UserProfileVisibility, value: ProfileFieldVisibility) {
     setVisibility((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function systemName(key: string) {
+    return systems.find((system) => system.key === key)?.name ?? key;
+  }
+
+  function toggleFavoriteSystem(key: string) {
+    setFavoriteSystemKeys((prev) =>
+      prev.includes(key) ? prev.filter((value) => value !== key) : [...prev, key]
+    );
+  }
+
+  function addArmy() {
+    const trimmed = armyName.trim();
+    if (!armySystemKey || !trimmed) return;
+
+    setArmies((prev) => [...prev, { systemKey: armySystemKey, armyName: trimmed }]);
+    setArmyName("");
+  }
+
+  function removeArmy(index: number) {
+    setArmies((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function resolvePositionFromAddress() {
@@ -204,8 +257,8 @@ export default function ProfilePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (latitude == null || longitude == null) {
-      setError("Bitte zuerst die Position aus der Adresse ermitteln.");
+    if ((latitude == null) !== (longitude == null)) {
+      setError("Latitude und Longitude müssen gemeinsam gesetzt oder beide leer sein.");
       return;
     }
 
@@ -232,7 +285,18 @@ export default function ProfilePage() {
           profileImageUrl: emptyToNull(profileImageUrl),
           defaultLocationId: defaultLocationId || null,
           canBeContacted,
+          hideProfile,
+          hideOnMap,
+          hideParticipation,
           visibility,
+          favoriteSystemKeys,
+          armies,
+          lookingForGame: {
+            isActive: lookingActive,
+            systemKey: lookingActive ? emptyToNull(lookingSystemKey) : null,
+            radiusKm: lookingActive && lookingRadiusKm ? Number(lookingRadiusKm) : null,
+            timeNote: lookingActive ? emptyToNull(lookingTimeNote) : null,
+          },
         },
         user
       );
@@ -275,12 +339,13 @@ export default function ProfilePage() {
           <div className="field">
             <label>Profilbild-URL</label>
             <input value={profileImageUrl} onChange={(e) => setProfileImageUrl(e.target.value)} />
+            <small className="field-hint">Upload vorbereitet: aktuell URL, später Datei-Upload über Storage/API.</small>
           </div>
 
           <div className="field">
-            <label>Standard-Location</label>
+            <label>Standard-Spielort</label>
             <select value={defaultLocationId} onChange={(e) => setDefaultLocationId(e.target.value)}>
-              <option value="">Keine Standard-Location</option>
+              <option value="">Kein Standard-Spielort</option>
               {locations.map((location) => (
                 <option key={location.id} value={location.id}>
                   {location.name} ({location.city})
@@ -296,6 +361,29 @@ export default function ProfilePage() {
               onChange={(e) => setCanBeContacted(e.target.checked)}
             />
             Darf angeschrieben werden
+          </label>
+
+          <h2>Privatsphäre</h2>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!hideProfile} onChange={(e) => setHideProfile(!e.target.checked)} />
+            <span>
+              Mein Profil darf gefunden werden
+              <small className="field-hint">Andere Spieler können dein öffentliches Profil öffnen.</small>
+            </span>
+          </label>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!hideOnMap} onChange={(e) => setHideOnMap(!e.target.checked)} />
+            <span>
+              Mich auf der Karte anzeigen
+              <small className="field-hint">Zeigt dich als Spieler, wenn Ort und Koordinaten vorhanden sind.</small>
+            </span>
+          </label>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!hideParticipation} onChange={(e) => setHideParticipation(!e.target.checked)} />
+            <span>
+              Meine Teilnahmen anzeigen
+              <small className="field-hint">Vorbereitet: wird bei öffentlichen Session-Ansichten später vollständig berücksichtigt.</small>
+            </span>
           </label>
 
           <h2>Kontakt</h2>
@@ -377,13 +465,102 @@ export default function ProfilePage() {
                 </p>
               ) : (
                 <p className="field-hint">
-                  Position fehlt. Ohne Koordinaten kann das Profil nicht gespeichert werden.
+                  Position fehlt. Das Profil kann gespeichert werden, erscheint dann aber nicht auf der Karte.
                 </p>
               )}
             </div>
           </div>
 
           <h2>Tabletop-Profile</h2>
+
+          <section className="card">
+            <h3>Spielhistorie</h3>
+            {calendarItems.filter((item) => item.status === "Closed").length === 0 && (
+              <p className="field-hint">Noch keine abgeschlossenen Spiele.</p>
+            )}
+            {calendarItems.filter((item) => item.status === "Closed").slice(0, 8).map((item) => (
+              <div key={item.id} className="list-row">
+                <b>{item.title}</b>
+                <span>{item.startTimeUtc ? new Date(item.startTimeUtc).toLocaleDateString("de-DE") : "Termin offen"}</span>
+              </div>
+            ))}
+          </section>
+
+          <div className="card profile-matchmaking-card">
+            <h3>Spielsysteme und Suche</h3>
+
+            <div className="field">
+              <label>Lieblingssysteme</label>
+              <div className="systems-checkboxes">
+                {systems.map((system) => (
+                  <label key={system.key}>
+                    <input
+                      type="checkbox"
+                      checked={favoriteSystemKeys.includes(system.key)}
+                      onChange={() => toggleFavoriteSystem(system.key)}
+                    />
+                    {system.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Armeen</label>
+              <div className="inline-add-system">
+                <select value={armySystemKey} onChange={(e) => setArmySystemKey(e.target.value)}>
+                  <option value="">System wählen</option>
+                  {systems.map((system) => (
+                    <option key={system.key} value={system.key}>{system.name}</option>
+                  ))}
+                </select>
+                <input value={armyName} onChange={(e) => setArmyName(e.target.value)} placeholder="z.B. Space Wolves" />
+                <button type="button" onClick={addArmy}>Armee hinzufügen</button>
+              </div>
+
+              {armies.length > 0 && (
+                <div className="system-badge-row">
+                  {armies.map((army, index) => (
+                    <button key={`${army.systemKey}-${army.armyName}-${index}`} type="button" className="system-badge removable" onClick={() => removeArmy(index)}>
+                      {systemName(army.systemKey)}: {army.armyName} ×
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <label className="checkbox-row">
+              <input type="checkbox" checked={lookingActive} onChange={(e) => setLookingActive(e.target.checked)} />
+              Ich suche aktuell ein Spiel
+            </label>
+
+            {lookingActive && (
+              <div className="form-row-2">
+                <div className="field">
+                  <label>System</label>
+                  <select value={lookingSystemKey} onChange={(e) => setLookingSystemKey(e.target.value)}>
+                    <option value="">Egal / offen</option>
+                    {systems.map((system) => (
+                      <option key={system.key} value={system.key}>{system.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>Umkreis</label>
+                  <div className="input-with-unit">
+                    <input type="number" min={1} max={500} value={lookingRadiusKm} onChange={(e) => setLookingRadiusKm(e.target.value)} />
+                    <span>km</span>
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label>Grobe Zeit / Notiz</label>
+                  <input value={lookingTimeNote} onChange={(e) => setLookingTimeNote(e.target.value)} placeholder="z.B. Freitag Abend" />
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="profile-field-with-visibility">
             <div className="field">
@@ -428,3 +605,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

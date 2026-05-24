@@ -18,7 +18,7 @@ export function locationMembershipLabel(location: LocationResponse) {
   }
 
   if (location.isOpen) {
-    return "Öffentliche Location";
+    return "Öffentlicher Spielort";
   }
 
   return "Noch kein Mitglied";

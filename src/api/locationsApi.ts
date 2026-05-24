@@ -13,7 +13,7 @@ import { API, authHeaders, handleResponse, handleVoidResponse } from "./apiClien
 
 export async function getLocations(): Promise<LocationOption[]> {
   const res = await fetch(`${API}/Locations`);
-  return handleResponse<LocationOption[]>(res, "Locations laden fehlgeschlagen");
+  return handleResponse<LocationOption[]>(res, "Spielorte laden fehlgeschlagen");
 }
 
 export async function getMyLocations(user: User): Promise<LocationResponse[]> {
@@ -21,7 +21,7 @@ export async function getMyLocations(user: User): Promise<LocationResponse[]> {
     headers: authHeaders(user),
   });
 
-  return handleResponse<LocationResponse[]>(res, "Meine Locations laden fehlgeschlagen");
+  return handleResponse<LocationResponse[]>(res, "Meine Spielorte laden fehlgeschlagen");
 }
 
 export async function searchNearbyLocations(
@@ -40,7 +40,7 @@ export async function searchNearbyLocations(
     headers: authHeaders(user),
   });
 
-  return handleResponse<LocationResponse[]>(res, "Nearby Locations fehlgeschlagen");
+  return handleResponse<LocationResponse[]>(res, "Spielort-Suche fehlgeschlagen");
 }
 
 export async function requestLocationMembership(
@@ -67,7 +67,7 @@ export async function createLocation(
     body: JSON.stringify(request),
   });
 
-  return handleResponse<LocationResponse>(res, "Location erstellen fehlgeschlagen");
+  return handleResponse<LocationResponse>(res, "Spielort erstellen fehlgeschlagen");
 }
 
 export async function updateLocation(
@@ -176,5 +176,5 @@ export async function getDiscoveryLocations(
     headers: authHeaders(user),
   });
 
-  return handleResponse<LocationDiscoveryResponse[]>(res, "Discovery Locations fehlgeschlagen");
+  return handleResponse<LocationDiscoveryResponse[]>(res, "Discovery-Spielorte laden fehlgeschlagen");
 }

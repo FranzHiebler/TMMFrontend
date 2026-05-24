@@ -91,3 +91,151 @@ label input[type="checkbox"] {
 .systems-checkboxes label {
   margin: 0;
 }
+
+.create-game-form-v2 {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.simple-session-card {
+  display: grid;
+  gap: 18px;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.segmented-control button {
+  min-height: 42px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.segmented-control button.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+.optional-section summary {
+  cursor: pointer;
+  font-weight: 900;
+  color: #111827;
+}
+
+.optional-section-body {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.secondary-action {
+  justify-self: start;
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.table-details-section {
+  display: grid;
+  gap: 14px;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .segmented-control {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section-heading-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+.list-row {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.list-row:first-child {
+  border-top: 0;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-panel,
+.session-planning-panel details {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.session-planning-panel {
+  margin-top: 1rem;
+  display: grid;
+  gap: 12px;
+}
+
+.systems-table {
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.systems-table-head,
+.systems-table-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(130px, 0.8fr) minmax(80px, 0.5fr) minmax(110px, 0.7fr) minmax(110px, 0.7fr) 48px;
+  gap: 8px;
+  align-items: center;
+  min-width: 760px;
+}
+
+.systems-table-head {
+  padding: 0 4px 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.systems-table-row {
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.systems-table-row input {
+  min-height: 36px;
+}
+
+.systems-table-row button {
+  min-width: 40px;
+  min-height: 36px;
+  padding: 0;
+}
+
+.systems-table-new {
+  background: #f8fafc;
+  border-style: dashed;
+}

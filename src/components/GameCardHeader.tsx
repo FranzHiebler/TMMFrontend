@@ -31,7 +31,7 @@ export default function GameCardHeader({ game }: Props) {
               <DirectMessageButton
                 recipientUserId={game.host.userId}
                 recipientDisplayName={game.host.displayName}
-                contextLabel={`aus GameSession ${game.title}`}
+                contextLabel={`aus Spiel ${game.title}`}
                 compact
               />
             )}
