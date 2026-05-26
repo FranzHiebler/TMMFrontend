@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { API } from "../api/apiClient";
 import { getFriends } from "../api/friendsApi";
 import { cancelGame, getGameById, inviteFriendToSession } from "../api/gamesApi";
 import { getSystems } from "../api/systemsApi";
@@ -32,6 +33,12 @@ function participants(game: GameResponse) {
   return game.tables.flatMap((table) => table.assignedPlayers);
 }
 
+function publicSessionUrl(game: GameResponse) {
+  const publicId = game.publicSlug || game.id;
+  const backendBaseUrl = API.replace(/\/api\/?$/, "");
+  return `${backendBaseUrl}/s/${encodeURIComponent(publicId)}`;
+}
+
 export default function SessionDetailPage() {
   const { gameId } = useParams();
   const user = useUser();
@@ -49,22 +56,17 @@ export default function SessionDetailPage() {
     onGameUpdated: setGame,
   });
 
-  const sessionUrl = useMemo(() => {
-    if (!gameId) return "";
-    return `${window.location.origin}/sessions/${encodeURIComponent(gameId)}`;
-  }, [gameId]);
-
   const shareText = useMemo(() => {
-    if (!game) return sessionUrl;
+    if (!game) return "";
 
     return [
       `Tabletop Matchmaker: ${game.title}`,
       `Ort: ${game.location.name}, ${game.location.city}`,
       `Start: ${timeLabel(game)}`,
       `Plätze: ${game.assignedPlayers}/${game.maxPlayers} belegt`,
-      sessionUrl,
+      publicSessionUrl(game),
     ].join("\n");
-  }, [game, sessionUrl]);
+  }, [game]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +175,6 @@ export default function SessionDetailPage() {
         <div>
           <h1>Session</h1>
         </div>
-
       </div>
 
       <Message text={successMessage} type="success" />

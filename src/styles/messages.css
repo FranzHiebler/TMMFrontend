@@ -215,13 +215,45 @@
 
 .notification-trigger {
   position: relative;
-  min-height: 40px;
-  padding: 9px 13px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   border: 1px solid #d1d5db;
   border-radius: 999px;
   background: #ffffff;
   color: #111827;
   font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+
+.notification-icon {
+  position: relative;
+  width: 18px;
+  height: 20px;
+  display: inline-block;
+}
+
+.notification-icon::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 12px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-radius: 8px 8px 5px 5px;
+}
+
+.notification-icon::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  bottom: 0;
+  width: 6px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: currentColor;
 }
 
 .notification-badge {
@@ -243,7 +275,7 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  z-index: 250;
+  z-index: 12050;
   width: min(360px, calc(100vw - 24px));
   padding: 12px;
   border: 1px solid #e5e7eb;

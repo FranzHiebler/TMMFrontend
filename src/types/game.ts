@@ -329,6 +329,10 @@ export interface UserProfileResponse {
   discoverySettings: UserDiscoverySettingsDto;
 }
 
+export interface UserPermissionsResponse {
+  isAdmin: boolean;
+}
+
 export interface UpdateUserProfileRequest {
   displayName: string;
   firstName?: string | null;

@@ -62,8 +62,13 @@ export default function NotificationBell() {
 
   return (
     <div className="notification-bell">
-      <button type="button" className="notification-trigger" onClick={() => setIsOpen((prev) => !prev)}>
-        <span>Benachrichtigungen</span>
+      <button
+        type="button"
+        className="notification-trigger"
+        aria-label="Benachrichtigungen"
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <span className="notification-icon" aria-hidden="true" />
         {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
       </button>
 

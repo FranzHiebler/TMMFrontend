@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { getCurrentUserPermissions } from "./api/usersApi";
+import NotificationBell from "./components/NotificationBell";
+import UserSwitcher from "./components/UserSwitcher";
 import CalendarPage from "./pages/CalendarPage";
 import CreateGamePage from "./pages/CreateGamePage";
 import DatenschutzPage from "./pages/DatenschutzPage";
@@ -18,10 +21,7 @@ import PublicProfilePage from "./pages/PublicProfilePage";
 import PublicSessionPage from "./pages/PublicSessionPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SystemsAdminPage from "./pages/SystemsAdminPage";
-import UserSwitcher from "./components/UserSwitcher";
 import { useUser } from "./context/UserContext";
-
-const adminUserIds = ["64f1a2b3c4d5e6f7890abc12"];
 
 function navClass({ isActive }: { isActive: boolean }) {
   return isActive ? "app-tab active" : "app-tab";
@@ -30,11 +30,27 @@ function navClass({ isActive }: { isActive: boolean }) {
 export default function App() {
   const user = useUser();
   const location = useLocation();
-  const isAdmin = adminUserIds.includes(user.userId);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const createRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getCurrentUserPermissions(user)
+      .then((permissions) => {
+        if (!cancelled) setIsAdmin(permissions.isAdmin);
+      })
+      .catch(() => {
+        if (!cancelled) setIsAdmin(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -64,6 +80,8 @@ export default function App() {
         </Link>
 
         <div className="top-nav-actions" ref={menuRef}>
+          <NotificationBell />
+
           <button
             type="button"
             className="hamburger-button"
