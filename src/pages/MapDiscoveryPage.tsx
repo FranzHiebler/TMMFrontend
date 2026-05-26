@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { getDiscoveryGames, getGameById } from "../api/gamesApi";
 import { getDiscoveryLocations, getMyLocations } from "../api/locationsApi";
@@ -8,9 +8,10 @@ import { getPlayRequests } from "../api/playRequestsApi";
 import { getSystems } from "../api/systemsApi";
 import { getCurrentUserProfile, searchUsers, updateDiscoverySettings } from "../api/usersApi";
 import { useUser } from "../context/UserContext";
+import DiscoveryFilterPanel from "../features/discovery/components/DiscoveryFilterPanel";
 import DiscoveryLegend from "../features/discovery/components/DiscoveryLegend";
-import { systemShortCode, systemShortCodes } from "../helpers/systemLabels";
-import { compactTimeText, dateTimeText, rangeToDates, shortDateText } from "../features/discovery/utils/discoveryDates";
+import DiscoverySelectionPanel from "../features/discovery/components/DiscoverySelectionPanel";
+import { rangeToDates, shortDateText } from "../features/discovery/utils/discoveryDates";
 import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
@@ -21,12 +22,10 @@ import {
   readZoomParam,
 } from "../features/discovery/utils/discoveryGeo";
 import {
-  cleanSystemLabel,
   gameMarkerIcon,
   locationMarkerIcon,
   playerMarkerIcon,
   playRequestMarkerIcon,
-  systemLabelsFromSummary,
 } from "../features/discovery/utils/discoveryMarkers";
 import {
   clampNumber,
@@ -490,18 +489,6 @@ export default function MapDiscoveryPage() {
     navigate(`/games/create?locationId=${encodeURIComponent(locationId)}`);
   }
 
-  function renderSystemBadges(labels: string[]) {
-    if (labels.length === 0) {
-      return <span className="system-badge muted">System offen</span>;
-    }
-
-    return labels.map((label) => (
-      <span key={label} className="system-badge">
-        {label}
-      </span>
-    ));
-  }
-
   return (
     <div className="discovery-page">
       <section className="discovery-map-shell">
@@ -600,96 +587,27 @@ export default function MapDiscoveryPage() {
             ))}
         </MapContainer>
 
-        <aside
-          className={`discovery-panel discovery-panel-compact ${
-            filterCollapsed ? "discovery-panel-collapsed" : ""
-          }`}
-        >
-          <div className="discovery-panel-header">
-            <button
-              type="button"
-              className="overlay-toggle"
-              aria-label={filterCollapsed ? "Filter öffnen" : "Filter einklappen"}
-              onClick={() => setFilterCollapsed((value) => !value)}
-            >
-              {filterCollapsed ? "›" : "‹"}
-            </button>
-          </div>
-
-          {!filterCollapsed && (
-            <>
-              <div className="discovery-filter-box discovery-filter-box-compact">
-                <label title="Spielorte im gewählten Umkreis">
-                  <input
-                    type="checkbox"
-                    checked={showLocations}
-                    onChange={(event) => setShowLocations(event.target.checked)}
-                  />
-                  <span>Spielorte</span>
-                </label>
-
-                <label title="Spieler mit sichtbarem Profil im Umkreis">
-                  <input
-                    type="checkbox"
-                    checked={showPlayers}
-                    onChange={(event) => setShowPlayers(event.target.checked)}
-                  />
-                  <span>Spieler</span>
-                </label>
-
-                <label title="Sessions, die du veranstaltest oder an denen du teilnimmst">
-                  <input
-                    type="checkbox"
-                    checked={showMySessions}
-                    onChange={(event) => setShowMySessions(event.target.checked)}
-                  />
-                  <span>Meine Sessions</span>
-                </label>
-
-                <label title="Alle sichtbaren Sessions im Umkreis">
-                  <input
-                    type="checkbox"
-                    checked={showAllSessions}
-                    onChange={(event) => setShowAllSessions(event.target.checked)}
-                  />
-                  <span>Öffentliche Sessions</span>
-                </label>
-              </div>
-
-              <label className="day-slider">
-                <input
-                  type="range"
-                  min={1}
-                  max={56}
-                  value={timeWindowDays}
-                  onChange={(event) => setTimeWindowDays(Number(event.target.value))}
-                />
-                <span className="range-scale"><small>1</small><small>{timeWindowDays} Tage</small><small>56</small></span>
-              </label>
-
-              <label className="day-slider radius-slider">
-                <input
-                  type="range"
-                  min={10}
-                  max={200}
-                  step={10}
-                  value={radiusKm}
-                  onChange={(event) => setRadiusKm(Number(event.target.value))}
-                />
-                <span className="range-scale"><small>10</small><small>{radiusKm} km</small><small>200</small></span>
-              </label>
-
-              {banner && <div className="message message-error">{banner}</div>}
-              {isLoading && <div className="discovery-skeleton" />}
-              {!isLoading && !banner && (
-                <p className="discovery-count">
-                  {visibleLocations.length} Spielorte · {visiblePlayers.length} Spieler ·{" "}
-                  {visibleGames.length} {visibleGames.length === 1 ? "Session" : "Sessions"}
-                </p>
-              )}
-            </>
-          )}
-        </aside>
+        <DiscoveryFilterPanel
+          collapsed={filterCollapsed}
+          showLocations={showLocations}
+          showPlayers={showPlayers}
+          showMySessions={showMySessions}
+          showAllSessions={showAllSessions}
+          timeWindowDays={timeWindowDays}
+          radiusKm={radiusKm}
+          banner={banner}
+          isLoading={isLoading}
+          visibleLocationCount={visibleLocations.length}
+          visiblePlayerCount={visiblePlayers.length}
+          visibleGameCount={visibleGames.length}
+          onToggleCollapsed={() => setFilterCollapsed((value) => !value)}
+          onShowLocationsChange={setShowLocations}
+          onShowPlayersChange={setShowPlayers}
+          onShowMySessionsChange={setShowMySessions}
+          onShowAllSessionsChange={setShowAllSessions}
+          onTimeWindowDaysChange={setTimeWindowDays}
+          onRadiusKmChange={setRadiusKm}
+        />
 
         <DiscoveryLegend
           collapsed={legendCollapsed}
@@ -702,149 +620,21 @@ export default function MapDiscoveryPage() {
           </div>
         )}
 
-        {selectedGame && (
-          <article className="session-preview">
-            <div className="session-preview-topbar compact-preview-topbar">
-              <time>{compactTimeText(selectedGame)}</time>
-
-              {selectedLocationGames.length > 1 && (
-                <div className="session-preview-switcher">
-                  <button type="button" onClick={() => selectGameAtOffset(-1)} aria-label="Vorheriges Spiel">&lt;</button>
-                  <span>{selectedGameIndex + 1} / {selectedLocationGames.length}</span>
-                  <button type="button" onClick={() => selectGameAtOffset(1)} aria-label="Nächstes Spiel">&gt;</button>
-                </div>
-              )}
-
-              <button
-                className="preview-close"
-                type="button"
-                onClick={() => setSelection(null)}
-                aria-label="Vorschau schließen"
-              >
-                ×
-              </button>
-            </div>
-
-            <h2>{selectedGame.title}</h2>
-
-            {selectedHostName && <p className="preview-host">von {selectedHostName}</p>}
-
-            <div className="compact-session-preview">
-              <span>
-                {systemLabelsFromSummary(selectedGame.tablesSummary, systems).join(", ") || "System offen"}
-                {" · "}
-                {selectedGame.city || selectedGame.locationName}
-                {" · "}
-                {selectedOccupiedSeats}/{selectedMaxSeats}
-              </span>
-            </div>
-
-            <div className="preview-actions">
-              <Link to={`/sessions/${encodeURIComponent(selectedGame.gameId)}`}>
-                Öffnen
-              </Link>
-            </div>
-          </article>
-        )}
-
-        {selectedLocation && (
-          <article className="session-preview location-preview">
-            <button
-              className="preview-close"
-              type="button"
-              onClick={() => setSelection(null)}
-              aria-label="Vorschau schließen"
-            >
-              ×
-            </button>
-
-            <p className="panel-kicker">
-              {selectedLocation.isOwnLocation
-                ? `Eigener Spielort${selectedLocation.role ? ` · ${selectedLocation.role}` : ""}`
-                : "Spielort"}
-            </p>
-
-            <h2>{selectedLocation.name}</h2>
-
-            <div className="preview-meta-grid">
-              <span>{selectedLocation.city}</span>
-              {selectedLocation.address && <span>{selectedLocation.address}</span>}
-              <span>{selectedLocation.upcomingGameCount} kommende Spiele</span>
-              {selectedLocation.nextGameStartTimeUtc && (
-                <span>nächste: {dateTimeText(selectedLocation.nextGameStartTimeUtc)}</span>
-              )}
-            </div>
-
-            <div className="system-badge-row">
-              {renderSystemBadges(systemShortCodes(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean))}
-            </div>
-
-            <div className="preview-actions">
-              <Link to="/locations">Details</Link>
-
-              <button type="button" onClick={() => createAtLocation(selectedLocation.locationId)}>
-                Spiel hier erstellen
-              </button>
-
-              {selectedLocation.isOwnLocation && <Link to="/locations">Mitglieder</Link>}
-            </div>
-          </article>
-        )}
-
-        {selectedPlayer && (
-          <article className="session-preview player-preview">
-            <button
-              className="preview-close"
-              type="button"
-              onClick={() => setSelection(null)}
-              aria-label="Vorschau schließen"
-            >
-              ×
-            </button>
-
-            <p className="panel-kicker">Spieler</p>
-            <h2>{selectedPlayer.displayName}</h2>
-
-            <div className="preview-meta-grid">
-              {selectedPlayer.city && <span>Ort: {selectedPlayer.city}</span>}
-              {selectedPlayer.postalCode && <span>PLZ: {selectedPlayer.postalCode}</span>}
-              {selectedPlayer.lookingForGame?.isActive && (
-                <span>
-                  Sucht Spiel
-                  {selectedPlayer.lookingForGame.systemKey ? `: ${systemShortCode(selectedPlayer.lookingForGame.systemKey, systems)}` : ""}
-                  {selectedPlayer.lookingForGame.timeNote ? ` · ${selectedPlayer.lookingForGame.timeNote}` : ""}
-                </span>
-              )}
-              {(selectedPlayer.favoriteSystemKeys ?? []).length > 0 && (
-                <span>Systeme: {systemShortCodes(selectedPlayer.favoriteSystemKeys, systems).join(", ")}</span>
-              )}
-            </div>
-
-            <div className="preview-actions">
-              <Link to={`/users/${encodeURIComponent(selectedPlayer.userId)}`}>Profil öffnen</Link>
-            </div>
-          </article>
-        )}
-
-        {selectedPlayRequest && (
-          <article className="session-preview player-preview">
-            <button className="preview-close" type="button" onClick={() => setSelection(null)} aria-label="Vorschau schließen">
-              ×
-            </button>
-            <p className="panel-kicker">Spielgesuch</p>
-            <h2>{selectedPlayRequest.owner.displayName}</h2>
-            <div className="preview-meta-grid">
-              <span>System: {systemShortCode(selectedPlayRequest.systemKey, systems)}</span>
-              {selectedPlayRequest.timeNote && <span>{selectedPlayRequest.timeNote}</span>}
-              {selectedPlayRequest.city && <span>{selectedPlayRequest.city}</span>}
-              {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}
-            </div>
-            <div className="preview-actions">
-              <Link to="/play-requests">Gesuche öffnen</Link>
-              <Link to={`/users/${encodeURIComponent(selectedPlayRequest.owner.userId)}`}>Profil öffnen</Link>
-            </div>
-          </article>
-        )}
+        <DiscoverySelectionPanel
+          selectedGame={selectedGame}
+          selectedLocation={selectedLocation}
+          selectedPlayer={selectedPlayer}
+          selectedPlayRequest={selectedPlayRequest}
+          selectedLocationGames={selectedLocationGames}
+          selectedGameIndex={selectedGameIndex}
+          selectedHostName={selectedHostName}
+          selectedOccupiedSeats={selectedOccupiedSeats}
+          selectedMaxSeats={selectedMaxSeats}
+          systems={systems}
+          onClose={() => setSelection(null)}
+          onSelectGameAtOffset={selectGameAtOffset}
+          onCreateAtLocation={createAtLocation}
+        />
       </section>
     </div>
   );
