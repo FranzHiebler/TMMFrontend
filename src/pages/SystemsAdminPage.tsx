@@ -2,15 +2,40 @@ import { useEffect, useState } from "react";
 import { createSystem, getSystems, updateSystem } from "../api/systemsApi";
 import Message from "../components/Message";
 import { useUser } from "../context/UserContext";
-import type { SystemOption } from "../types/game";
+import type { SystemCategory, SystemOption } from "../types/game";
+
+const categories: SystemCategory[] = ["Tabletop", "Brettspiel", "Rollenspiel", "TCG", "Sonstiges"];
 
 const emptySystem: SystemOption = {
   key: "",
   name: "",
   shortCode: "",
-  color: "",
-  markerColor: "",
+  color: "#334155",
+  markerColor: "#f97316",
+  category: "Tabletop",
 };
+
+function isHexColor(value?: string | null) {
+  return /^#[0-9a-fA-F]{6}$/.test(value ?? "");
+}
+
+function ColorCell({
+  value,
+  onChange,
+}: {
+  value?: string | null;
+  onChange: (value: string) => void;
+}) {
+  const safeValue = isHexColor(value) ? value! : "#334155";
+
+  return (
+    <div className="color-cell">
+      <input type="color" value={safeValue} onChange={(e) => onChange(e.target.value)} />
+      <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder="#334155" />
+      <span style={{ background: safeValue }} aria-hidden="true" />
+    </div>
+  );
+}
 
 export default function SystemsAdminPage() {
   const user = useUser();
@@ -42,7 +67,7 @@ export default function SystemsAdminPage() {
       setSavingKey(system.key);
       setError("");
       setMessage("");
-      await updateSystem(system.key, system, user);
+      await updateSystem(system.key, { ...system, category: system.category ?? "Tabletop" }, user);
       setMessage("System gespeichert.");
       await loadSystems();
     } catch (err) {
@@ -57,7 +82,7 @@ export default function SystemsAdminPage() {
       setSavingKey("__new");
       setError("");
       setMessage("");
-      await createSystem(draft, user);
+      await createSystem({ ...draft, category: draft.category ?? "Tabletop" }, user);
       setDraft(emptySystem);
       setMessage("System angelegt.");
       await loadSystems();
@@ -73,7 +98,7 @@ export default function SystemsAdminPage() {
       <div className="page-header">
         <div>
           <h1>Systeme</h1>
-          <p className="page-subtitle">Admin-Tabelle für Spielsysteme und Markerfarben.</p>
+          <p className="page-subtitle">Admin-Tabelle für Spielsysteme, Kategorien und Markerfarben.</p>
         </div>
       </div>
 
@@ -81,11 +106,12 @@ export default function SystemsAdminPage() {
       <Message text={error} type="error" />
 
       <section className="card systems-table-card">
-        <div className="systems-table">
+        <div className="systems-table systems-table-categorized">
           <div className="systems-table-head">
             <span>Name</span>
             <span>Key</span>
             <span>Kürzel</span>
+            <span>Kategorie</span>
             <span>Farbe</span>
             <span>Marker</span>
             <span />
@@ -96,10 +122,13 @@ export default function SystemsAdminPage() {
               <input value={system.name} onChange={(e) => updateRow(system.key, { name: e.target.value })} />
               <input value={system.key} disabled />
               <input value={system.shortCode ?? ""} onChange={(e) => updateRow(system.key, { shortCode: e.target.value })} />
-              <input value={system.color ?? ""} onChange={(e) => updateRow(system.key, { color: e.target.value })} placeholder="#334155" />
-              <input value={system.markerColor ?? ""} onChange={(e) => updateRow(system.key, { markerColor: e.target.value })} placeholder="#f97316" />
+              <select value={system.category ?? "Tabletop"} onChange={(e) => updateRow(system.key, { category: e.target.value as SystemCategory })}>
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+              <ColorCell value={system.color} onChange={(color) => updateRow(system.key, { color })} />
+              <ColorCell value={system.markerColor} onChange={(markerColor) => updateRow(system.key, { markerColor })} />
               <button type="button" title="Speichern" disabled={savingKey === system.key} onClick={() => save(system)}>
-                💾
+                Speichern
               </button>
             </div>
           ))}
@@ -108,8 +137,11 @@ export default function SystemsAdminPage() {
             <input value={draft.name} onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))} placeholder="Name" />
             <input value={draft.key} onChange={(e) => setDraft((prev) => ({ ...prev, key: e.target.value }))} placeholder="key" />
             <input value={draft.shortCode ?? ""} onChange={(e) => setDraft((prev) => ({ ...prev, shortCode: e.target.value }))} placeholder="Kürzel" />
-            <input value={draft.color ?? ""} onChange={(e) => setDraft((prev) => ({ ...prev, color: e.target.value }))} placeholder="#334155" />
-            <input value={draft.markerColor ?? ""} onChange={(e) => setDraft((prev) => ({ ...prev, markerColor: e.target.value }))} placeholder="#f97316" />
+            <select value={draft.category ?? "Tabletop"} onChange={(e) => setDraft((prev) => ({ ...prev, category: e.target.value as SystemCategory }))}>
+              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+            <ColorCell value={draft.color} onChange={(color) => setDraft((prev) => ({ ...prev, color }))} />
+            <ColorCell value={draft.markerColor} onChange={(markerColor) => setDraft((prev) => ({ ...prev, markerColor }))} />
             <button type="button" title="Neues System" disabled={savingKey === "__new"} onClick={addSystem}>
               +
             </button>

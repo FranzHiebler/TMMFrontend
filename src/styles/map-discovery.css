@@ -13,7 +13,6 @@
   width: 100%;
   height: calc(100vh - 72px);
   min-height: 620px;
-  padding-bottom: 86px;
   z-index: 0;
 }
 
@@ -28,28 +27,47 @@
 }
 
 .discovery-panel {
-  top: 12px;
+  top: 8px;
   right: 12px;
   left: auto;
-  width: 230px;
-  border-radius: 18px;
-  padding: 10px;
+  width: min(220px, calc(100vw - 24px));
+  border-radius: 12px;
+  padding: 6px;
   display: grid;
-  gap: 7px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
 }
 
 .discovery-panel-collapsed {
-  width: 116px;
-  padding: 7px;
+  width: auto;
+  padding: 5px 6px;
 }
 
-.discovery-panel-toggle {
-  width: 100%;
-  min-height: 30px;
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 900;
+.discovery-panel-header,
+.discovery-legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #111827;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.overlay-toggle {
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .panel-kicker {
@@ -62,25 +80,39 @@
 
 .day-slider {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   margin: 0;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
   color: #334155;
 }
 
+.radius-slider {
+  opacity: 0.86;
+}
+
 .day-slider input {
   padding: 0;
+  height: 16px;
+}
+
+.range-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -3px;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .discovery-filter-box {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 5px;
-  padding: 7px;
-  border-radius: 12px;
-  background: rgba(241, 245, 249, 0.88);
-  font-size: 11px;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 10px;
   font-weight: 800;
 }
 
@@ -88,15 +120,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 28px;
-  padding: 3px 5px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.55);
+  min-height: 20px;
+  padding: 2px 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .discovery-filter-box input {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   flex: 0 0 auto;
 }
 
@@ -117,13 +149,13 @@
 .discovery-map-legend {
   position: absolute;
   left: 16px;
-  bottom: 90px;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   z-index: 80;
   display: grid;
   gap: 5px;
-  padding: 7px 9px;
+  padding: 6px 8px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.42);
   border: 1px solid rgba(148, 163, 184, 0.22);
   box-shadow: none;
   backdrop-filter: blur(6px);
@@ -135,16 +167,22 @@
 
 .discovery-map-legend button {
   pointer-events: auto;
-  min-height: 24px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  font-size: 11px;
+}
+
+.discovery-map-legend .overlay-toggle {
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  font-size: 14px;
 }
 
 .discovery-map-legend.legend-collapsed {
   opacity: 0.9;
-  padding: 4px;
+  width: 36px;
+  height: 36px;
+  padding: 3px;
   gap: 0;
+  place-items: center;
 }
 
 .legend-dot {
@@ -251,6 +289,7 @@
 .location-marker {
   width: 34px;
   height: 34px;
+  position: relative;
   font-size: 13px;
   font-weight: 900;
 }
@@ -258,9 +297,79 @@
 .player-marker {
   width: 30px;
   height: 30px;
+  position: relative;
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.marker-icon {
+  position: relative;
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+}
+
+.marker-icon::before,
+.marker-icon::after {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.marker-icon-house::before {
+  left: 3px;
+  top: 8px;
+  width: 11px;
+  height: 8px;
+  border: 2px solid #ffffff;
+  border-top: 0;
+  border-radius: 1px;
+}
+
+.marker-icon-house::after {
+  left: 3px;
+  top: 3px;
+  width: 11px;
+  height: 11px;
+  border-left: 2px solid #ffffff;
+  border-top: 2px solid #ffffff;
+  transform: rotate(45deg);
+}
+
+.marker-icon-user::before {
+  left: 5px;
+  top: 2px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+}
+
+.marker-icon-user::after {
+  left: 2px;
+  top: 12px;
+  width: 13px;
+  height: 6px;
+  border: 2px solid #ffffff;
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+}
+
+.marker-mini-label {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  transform: translateX(-50%);
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 7px;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .player-marker-looking {
@@ -271,7 +380,7 @@
 
 .session-preview {
   right: 24px;
-  bottom: 92px;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   width: min(300px, calc(100vw - 48px));
   border-radius: 12px;
   padding: 8px;
@@ -323,7 +432,7 @@
   border-radius: 999px;
   background: #eef2ff;
   color: #1e3a8a;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 950;
 }
 
@@ -535,12 +644,12 @@
   }
 
   .discovery-panel {
-    top: 10px;
+    top: 8px;
     right: 10px;
-    width: min(210px, calc(100vw - 20px));
-    padding: 10px;
-    gap: 7px;
-    border-radius: 16px;
+    width: min(190px, calc(100vw - 20px));
+    padding: 7px;
+    gap: 5px;
+    border-radius: 13px;
   }
 
   .discovery-panel-collapsed {
@@ -555,15 +664,15 @@
   }
 
   .day-slider {
-    font-size: 11px;
-    gap: 3px;
+    font-size: 10px;
+    gap: 2px;
   }
 
   .discovery-filter-box {
     grid-template-columns: 1fr;
-    gap: 4px;
-    padding: 7px;
-    font-size: 11px;
+    gap: 2px;
+    padding: 0;
+    font-size: 10px;
   }
 
   .discovery-filter-box label {
@@ -584,7 +693,7 @@
   .session-preview {
     left: 10px;
     right: 10px;
-    bottom: 84px;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     width: auto;
     max-height: 42vh;
     overflow-y: auto;
@@ -681,14 +790,14 @@
 
   .discovery-map-legend {
     left: 10px;
-    bottom: 84px;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     max-width: calc(100vw - 20px);
     font-size: 10px;
   }
 
   .discovery-empty-state {
     left: 10px;
-    bottom: 82px;
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
     width: calc(100vw - 20px);
   }
 }

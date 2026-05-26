@@ -122,7 +122,7 @@ export default function App() {
         </NavLink>
         <NavLink to="/profile" className={navClass}>
           <span className="app-icon app-icon-profile" aria-hidden="true" />
-          Ich Profil
+          Profil
         </NavLink>
 
         <button

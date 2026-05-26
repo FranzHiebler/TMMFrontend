@@ -1,15 +1,15 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Link, useNavigate } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { getDiscoveryGames, getGameById } from "../api/gamesApi";
 import { getDiscoveryLocations, getMyLocations } from "../api/locationsApi";
 import { getPlayRequests } from "../api/playRequestsApi";
 import { getSystems } from "../api/systemsApi";
-import { getCurrentUserProfile, searchUsers } from "../api/usersApi";
+import { getCurrentUserProfile, searchUsers, updateDiscoverySettings } from "../api/usersApi";
 import { useUser } from "../context/UserContext";
-import { systemName, systemNames } from "../helpers/systemLabels";
+import { systemShortCode, systemShortCodes } from "../helpers/systemLabels";
 import type {
   GameDiscoveryResponse,
   GameResponse,
@@ -26,14 +26,119 @@ type Selection =
   | { type: "playRequest"; id: string }
   | null;
 
-const DEFAULT_CENTER: [number, number] = [50.5558, 9.6808];
+const DEFAULT_CENTER: [number, number] = [50.2279, 9.3472];
+const DEFAULT_ZOOM = 10;
+const CENTRAL_EUROPE_BOUNDS = {
+  minLat: 44,
+  maxLat: 56,
+  minLng: 4,
+  maxLng: 16,
+};
 
-function MapCenterController({ center }: { center: [number, number] }) {
+function clampNumber(value: number, min: number, max: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+function readNumberParam(params: URLSearchParams, key: string, fallback: number, min = 1, max = 250) {
+  const rawValue = params.get(key);
+  if (rawValue == null) return fallback;
+
+  const value = Number(rawValue);
+  return clampNumber(value, min, max, fallback);
+}
+
+function readBoolParam(params: URLSearchParams, key: string, fallback: boolean) {
+  const value = params.get(key);
+  if (value == null) return fallback;
+  return value === "1" || value.toLowerCase() === "true";
+}
+
+function isCentralEuropeCenter([lat, lng]: [number, number]) {
+  return (
+    lat >= CENTRAL_EUROPE_BOUNDS.minLat &&
+    lat <= CENTRAL_EUROPE_BOUNDS.maxLat &&
+    lng >= CENTRAL_EUROPE_BOUNDS.minLng &&
+    lng <= CENTRAL_EUROPE_BOUNDS.maxLng
+  );
+}
+
+function normalizeMapCenter(center: [number, number] | null): [number, number] | null {
+  if (!center) return null;
+  const [lat, lng] = center;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  if (isCentralEuropeCenter(center)) return center;
+
+  const swapped: [number, number] = [lng, lat];
+  if (isCentralEuropeCenter(swapped)) {
+    return swapped;
+  }
+
+  return null;
+}
+
+function readCenterParams(params: URLSearchParams): [number, number] | null {
+  const lat = Number(params.get("lat"));
+  const lng = Number(params.get("lng"));
+  return normalizeMapCenter([lat, lng]);
+}
+
+function readZoomParam(params: URLSearchParams) {
+  return readNumberParam(params, "zoom", DEFAULT_ZOOM, 3, 18);
+}
+
+function hasDiscoveryUrlState(params: URLSearchParams) {
+  return ["days", "radius", "locations", "players", "mine", "public", "lat", "lng", "zoom"].some((key) =>
+    params.has(key)
+  );
+}
+
+function MapController({
+  center,
+  zoom,
+  refreshKey,
+  onViewportChanged,
+}: {
+  center: [number, number];
+  zoom: number;
+  refreshKey: string;
+  onViewportChanged: (center: [number, number], zoom: number) => void;
+}) {
   const map = useMap();
 
   useEffect(() => {
-    map.flyTo(center, map.getZoom(), { animate: true, duration: 0.6 });
-  }, [center, map]);
+    const current = map.getCenter();
+    const zoomChanged = map.getZoom() !== zoom;
+    const centerChanged =
+      Math.abs(current.lat - center[0]) > 0.0001 || Math.abs(current.lng - center[1]) > 0.0001;
+
+    if (centerChanged || zoomChanged) {
+      map.setView(center, zoom, { animate: true });
+    }
+  }, [center, map, zoom]);
+
+  useEffect(() => {
+    const first = window.setTimeout(() => map.invalidateSize({ pan: false }), 0);
+    const second = window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+
+    return () => {
+      window.clearTimeout(first);
+      window.clearTimeout(second);
+    };
+  }, [map, refreshKey]);
+
+  useMapEvents({
+    moveend() {
+      const nextCenter = map.getCenter();
+      onViewportChanged([nextCenter.lat, nextCenter.lng], map.getZoom());
+    },
+    zoomend() {
+      const nextCenter = map.getCenter();
+      onViewportChanged([nextCenter.lat, nextCenter.lng], map.getZoom());
+    },
+  });
 
   return null;
 }
@@ -62,21 +167,6 @@ function dateTimeText(startTimeUtc: string) {
   });
 }
 
-function timeHint(startTimeUtc: string) {
-  const start = new Date(startTimeUtc);
-  const today = startOfToday();
-  const startDay = new Date(start);
-  startDay.setHours(0, 0, 0, 0);
-
-  const diffDays = Math.round((startDay.getTime() - today.getTime()) / 86400000);
-
-  if (diffDays === 0) return "Heute";
-  if (diffDays === 1) return "Morgen";
-  if (diffDays > 1 && diffDays < 7) return start.toLocaleDateString("de-DE", { weekday: "short" });
-
-  return start.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-}
-
 function gameMarkerState(game: GameDiscoveryResponse) {
   if (game.isHost) return "host";
   if (game.isParticipant) return "participant";
@@ -90,13 +180,13 @@ function cleanSystemLabel(value: string) {
   return cleaned.length <= 8 ? cleaned : cleaned.slice(0, 8);
 }
 
-function systemLabelsFromSummary(summary: string) {
+function systemLabelsFromSummary(summary: string, systems: SystemOption[]) {
   if (!summary.trim()) return [];
 
   return summary
     .split("·")
     .flatMap((part) => part.split(":").slice(1).join(":").split(","))
-    .map((value) => cleanSystemLabel(value.replace(/\d+\s*Punkte/i, "")))
+    .map((value) => systemShortCode(cleanSystemLabel(value.replace(/\d+\s*Punkte/i, "")), systems))
     .filter(Boolean)
     .filter((value, index, array) => array.indexOf(value) === index)
     .slice(0, 3);
@@ -108,10 +198,10 @@ function systemBadgesHtml(labels: string[]) {
   return labels.map((label) => `<span class="map-system-badge">${label}</span>`).join("");
 }
 
-function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number) {
+function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number, systems: SystemOption[]) {
   const state = gameMarkerState(game);
   const offset = Math.min(indexAtLocation, 3) * 8;
-  const systems = systemLabelsFromSummary(game.tablesSummary);
+  const systemLabels = systemLabelsFromSummary(game.tablesSummary, systems);
 
   return L.divIcon({
     className: "",
@@ -119,9 +209,9 @@ function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number) {
       <div class="discovery-marker discovery-marker-${state}" style="transform: translate(${offset}px, -${offset}px)">
         <div class="marker-main-row">
           <span class="marker-symbol">S</span>
-          <span>${timeHint(game.startTimeUtc)}</span>
+          <span>${shortDateText(game.startTimeUtc)}</span>
         </div>
-        <div class="marker-system-row">${systemBadgesHtml(systems)}</div>
+        <div class="marker-system-row">${systemBadgesHtml(systemLabels)}</div>
       </div>
     `,
     iconSize: [104, 52],
@@ -137,7 +227,7 @@ function locationMarkerIcon(location: LocationDiscoveryResponse) {
     className: "",
     html: `
       <div class="location-marker location-marker-${state}">
-        <span class="marker-symbol">O</span>
+        <span class="marker-icon marker-icon-house" aria-hidden="true"></span>
         ${count ? `<strong>${count}</strong>` : ""}
       </div>
     `,
@@ -156,7 +246,12 @@ function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
 
   return L.divIcon({
     className: "",
-    html: `<div class="${classes}">${isLooking ? "Sucht" : "User"}</div>`,
+    html: `
+      <div class="${classes}">
+        <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
+        ${isLooking ? `<span class="marker-mini-label">sucht</span>` : ""}
+      </div>
+    `,
     iconSize: isLooking ? [36, 36] : [30, 30],
     iconAnchor: isLooking ? [18, 18] : [15, 15],
   });
@@ -165,9 +260,21 @@ function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
 function playRequestMarkerIcon() {
   return L.divIcon({
     className: "",
-    html: `<div class="player-marker player-marker-looking">Gesuch</div>`,
+    html: `
+      <div class="player-marker player-marker-looking">
+        <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
+        <span class="marker-mini-label">sucht</span>
+      </div>
+    `,
     iconSize: [42, 42],
     iconAnchor: [21, 21],
+  });
+}
+
+function shortDateText(startTimeUtc: string) {
+  return new Date(startTimeUtc).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
   });
 }
 
@@ -187,8 +294,8 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
 
 function compactTimeText(game: GameDiscoveryResponse) {
   if (game.timingMode === "Open") return "offen";
-  if (game.timeLabel) return game.timeLabel;
-  return timeHint(game.startTimeUtc);
+  if (game.timeLabel) return `${shortDateText(game.startTimeUtc)} · ${game.timeLabel}`;
+  return shortDateText(game.startTimeUtc);
 }
 
 function getBrowserPosition(): Promise<[number, number]> {
@@ -209,16 +316,22 @@ function getBrowserPosition(): Promise<[number, number]> {
 export default function MapDiscoveryPage() {
   const user = useUser();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hasUrlState = useMemo(() => hasDiscoveryUrlState(searchParams), [searchParams]);
+  const initialCenter = useMemo(
+    () => readCenterParams(searchParams) ?? DEFAULT_CENTER,
+    [searchParams]
+  );
 
-  const [timeWindowDays, setTimeWindowDays] = useState(7);
-  const [radiusKm, setRadiusKm] = useState(80);
-  const [filterCollapsed, setFilterCollapsed] = useState(true);
+  const [timeWindowDays, setTimeWindowDays] = useState(() => readNumberParam(searchParams, "days", 7, 1, 56));
+  const [radiusKm, setRadiusKm] = useState(() => readNumberParam(searchParams, "radius", 80, 10, 200));
+  const [filterCollapsed, setFilterCollapsed] = useState(() => readBoolParam(searchParams, "filtersClosed", true));
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   
-  const [showLocations, setShowLocations] = useState(false);
-  const [showPlayers, setShowPlayers] = useState(false);
-  const [showMySessions, setShowMySessions] = useState(true);
-  const [showAllSessions, setShowAllSessions] = useState(false);
+  const [showLocations, setShowLocations] = useState(() => readBoolParam(searchParams, "locations", true));
+  const [showPlayers, setShowPlayers] = useState(() => readBoolParam(searchParams, "players", true));
+  const [showMySessions, setShowMySessions] = useState(() => readBoolParam(searchParams, "mine", true));
+  const [showAllSessions, setShowAllSessions] = useState(() => readBoolParam(searchParams, "public", true));
 
   const [players, setPlayers] = useState<UserSearchResponse[]>([]);
   const [games, setGames] = useState<GameDiscoveryResponse[]>([]);
@@ -233,28 +346,45 @@ export default function MapDiscoveryPage() {
   const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [loadingPlayRequests, setLoadingPlayRequests] = useState(true);
   const [banner, setBanner] = useState("");
-  const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
-  const [centerReady, setCenterReady] = useState(false);
+  const [center, setCenter] = useState<[number, number]>(initialCenter);
+  const [zoom, setZoom] = useState(() => readZoomParam(searchParams));
+  const [centerReady, setCenterReady] = useState(() => readCenterParams(searchParams) != null);
 
   const { from, to } = useMemo(() => rangeToDates(timeWindowDays), [timeWindowDays]);
 
   const resolveInitialCenter = useCallback(async () => {
+    let profile: Awaited<ReturnType<typeof getCurrentUserProfile>> | null = null;
+    let myLocations: Awaited<ReturnType<typeof getMyLocations>> | null = null;
+
     try {
-      const [profile, myLocations] = await Promise.all([
+      const loaded = await Promise.all([
         getCurrentUserProfile(user),
         getMyLocations(user),
       ]);
 
-      const defaultLocation = myLocations.find(
-        (location) =>
-          location.id === profile.defaultLocationId &&
-          location.latitude != null &&
-          location.longitude != null
-      );
+      profile = loaded[0];
+      myLocations = loaded[1];
 
-      if (defaultLocation?.latitude != null && defaultLocation.longitude != null) {
-        setCenter([defaultLocation.latitude, defaultLocation.longitude]);
-        return;
+      if (!hasUrlState) {
+        const saved = profile.discoverySettings;
+
+        setTimeWindowDays(clampNumber(saved?.timeWindowDays ?? 7, 1, 56, 7));
+        setRadiusKm(clampNumber(saved?.radiusKm ?? 80, 10, 200, 80));
+        setShowLocations(saved?.showLocations ?? true);
+        setShowPlayers(saved?.showPlayers ?? true);
+        setShowMySessions(saved?.showMySessions ?? true);
+        setShowAllSessions(saved?.showPublicSessions ?? true);
+        setZoom(clampNumber(saved?.zoom ?? DEFAULT_ZOOM, 3, 18, DEFAULT_ZOOM));
+
+        const savedCenter = normalizeMapCenter([
+          saved?.latitude ?? Number.NaN,
+          saved?.longitude ?? Number.NaN,
+        ]);
+
+        if (savedCenter) {
+          setCenter(savedCenter);
+          return;
+        }
       }
     } catch {
       // fallback unten
@@ -262,14 +392,56 @@ export default function MapDiscoveryPage() {
 
     try {
       const browserCenter = await getBrowserPosition();
-      setCenter(browserCenter);
-      return;
+      const normalizedBrowserCenter = normalizeMapCenter(browserCenter);
+
+      if (normalizedBrowserCenter) {
+        setCenter(normalizedBrowserCenter);
+        setZoom(11);
+        return;
+      }
+    } catch {
+      // fallback unten
+    }
+
+    try {
+      const defaultLocation = myLocations?.find(
+        (location) =>
+          location.id === profile?.defaultLocationId &&
+          location.latitude != null &&
+          location.longitude != null
+      );
+
+      if (defaultLocation?.latitude != null && defaultLocation.longitude != null) {
+        const normalizedDefaultLocation = normalizeMapCenter([
+          defaultLocation.latitude,
+          defaultLocation.longitude,
+        ]);
+
+        if (normalizedDefaultLocation) {
+          setCenter(normalizedDefaultLocation);
+          setZoom(11);
+          return;
+        }
+      }
     } catch {
       // fallback unten
     }
 
     setCenter(DEFAULT_CENTER);
-  }, [user]);
+    setZoom(DEFAULT_ZOOM);
+  }, [hasUrlState, user]);
+
+  const updateMapViewport = useCallback((nextCenter: [number, number], nextZoom: number) => {
+    setCenter((currentCenter) => {
+      const centerChanged =
+        Math.abs(currentCenter[0] - nextCenter[0]) > 0.0001 ||
+        Math.abs(currentCenter[1] - nextCenter[1]) > 0.0001;
+
+      return centerChanged ? nextCenter : currentCenter;
+    });
+
+    setZoom((currentZoom) => (currentZoom !== nextZoom ? nextZoom : currentZoom));
+  }, []);
 
   const loadDiscovery = useCallback(async () => {
     if (!centerReady) return;
@@ -337,9 +509,75 @@ export default function MapDiscoveryPage() {
   }, [center, centerReady, from, radiusKm, to, user]);
 
   useEffect(() => {
+    if (centerReady) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void resolveInitialCenter().finally(() => setCenterReady(true));
-  }, [resolveInitialCenter]);
+  }, [centerReady, resolveInitialCenter]);
+
+  useEffect(() => {
+    if (!centerReady) return;
+
+    const next = new URLSearchParams();
+    next.set("days", String(timeWindowDays));
+    next.set("radius", String(radiusKm));
+    next.set("locations", showLocations ? "1" : "0");
+    next.set("players", showPlayers ? "1" : "0");
+    next.set("mine", showMySessions ? "1" : "0");
+    next.set("public", showAllSessions ? "1" : "0");
+    next.set("filtersClosed", filterCollapsed ? "1" : "0");
+    next.set("lat", center[0].toFixed(5));
+    next.set("lng", center[1].toFixed(5));
+    next.set("zoom", String(zoom));
+    setSearchParams(next, { replace: true });
+  }, [
+    center,
+    centerReady,
+    filterCollapsed,
+    radiusKm,
+    setSearchParams,
+    showAllSessions,
+    showLocations,
+    showMySessions,
+    showPlayers,
+    timeWindowDays,
+    zoom,
+  ]);
+
+  useEffect(() => {
+    if (!centerReady) return;
+
+    const timeout = window.setTimeout(() => {
+      void updateDiscoverySettings(
+        {
+          showLocations,
+          showPlayers,
+          showMySessions,
+          showPublicSessions: showAllSessions,
+          timeWindowDays,
+          radiusKm,
+          latitude: center[0],
+          longitude: center[1],
+          zoom,
+        },
+        user
+      ).catch(() => {
+        // Komforteinstellung: Karte bleibt nutzbar, auch wenn Speichern fehlschlägt.
+      });
+    }, 800);
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    center,
+    centerReady,
+    radiusKm,
+    showAllSessions,
+    showLocations,
+    showMySessions,
+    showPlayers,
+    timeWindowDays,
+    user,
+    zoom,
+  ]);
 
   useEffect(() => {
     getSystems()
@@ -482,8 +720,13 @@ export default function MapDiscoveryPage() {
   return (
     <div className="discovery-page">
       <section className="discovery-map-shell">
-        <MapContainer center={center} zoom={10} className="discovery-map">
-          <MapCenterController center={center} />
+        <MapContainer center={center} zoom={zoom} className="discovery-map">
+          <MapController
+            center={center}
+            zoom={zoom}
+            refreshKey={`${filterCollapsed}-${legendCollapsed}-${selection?.type ?? "none"}`}
+            onViewportChanged={updateMapViewport}
+          />
 
           <TileLayer
             attribution="&copy; OpenStreetMap"
@@ -497,7 +740,7 @@ export default function MapDiscoveryPage() {
                 key={location.locationId}
                 position={[location.latitude!, location.longitude!]}
                 icon={locationMarkerIcon(location)}
-                zIndexOffset={location.isOwnLocation ? 180 : 80}
+                zIndexOffset={location.isOwnLocation ? 180 : 120}
                 eventHandlers={{
                   click: () => setSelection({ type: "location", id: location.locationId }),
                 }}
@@ -523,8 +766,8 @@ export default function MapDiscoveryPage() {
               <Marker
                 key={game.gameId}
                 position={[game.latitude!, game.longitude!]}
-                icon={gameMarkerIcon(game, indexAtLocation)}
-                zIndexOffset={600 + indexAtLocation}
+                icon={gameMarkerIcon(game, indexAtLocation, systems)}
+                zIndexOffset={60 + indexAtLocation}
                 eventHandlers={{
                   click: () => setSelection({ type: "game", id: game.gameId }),
                 }}
@@ -532,7 +775,7 @@ export default function MapDiscoveryPage() {
                 <Popup>
                   <strong>{game.title}</strong>
                   <br />
-                  {dateTimeText(game.startTimeUtc)}
+                  {shortDateText(game.startTimeUtc)}
                   <br />
                   {game.locationName}, {game.city}
                 </Popup>
@@ -544,7 +787,7 @@ export default function MapDiscoveryPage() {
               key={player.userId}
               position={[player.latitude!, player.longitude!]}
               icon={playerMarkerIcon(player, player.userId === user.userId)}
-              zIndexOffset={player.lookingForGame?.isActive ? 420 : 300}
+              zIndexOffset={player.lookingForGame?.isActive ? 760 : 720}
               eventHandlers={{
                 click: () => setSelection({ type: "player", id: player.userId }),
               }}
@@ -564,7 +807,7 @@ export default function MapDiscoveryPage() {
                 key={request.id}
                 position={[request.latitude!, request.longitude!]}
                 icon={playRequestMarkerIcon()}
-                zIndexOffset={430}
+                zIndexOffset={780}
                 eventHandlers={{
                   click: () => setSelection({ type: "playRequest", id: request.id }),
                 }}
@@ -577,39 +820,19 @@ export default function MapDiscoveryPage() {
             filterCollapsed ? "discovery-panel-collapsed" : ""
           }`}
         >
-          <button
-            type="button"
-            className="discovery-panel-toggle"
-            onClick={() => setFilterCollapsed((value) => !value)}
-          >
-            {filterCollapsed ? "Filter" : "Filter einklappen"}
-          </button>
+          <div className="discovery-panel-header">
+            <button
+              type="button"
+              className="overlay-toggle"
+              aria-label={filterCollapsed ? "Filter öffnen" : "Filter einklappen"}
+              onClick={() => setFilterCollapsed((value) => !value)}
+            >
+              {filterCollapsed ? "›" : "‹"}
+            </button>
+          </div>
 
           {!filterCollapsed && (
             <>
-              <label className="day-slider">
-                <span>Zeitraum: {timeWindowDays} Tage</span>
-                <input
-                  type="range"
-                  min={1}
-                  max={56}
-                  value={timeWindowDays}
-                  onChange={(event) => setTimeWindowDays(Number(event.target.value))}
-                />
-              </label>
-
-              <label className="day-slider">
-                <span>Radius: {radiusKm} km</span>
-                <input
-                  type="range"
-                  min={10}
-                  max={250}
-                  step={10}
-                  value={radiusKm}
-                  onChange={(event) => setRadiusKm(Number(event.target.value))}
-                />
-              </label>
-
               <div className="discovery-filter-box discovery-filter-box-compact">
                 <label title="Spielorte im gewählten Umkreis">
                   <input
@@ -635,7 +858,7 @@ export default function MapDiscoveryPage() {
                     checked={showMySessions}
                     onChange={(event) => setShowMySessions(event.target.checked)}
                   />
-                  <span>Meine</span>
+                  <span>Meine Sessions</span>
                 </label>
 
                 <label title="Alle sichtbaren Sessions im Umkreis">
@@ -644,9 +867,32 @@ export default function MapDiscoveryPage() {
                     checked={showAllSessions}
                     onChange={(event) => setShowAllSessions(event.target.checked)}
                   />
-                  <span>Öffentlich</span>
+                  <span>Öffentliche Sessions</span>
                 </label>
               </div>
+
+              <label className="day-slider">
+                <input
+                  type="range"
+                  min={1}
+                  max={56}
+                  value={timeWindowDays}
+                  onChange={(event) => setTimeWindowDays(Number(event.target.value))}
+                />
+                <span className="range-scale"><small>1</small><small>{timeWindowDays} Tage</small><small>56</small></span>
+              </label>
+
+              <label className="day-slider radius-slider">
+                <input
+                  type="range"
+                  min={10}
+                  max={200}
+                  step={10}
+                  value={radiusKm}
+                  onChange={(event) => setRadiusKm(Number(event.target.value))}
+                />
+                <span className="range-scale"><small>10</small><small>{radiusKm} km</small><small>200</small></span>
+              </label>
 
               {banner && <div className="message message-error">{banner}</div>}
               {isLoading && <div className="discovery-skeleton" />}
@@ -661,9 +907,16 @@ export default function MapDiscoveryPage() {
         </aside>
 
         <div className={`discovery-map-legend ${legendCollapsed ? "legend-collapsed" : ""}`}>
-          <button type="button" onClick={() => setLegendCollapsed((value) => !value)}>
-            {legendCollapsed ? "Legende" : "Legende ausblenden"}
-          </button>
+          <div className="discovery-legend-header">
+            <button
+              type="button"
+              className="overlay-toggle"
+              aria-label={legendCollapsed ? "Legende öffnen" : "Legende einklappen"}
+              onClick={() => setLegendCollapsed((value) => !value)}
+            >
+              {legendCollapsed ? "?" : "‹"}
+            </button>
+          </div>
           {!legendCollapsed && (
             <>
               <span><i className="legend-dot location" /> Spielort</span>
@@ -713,7 +966,7 @@ export default function MapDiscoveryPage() {
 
             <div className="compact-session-preview">
               <span>
-                {systemLabelsFromSummary(selectedGame.tablesSummary).join(", ") || "System offen"}
+                {systemLabelsFromSummary(selectedGame.tablesSummary, systems).join(", ") || "System offen"}
                 {" · "}
                 {selectedGame.city || selectedGame.locationName}
                 {" · "}
@@ -758,7 +1011,7 @@ export default function MapDiscoveryPage() {
             </div>
 
             <div className="system-badge-row">
-              {renderSystemBadges(systemNames(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean))}
+              {renderSystemBadges(systemShortCodes(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean))}
             </div>
 
             <div className="preview-actions">
@@ -794,12 +1047,12 @@ export default function MapDiscoveryPage() {
               {selectedPlayer.lookingForGame?.isActive && (
                 <span>
                   Sucht Spiel
-                  {selectedPlayer.lookingForGame.systemKey ? `: ${systemName(selectedPlayer.lookingForGame.systemKey, systems)}` : ""}
+                  {selectedPlayer.lookingForGame.systemKey ? `: ${systemShortCode(selectedPlayer.lookingForGame.systemKey, systems)}` : ""}
                   {selectedPlayer.lookingForGame.timeNote ? ` · ${selectedPlayer.lookingForGame.timeNote}` : ""}
                 </span>
               )}
               {(selectedPlayer.favoriteSystemKeys ?? []).length > 0 && (
-                <span>Systeme: {systemNames(selectedPlayer.favoriteSystemKeys, systems).join(", ")}</span>
+                <span>Systeme: {systemShortCodes(selectedPlayer.favoriteSystemKeys, systems).join(", ")}</span>
               )}
             </div>
 
@@ -817,7 +1070,7 @@ export default function MapDiscoveryPage() {
             <p className="panel-kicker">Spielgesuch</p>
             <h2>{selectedPlayRequest.owner.displayName}</h2>
             <div className="preview-meta-grid">
-              <span>System: {systemName(selectedPlayRequest.systemKey, systems)}</span>
+              <span>System: {systemShortCode(selectedPlayRequest.systemKey, systems)}</span>
               {selectedPlayRequest.timeNote && <span>{selectedPlayRequest.timeNote}</span>}
               {selectedPlayRequest.city && <span>{selectedPlayRequest.city}</span>}
               {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}

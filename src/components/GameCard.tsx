@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getSystems } from "../api/systemsApi";
 import { useUser } from "../context/UserContext";
 import {
   type GameChangeProposalDto,
   type GameResponse,
   type GameTableDto,
   GameJoinMode,
+  type SystemOption,
 } from "../types/game";
 import { useGameCardActions } from "../hooks/useGameCardActions";
 import { combineDateWithTime, timeFromDate } from "../helpers/dateTime";
@@ -22,6 +24,8 @@ type Props = {
   currentUserId: string;
   onJoin: (gameId: string, tableId: string, joinMode: GameJoinMode, systemKey?: string) => void;
   onGameUpdated?: (game: GameResponse) => void;
+  showMessages?: boolean;
+  showHeader?: boolean;
 };
 
 export default function GameCard({
@@ -31,8 +35,11 @@ export default function GameCard({
   messageByKey,
   onJoin,
   onGameUpdated,
+  showMessages = true,
+  showHeader = true,
 }: Props) {
   const user = useUser();
+  const [systems, setSystems] = useState<SystemOption[]>([]);
 
   const [isEditingSession, setIsEditingSession] = useState(false);
   const [openProposalTableId, setOpenProposalTableId] = useState<string | null>(null);
@@ -64,6 +71,12 @@ export default function GameCard({
   );
 
   const pendingProposals = (game.changeProposals ?? []).filter((p) => p.status === "Pending");
+
+  useEffect(() => {
+    getSystems()
+      .then(setSystems)
+      .catch(() => setSystems([]));
+  }, []);
 
   function resetProposalForm() {
     setProposalStartTime("");
@@ -129,15 +142,19 @@ export default function GameCard({
 
   return (
     <div className="card">
-      <GameCardHeader game={game} />
+      {showHeader && <GameCardHeader game={game} />}
 
       <Message text={message?.text} type={message?.type} />
 
       {isHost && (
         <div className="host-edit-bar">
-          <button type="button" onClick={() => setIsEditingSession((prev) => !prev)}>
-            {isEditingSession ? "Bearbeiten schließen" : "Session bearbeiten"}
-          </button>
+          <button
+            type="button"
+            className="icon-button icon-edit"
+            aria-label={isEditingSession ? "Sessionbearbeitung schließen" : "Session bearbeiten"}
+            title={isEditingSession ? "Schließen" : "Session bearbeiten"}
+            onClick={() => setIsEditingSession((prev) => !prev)}
+          />
         </div>
       )}
 
@@ -185,6 +202,7 @@ export default function GameCard({
             onDragPlayerStart={setDraggedPlayerId}
             onDragPlayerEnd={() => setDraggedPlayerId(null)}
             onDropPlayer={moveAssignedPlayer}
+            systems={systems}
           />
         ))}
       </div>
@@ -197,7 +215,7 @@ export default function GameCard({
         onResolveProposal={resolveProposal}
       />
 
-      <GameSessionMessagesPanel gameId={game.id} />
+      {showMessages && <GameSessionMessagesPanel gameId={game.id} />}
     </div>
   );
 }

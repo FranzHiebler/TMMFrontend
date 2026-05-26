@@ -325,3 +325,11 @@ export async function closeGame(gameId: string, request: CloseGameRequest, user:
   });
   return handleResponse<GameResponse>(res, "Session abschließen fehlgeschlagen");
 }
+
+export async function cancelGame(gameId: string, user: User): Promise<GameResponse> {
+  const res = await fetch(`${API}/Games/${gameId}/cancel`, {
+    method: "POST",
+    headers: authHeaders(user),
+  });
+  return handleResponse<GameResponse>(res, "Spiel konnte nicht abgesagt werden");
+}

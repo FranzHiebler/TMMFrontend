@@ -146,7 +146,10 @@ export type SystemOption = {
   shortCode?: string | null;
   color?: string | null;
   markerColor?: string | null;
+  category?: SystemCategory | null;
 };
+
+export type SystemCategory = "Tabletop" | "Brettspiel" | "Rollenspiel" | "TCG" | "Sonstiges";
 
 export interface SearchNearbyGamesRequest {
   latitude: number;
@@ -262,6 +265,18 @@ export interface LookingForGameStatusDto {
   updatedAtUtc?: string | null;
 }
 
+export interface UserDiscoverySettingsDto {
+  showLocations: boolean;
+  showPlayers: boolean;
+  showMySessions: boolean;
+  showPublicSessions: boolean;
+  timeWindowDays: number;
+  radiusKm: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  zoom: number;
+}
+
 export interface LocationJoinRequestResponse {
   id: string;
   userId: string;
@@ -309,6 +324,7 @@ export interface UserProfileResponse {
   favoriteSystemKeys: string[];
   armies: UserArmyProfileDto[];
   lookingForGame: LookingForGameStatusDto;
+  discoverySettings: UserDiscoverySettingsDto;
 }
 
 export interface UpdateUserProfileRequest {
@@ -335,6 +351,7 @@ export interface UpdateUserProfileRequest {
   favoriteSystemKeys: string[];
   armies: UserArmyProfileDto[];
   lookingForGame: LookingForGameStatusDto;
+  discoverySettings?: UserDiscoverySettingsDto | null;
 }
 
 export interface UpdateGameSessionRequest {
@@ -587,6 +604,8 @@ export interface CreateEventSeriesRequest {
   dayOfWeek: string | number;
   timeLabel?: string | null;
   startHour: number;
+  startDateUtc?: string | null;
+  endDateUtc?: string | null;
   defaultMaxPlayers: number;
   description?: string | null;
 }

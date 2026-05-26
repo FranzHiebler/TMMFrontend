@@ -141,16 +141,35 @@
 
 .game-tables-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .game-table-card {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   margin: 0;
-  padding: 18px;
+  padding: 12px;
+}
+
+.game-table-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.game-table-main {
+  min-width: 0;
+}
+
+.game-table-chat {
+  min-width: 0;
+  max-height: 360px;
+  overflow: auto;
+  border-left: 1px solid #e5e7eb;
+  padding-left: 12px;
 }
 
 .game-table-header {
@@ -165,7 +184,7 @@
 }
 
 .game-table-subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: #6b7280;
   font-weight: 700;
 }
@@ -178,15 +197,23 @@
 }
 
 .table-actions button {
-  padding: 9px 13px;
+  padding: 7px 10px;
   white-space: nowrap;
 }
 
 .game-table-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.compact-table-meta span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 800;
 }
 
 .game-table-notes {
@@ -212,9 +239,9 @@
 .assigned-player-row {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: auto;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #ffffff;
@@ -235,9 +262,11 @@
 }
 
 .assigned-player-remove {
-  width: auto;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
   white-space: nowrap;
-  padding: 7px 10px;
+  padding: 0;
 }
 
 .proposal-form {
@@ -355,12 +384,390 @@
   margin: 0;
 }
 
+.session-detail-page .card + .card {
+  margin-top: 12px;
+}
+
+.icon-button,
+.icon-link {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+}
+
+.icon-button::before,
+.icon-button::after,
+.icon-link::before,
+.icon-link::after {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.icon-message::before {
+  left: 8px;
+  top: 10px;
+  width: 16px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+}
+
+.icon-message::after {
+  left: 10px;
+  width: 11px;
+  height: 8px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  top: 10px;
+}
+
+.icon-trash::before {
+  left: 9px;
+  width: 13px;
+  height: 14px;
+  top: 11px;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-radius: 0 0 3px 3px;
+}
+
+.icon-trash::after {
+  left: 8px;
+  width: 16px;
+  height: 2px;
+  top: 8px;
+  background: currentColor;
+  box-shadow: 4px -3px 0 -1px currentColor;
+}
+
+.icon-edit::before {
+  left: 8px;
+  top: 13px;
+  width: 15px;
+  height: 5px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  transform: rotate(-35deg);
+}
+
+.icon-edit::after {
+  width: 5px;
+  height: 5px;
+  right: 7px;
+  bottom: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+}
+
+.icon-share::before {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top: 0;
+  left: 8px;
+  bottom: 7px;
+}
+
+.icon-share::after {
+  width: 11px;
+  height: 11px;
+  top: 7px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.icon-invite {
+  width: auto;
+  padding: 7px 11px 7px 34px;
+}
+
+.icon-invite::before {
+  left: 12px;
+  top: 10px;
+  width: 14px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+}
+
+.icon-invite::after {
+  left: 15px;
+  top: 11px;
+  width: 9px;
+  height: 7px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.danger-button {
+  background: #991b1b;
+  color: #ffffff;
+}
+
+.session-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.session-overview-grid .card + .card {
+  margin-top: 0;
+}
+
+.session-hero-card {
+  display: grid;
+  gap: 12px;
+}
+
+.session-hero-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.session-hero-main h2 {
+  margin: 0;
+}
+
+.session-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-hero-main p {
+  margin: 4px 0 0;
+  color: #475569;
+  font-weight: 800;
+}
+
+.session-hero-main strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 52px;
+  min-height: 36px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1d4ed8;
+  font-size: 16px;
+}
+
+.session-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.session-fact-grid span {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-participants,
+.session-action-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.session-participants span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.session-action-bar {
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.session-action-bar a,
+.session-action-bar button {
+  min-height: 32px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.session-inline-invite {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.session-inline-invite select {
+  min-width: 180px;
+}
+
+.session-chat-card {
+  max-height: 420px;
+  overflow: auto;
+}
+
+.session-cancel-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.session-planning-panel > h2 {
+  margin-top: 0;
+}
+
+.session-detail-accordion summary {
+  cursor: pointer;
+  font-weight: 950;
+}
+
+.session-detail-accordion > .card {
+  margin-top: 12px;
+  box-shadow: none;
+}
+
+.calendar-toolbar,
+.calendar-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.calendar-toolbar strong {
+  min-width: 180px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.calendar-filters button.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-grid > b {
+  color: #64748b;
+  font-size: 12px;
+  text-align: center;
+}
+
+.calendar-day {
+  min-height: 104px;
+  padding: 7px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  text-align: left;
+}
+
+.calendar-day.selected {
+  outline: 2px solid #2563eb;
+}
+
+.calendar-day.muted {
+  opacity: 0.42;
+}
+
+.calendar-day small {
+  padding: 3px 5px;
+  border-radius: 6px;
+  background: #eef2ff;
+  color: #1d4ed8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-day em {
+  color: #64748b;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.calendar-agenda {
+  margin-top: 12px;
+}
+
 @media (max-width: 760px) {
+  .session-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-chat-card {
+    max-height: 360px;
+  }
+
+  .game-table-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-table-chat {
+    max-height: 320px;
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 10px;
+  }
+
   .my-game-row summary {
     grid-template-columns: 1fr auto;
   }
 
   .my-game-row summary span:nth-of-type(n + 3) {
     display: none;
+  }
+
+  .session-fact-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .calendar-grid {
+    display: none;
+  }
+
+  .calendar-toolbar strong {
+    order: -1;
+    width: 100%;
   }
 }

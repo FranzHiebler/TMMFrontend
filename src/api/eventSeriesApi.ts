@@ -19,6 +19,19 @@ export async function createEventSeries(
   return handleResponse<EventSeriesDto>(res, "Event-Serie konnte nicht erstellt werden");
 }
 
+export async function updateEventSeries(
+  id: string,
+  request: CreateEventSeriesRequest,
+  user: User
+): Promise<EventSeriesDto> {
+  const res = await fetch(`${API}/EventSeries/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<EventSeriesDto>(res, "Event-Serie konnte nicht gespeichert werden");
+}
+
 export async function createNextSeriesSession(id: string, user: User): Promise<GameResponse> {
   const res = await fetch(`${API}/EventSeries/${id}/create-next-session`, {
     method: "POST",

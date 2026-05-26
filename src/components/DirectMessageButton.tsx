@@ -65,11 +65,11 @@ export default function DirectMessageButton({
     <>
       <button
         type="button"
-        className={compact ? "button-compact" : undefined}
+        className={compact ? "icon-button icon-message" : "icon-link icon-message"}
+        aria-label={`Nachricht an ${recipientDisplayName}`}
+        title="Nachricht"
         onClick={() => setIsOpen(true)}
-      >
-        Nachricht
-      </button>
+      />
 
       {isOpen && (
         <div className="modal-backdrop" role="presentation" onClick={() => setIsOpen(false)}>

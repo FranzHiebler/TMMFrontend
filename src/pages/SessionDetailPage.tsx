@@ -1,15 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { getGameById } from "../api/gamesApi";
+import { useParams } from "react-router-dom";
+import { getFriends } from "../api/friendsApi";
+import { cancelGame, getGameById, inviteFriendToSession } from "../api/gamesApi";
+import { getSystems } from "../api/systemsApi";
 import { useJoinGame } from "../api/useJoinGame";
 import GameCard from "../components/GameCard";
+import GameSessionMessagesPanel from "../components/GameSessionMessagesPanel";
 import Message from "../components/Message";
-import SessionPlanningPanel from "../components/SessionPlanningPanel";
 import { useUser } from "../context/UserContext";
-import type { GameResponse } from "../types/game";
+import { systemShortCode } from "../helpers/systemLabels";
+import { GameJoinMode, type FriendDto, type GameResponse, type SystemOption } from "../types/game";
 
-function buildWhatsAppShareUrl(text: string) {
-  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+function systemsLabel(game: GameResponse, systemOptions: SystemOption[]) {
+  const tableSystems = [...new Set(game.tables.flatMap((table) => table.systems).filter(Boolean))];
+  return tableSystems.map((system) => systemShortCode(system, systemOptions)).join(", ") || "System offen";
+}
+
+function timeLabel(game: GameResponse) {
+  if (game.timingMode === "Open") return "Termin offen";
+  if (game.timeLabel) return game.timeLabel;
+  return new Date(game.startTimeUtc).toLocaleString("de-DE", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function participants(game: GameResponse) {
+  return game.tables.flatMap((table) => table.assignedPlayers);
 }
 
 export default function SessionDetailPage() {
@@ -17,6 +37,10 @@ export default function SessionDetailPage() {
   const user = useUser();
 
   const [game, setGame] = useState<GameResponse | null>(null);
+  const [systems, setSystems] = useState<SystemOption[]>([]);
+  const [friends, setFriends] = useState<FriendDto[]>([]);
+  const [friendId, setFriendId] = useState("");
+  const [showInvite, setShowInvite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
@@ -33,25 +57,14 @@ export default function SessionDetailPage() {
   const shareText = useMemo(() => {
     if (!game) return sessionUrl;
 
-    const startText = new Date(game.startTimeUtc).toLocaleString("de-DE", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
     return [
       `Tabletop Matchmaker: ${game.title}`,
       `Ort: ${game.location.name}, ${game.location.city}`,
-      `Start: ${startText}`,
+      `Start: ${timeLabel(game)}`,
       `Plätze: ${game.assignedPlayers}/${game.maxPlayers} belegt`,
       sessionUrl,
     ].join("\n");
   }, [game, sessionUrl]);
-
-  const whatsappShareUrl = useMemo(() => buildWhatsAppShareUrl(shareText), [shareText]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,16 +102,11 @@ export default function SessionDetailPage() {
     };
   }, [gameId]);
 
-  async function copySessionLink() {
-    if (!sessionUrl) return;
-
-    try {
-      await navigator.clipboard.writeText(sessionUrl);
-      setCopyMessage("Session-Link wurde kopiert.");
-    } catch {
-      setCopyMessage("Link konnte nicht automatisch kopiert werden.");
-    }
-  }
+  useEffect(() => {
+    getSystems()
+      .then(setSystems)
+      .catch(() => setSystems([]));
+  }, []);
 
   async function copyShareText() {
     if (!shareText) return;
@@ -111,17 +119,61 @@ export default function SessionDetailPage() {
     }
   }
 
+  async function joinFirstOpenTable() {
+    if (!game) return;
+    const table = game.tables.find((candidate) => candidate.openSlots > 0);
+    if (!table) return;
+    const systemKey = table.systems.length === 1 && table.systems[0] !== "egal" ? table.systems[0] : undefined;
+    join(game.id, table.id, game.joinMode, systemKey);
+  }
+
+  async function cancelSession() {
+    if (!game) return;
+    if (!window.confirm("Willst du dieses Spiel wirklich absagen? Teilnehmer werden benachrichtigt.")) return;
+
+    const updated = await cancelGame(game.id, user);
+    setCopyMessage("Spiel wurde abgesagt.");
+    setGame(updated);
+  }
+
+  async function toggleInvite() {
+    setShowInvite((current) => !current);
+
+    if (friends.length === 0) {
+      const loaded = await getFriends(user);
+      setFriends(loaded);
+      setFriendId((current) => current || loaded[0]?.userId || "");
+    }
+  }
+
+  async function inviteSelectedFriend() {
+    if (!game || !friendId) return;
+
+    const friend = friends.find((candidate) => candidate.userId === friendId);
+    if (!friend) return;
+
+    const updated = await inviteFriendToSession(
+      game.id,
+      { userId: friend.userId, displayName: friend.displayName },
+      user
+    );
+
+    setCopyMessage("Einladung gesendet.");
+    setGame(updated);
+    setShowInvite(false);
+  }
+
+  const isHost = game?.host.userId === user.userId;
+  const alreadyInGame = !!game && participants(game).some((player) => player.userId === user.userId);
+  const canJoin = !!game && !isHost && !alreadyInGame && game.openSlots > 0;
+
   return (
-    <main className="container">
+    <main className="container session-detail-page">
       <div className="page-header">
         <div>
           <h1>Session</h1>
-          <p className="page-subtitle">Detailansicht für genau ein Spiel.</p>
         </div>
 
-        <Link className="nav-create-button" to="/">
-          Zur Karte
-        </Link>
       </div>
 
       <Message text={successMessage} type="success" />
@@ -132,43 +184,81 @@ export default function SessionDetailPage() {
 
       {!loading && !error && game && (
         <>
-          <section className="card" style={{ marginBottom: "1rem" }}>
-            <div className="section-header">
-              <div>
-                <h2>Session teilen</h2>
-                <p className="muted">
-                  Link zur einzelnen Session. Später kann diese URL für WhatsApp-Vorschau /
-                  OpenGraph genutzt werden.
-                </p>
+          <section className="session-overview-grid">
+            <div className="card session-hero-card">
+              <div className="session-hero-main">
+                <div>
+                  <div className="session-title-row">
+                    <h2>{game.title}</h2>
+                    <button
+                      type="button"
+                      className="icon-button icon-share"
+                      aria-label="Teilen-Text kopieren"
+                      title="Teilen"
+                      onClick={copyShareText}
+                    />
+                  </div>
+                  <p>{systemsLabel(game, systems)}</p>
+                </div>
+                <strong>{game.assignedPlayers}/{game.maxPlayers}</strong>
               </div>
+
+              <div className="session-fact-grid">
+                <span>{timeLabel(game)}</span>
+                <span>{game.location.name}</span>
+                <span>{game.location.city}</span>
+                <span>{game.openSlots} frei</span>
+              </div>
+
+              <div className="session-participants">
+                {participants(game).length === 0 && <span>Noch keine Teilnehmer.</span>}
+                {participants(game).map((participant) => (
+                  <span key={participant.userId}>{participant.displayName}</span>
+                ))}
+              </div>
+
+              <div className="session-action-bar">
+                {canJoin && (
+                  <button type="button" disabled={!!joiningKey} onClick={joinFirstOpenTable}>
+                    {game.joinMode === GameJoinMode.ApprovalRequired ? "Bewerben" : "Mitspielen"}
+                  </button>
+                )}
+                {isHost && (
+                  <button type="button" className="icon-link icon-invite" onClick={toggleInvite}>
+                    Freunde einladen
+                  </button>
+                )}
+              </div>
+
+              {showInvite && isHost && (
+                <div className="session-inline-invite">
+                  <select value={friendId} onChange={(event) => setFriendId(event.target.value)}>
+                    {friends.length === 0 && <option value="">Keine Freunde gefunden</option>}
+                    {friends.map((friend) => (
+                      <option key={friend.userId} value={friend.userId}>
+                        {friend.displayName}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" disabled={!friendId} onClick={inviteSelectedFriend}>
+                    Einladen
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="form-grid">
-              <label>
-                <span>Session-Link</span>
-                <input value={sessionUrl} readOnly onFocus={(event) => event.target.select()} />
-              </label>
-            </div>
-
-            <div className="button-row" style={{ marginTop: "1rem" }}>
-              <button type="button" onClick={copySessionLink}>
-                Link kopieren
-              </button>
-
-              <button type="button" onClick={copyShareText}>
-                Teilen-Text kopieren
-              </button>
-
-              <a
-                className="button-like"
-                href={whatsappShareUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Per WhatsApp teilen
-              </a>
-            </div>
+            <aside className="card session-chat-card" id="session-chat">
+              <GameSessionMessagesPanel gameId={game.id} />
+            </aside>
           </section>
+
+          {isHost && (
+            <div className="session-cancel-row">
+              <button type="button" className="danger-button" onClick={cancelSession}>
+                Spiel absagen
+              </button>
+            </div>
+          )}
 
           <GameCard
             game={game}
@@ -177,9 +267,9 @@ export default function SessionDetailPage() {
             messageByKey={messageByKey}
             onJoin={join}
             onGameUpdated={setGame}
+            showMessages={false}
+            showHeader={false}
           />
-
-          <SessionPlanningPanel game={game} onGameUpdated={setGame} />
         </>
       )}
     </main>

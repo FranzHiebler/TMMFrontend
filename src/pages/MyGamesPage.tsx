@@ -17,6 +17,10 @@ function systemsLabel(game: GameResponse) {
   return [...new Set(systems)].join(", ") || "System offen";
 }
 
+function gameTime(game: GameResponse) {
+  return game.startTimeUtc ? new Date(game.startTimeUtc).getTime() : 0;
+}
+
 function timeLabel(game: GameResponse) {
   if (game.timingMode === "Open") return "Termin offen";
   if (game.timeLabel) return game.timeLabel;
@@ -43,7 +47,7 @@ function GameRow({ game }: { game: GameResponse }) {
         <span>{game.assignedPlayers}/{game.maxPlayers} Plätze</span>
         <span>{game.status}</span>
         {game.description && <p>{game.description}</p>}
-        <Link to={`/sessions/${game.id}`}>Details öffnen</Link>
+        <Link to={`/sessions/${game.id}`}>Öffnen</Link>
       </div>
     </details>
   );
@@ -70,16 +74,36 @@ export default function MyGamesPage() {
     return () => window.clearTimeout(timeout);
   }, [loadGames]);
 
-  const hosted = useMemo(
-    () => games.filter((game) => game.host.userId === user.userId),
+  const recentCutoff = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - 7);
+    return date.getTime();
+  }, []);
+
+  const myGames = useMemo(
+    () => games.filter((game) => game.host.userId === user.userId || participates(game, user.userId)),
     [games, user.userId]
   );
 
-  const joined = useMemo(
-    () => games.filter((game) => game.host.userId !== user.userId && participates(game, user.userId)),
-    [games, user.userId]
+  const activeGames = useMemo(
+    () =>
+      myGames
+        .filter((game) => gameTime(game) >= recentCutoff)
+        .sort((a, b) => gameTime(a) - gameTime(b)),
+    [myGames, recentCutoff]
   );
 
+  const archiveGames = useMemo(
+    () =>
+      myGames
+        .filter((game) => gameTime(game) < recentCutoff)
+        .sort((a, b) => gameTime(b) - gameTime(a)),
+    [myGames, recentCutoff]
+  );
+
+  const hosted = activeGames.filter((game) => game.host.userId === user.userId);
+  const joined = activeGames.filter((game) => game.host.userId !== user.userId);
   const showHeaders = hosted.length > 0 && joined.length > 0;
 
   return (
@@ -87,14 +111,14 @@ export default function MyGamesPage() {
       <div className="page-header">
         <div>
           <h1>Meine</h1>
-          <p className="page-subtitle">Deine Spiele, schnell scanbar.</p>
+          <p className="page-subtitle">Kommende und aktuelle Spiele zuerst. Ältere Spiele liegen im Archiv.</p>
         </div>
       </div>
 
       <Message text={loading ? "Lade Spiele..." : ""} type="info" />
       <Message text={error} type="error" />
 
-      {!loading && !error && hosted.length === 0 && joined.length === 0 && (
+      {!loading && !error && activeGames.length === 0 && archiveGames.length === 0 && (
         <section className="card">
           <p className="muted">Du hast noch keine Spiele.</p>
           <Link to="/games/create">Spiel erstellen</Link>
@@ -112,6 +136,17 @@ export default function MyGamesPage() {
         <section className="card my-games-compact">
           {showHeaders && <h2>Ich nehme teil</h2>}
           {joined.map((game) => <GameRow key={game.id} game={game} />)}
+        </section>
+      )}
+
+      {archiveGames.length > 0 && (
+        <section className="card my-games-compact">
+          <details>
+            <summary>
+              <strong>Archiv ({archiveGames.length})</strong>
+            </summary>
+            {archiveGames.map((game) => <GameRow key={game.id} game={game} />)}
+          </details>
         </section>
       )}
     </main>

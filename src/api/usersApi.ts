@@ -1,6 +1,7 @@
 import type {
   PublicUserProfileResponse,
   UpdateUserProfileRequest,
+  UserDiscoverySettingsDto,
   UserProfileResponse,
   UserSearchResponse,
 } from "../types/game";
@@ -37,6 +38,19 @@ export async function updateCurrentUserProfile(
   });
 
   return handleResponse<UserProfileResponse>(res, "Profil speichern fehlgeschlagen");
+}
+
+export async function updateDiscoverySettings(
+  request: UserDiscoverySettingsDto,
+  user: User
+): Promise<UserDiscoverySettingsDto> {
+  const res = await fetch(`${API}/Users/me/discovery-settings`, {
+    method: "PUT",
+    headers: authHeaders(user),
+    body: JSON.stringify(request),
+  });
+
+  return handleResponse<UserDiscoverySettingsDto>(res, "Karteneinstellungen speichern fehlgeschlagen");
 }
 
 export async function getPublicUserProfile(

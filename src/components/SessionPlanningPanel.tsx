@@ -55,12 +55,9 @@ export default function SessionPlanningPanel({ game, onGameUpdated }: Props) {
 
   async function closeWithResult() {
     const updated = await closeGame(game.id, { kind: resultKind, value: resultValue, notes: resultNotes || null }, user);
-    setMessage("Session abgeschlossen.");
+    setMessage("Spiel wurde abgeschlossen und in die Historie verschoben.");
     onGameUpdated(updated);
   }
-
-  const publicUrl = `${window.location.origin}/public/sessions/${game.publicSlug || game.id}`;
-  const ogUrl = `${window.location.origin.replace(":5173", ":7173")}/s/${game.publicSlug || game.id}`;
 
   return (
     <section className="card session-planning-panel">
@@ -69,11 +66,6 @@ export default function SessionPlanningPanel({ game, onGameUpdated }: Props) {
       <p className="muted">
         Termin: {game.timingMode === "Open" ? "offen" : game.timeLabel || new Date(game.startTimeUtc).toLocaleString("de-DE")}
       </p>
-
-      <div className="button-row">
-        <button type="button" onClick={() => navigator.clipboard.writeText(publicUrl)}>Öffentlichen Link kopieren</button>
-        <a href={ogUrl} target="_blank" rel="noreferrer">OG-Vorschau</a>
-      </div>
 
       {myInvitation && (
         <div className="inline-panel">
@@ -102,9 +94,9 @@ export default function SessionPlanningPanel({ game, onGameUpdated }: Props) {
         ))}
       </details>
 
-      <details>
-        <summary>Einladungen</summary>
-        {isHost && (
+      {isHost && (
+        <details>
+          <summary>Freunde einladen</summary>
           <div className="button-row">
             <button type="button" onClick={refreshFriends}>Freunde laden</button>
             <select value={friendId} onChange={(e) => setFriendId(e.target.value)}>
@@ -112,14 +104,8 @@ export default function SessionPlanningPanel({ game, onGameUpdated }: Props) {
             </select>
             <button type="button" disabled={!friendId} onClick={invite}>Einladen</button>
           </div>
-        )}
-        {game.invitations?.map((invitation) => (
-          <div key={invitation.id} className="list-row">
-            <b>{invitation.user.displayName}</b>
-            <span>{invitation.status}</span>
-          </div>
-        ))}
-      </details>
+        </details>
+      )}
 
       <details>
         <summary>Warteliste</summary>
@@ -142,7 +128,8 @@ export default function SessionPlanningPanel({ game, onGameUpdated }: Props) {
 
       {isHost && (
         <details>
-          <summary>Session abschließen</summary>
+          <summary>Spiel abschließen</summary>
+          <p className="field-hint">Speichert ein Ergebnis und verschiebt das Spiel in die Historie.</p>
           <div className="form-row-2">
             <select value={resultKind} onChange={(e) => setResultKind(e.target.value as GameResultKind)}>
               <option value="Matrix20">20er Matrix</option>
@@ -152,10 +139,11 @@ export default function SessionPlanningPanel({ game, onGameUpdated }: Props) {
             </select>
             <input value={resultValue} onChange={(e) => setResultValue(e.target.value)} placeholder="z.B. 15:5" />
             <input value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} placeholder="Notiz optional" />
-            <button type="button" disabled={!resultValue} onClick={closeWithResult}>Abschließen</button>
+            <button type="button" disabled={!resultValue} onClick={closeWithResult}>Spiel als beendet markieren</button>
           </div>
         </details>
       )}
+
     </section>
   );
 }

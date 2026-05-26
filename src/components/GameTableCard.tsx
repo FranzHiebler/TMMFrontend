@@ -1,18 +1,19 @@
 import { useState } from "react";
 import type {
+  GameJoinMode,
   GameResponse,
   GameTableDto,
-  GameJoinMode,
+  SystemOption,
   UpdateGameTableRequest,
 } from "../types/game";
-import { gameTableSystemsLabel } from "../helpers/gameLabels";
-import AssignedPlayersList from "./AssignedPlayersList";
+import { gameTableSystemsShortLabel } from "../helpers/gameLabels";
 import ApplicationsList from "./ApplicationsList";
-import GameTableActions from "./GameTableActions";
+import AssignedPlayersList from "./AssignedPlayersList";
 import GameProposalForm from "./GameProposalForm";
+import GameTableActions from "./GameTableActions";
 import GameTableEditForm from "./GameTableEditForm";
-import Message from "./Message";
 import GameTableMessagesPanel from "./GameTableMessagesPanel";
+import Message from "./Message";
 
 type Props = {
   game: GameResponse;
@@ -24,6 +25,7 @@ type Props = {
   messageByKey: Record<string, string>;
   currentUserId: string;
   busyKey: string | null;
+  systems: SystemOption[];
 
   openProposalTableId: string | null;
   proposalStartTime: string;
@@ -62,6 +64,7 @@ export default function GameTableCard({
   messageByKey,
   currentUserId,
   busyKey,
+  systems,
   openProposalTableId,
   proposalStartTime,
   proposalSystems,
@@ -106,119 +109,117 @@ export default function GameTableCard({
       onDragOver={(e) => e.preventDefault()}
       onDrop={() => onDropPlayer(table.id)}
     >
-      <div className="game-table-header">
-        <div>
-          <h4>{table.name}</h4>
-          <div className="game-table-subtitle">
-            {table.assignedPlayers.length}/{table.maxPlayers} Spieler · {table.openSlots} frei
+      <div className="game-table-layout">
+        <div className="game-table-main">
+          <div className="game-table-header">
+            <div>
+              <h4>{table.name}</h4>
+              <div className="game-table-subtitle">
+                {table.assignedPlayers.length}/{table.maxPlayers} Spieler · {table.openSlots} frei
+              </div>
+            </div>
+
+            <div className="table-actions">
+              <GameTableActions
+                isFull={isFull}
+                isJoining={isJoining}
+                alreadyInGame={alreadyInGame}
+                isApproval={isApproval}
+                isAssignedToTable={isAssignedToTable}
+                onJoin={() => onJoin(game.id, table.id, game.joinMode, systemKey)}
+                onToggleProposal={() => {
+                  if (openProposalTableId === table.id) {
+                    onOpenProposalTableIdChange(null);
+                    return;
+                  }
+
+                  onOpenProposalTable(table);
+                }}
+              />
+
+              {isHost && (
+                <button
+                  type="button"
+                  className="icon-button icon-edit"
+                  aria-label={isEditingTable ? "Tischbearbeitung schließen" : "Tisch bearbeiten"}
+                  title={isEditingTable ? "Schließen" : "Tisch bearbeiten"}
+                  onClick={() => setIsEditingTable((prev) => !prev)}
+                />
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="table-actions">
-          <GameTableActions
-            isFull={isFull}
-            isJoining={isJoining}
-            alreadyInGame={alreadyInGame}
-            isApproval={isApproval}
-            isAssignedToTable={isAssignedToTable}
-            onJoin={() => onJoin(game.id, table.id, game.joinMode, systemKey)}
-            onToggleProposal={() => {
-              if (openProposalTableId === table.id) {
-                onOpenProposalTableIdChange(null);
-                return;
-              }
+          <div className="game-table-meta compact-table-meta">
+            <span>{gameTableSystemsShortLabel(table, systems)}</span>
 
-              onOpenProposalTable(table);
-            }}
+            {table.startTimeUtc && (
+              <span>
+                {new Date(table.startTimeUtc).toLocaleTimeString("de-DE", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
+
+            {table.points != null && <span>{table.points} Punkte</span>}
+            {table.scenario && <span>{table.scenario}</span>}
+          </div>
+
+          {table.notes && <div className="game-table-notes">{table.notes}</div>}
+
+          {isEditingTable && (
+            <GameTableEditForm
+              table={table}
+              gameStartTimeUtc={game.startTimeUtc}
+              isBusy={busyKey === `table-edit-${table.id}`}
+              onCancel={() => setIsEditingTable(false)}
+              onSave={(request) => onUpdateTable(table.id, request)}
+            />
+          )}
+
+          <AssignedPlayersList
+            table={table}
+            isHost={isHost}
+            busyKey={busyKey}
+            onRemovePlayer={onRemovePlayer}
+            onDragPlayerStart={onDragPlayerStart}
+            onDragPlayerEnd={onDragPlayerEnd}
           />
 
-          {isHost && (
-            <button type="button" onClick={() => setIsEditingTable((prev) => !prev)}>
-              {isEditingTable ? "Bearbeiten schließen" : "Tisch bearbeiten"}
-            </button>
+          {openProposalTableId === table.id && (
+            <GameProposalForm
+              proposalStartTime={proposalStartTime}
+              proposalSystems={proposalSystems}
+              proposalCustomSystems={proposalCustomSystems}
+              proposalPoints={proposalPoints}
+              proposalMessage={proposalMessage}
+              availableSystems={availableSystems}
+              isBusy={busyKey === `proposal-submit-${table.id}`}
+              onProposalStartTimeChange={onProposalStartTimeChange}
+              onToggleProposalSystem={onToggleProposalSystem}
+              onProposalCustomSystemsChange={onProposalCustomSystemsChange}
+              onProposalPointsChange={onProposalPointsChange}
+              onProposalMessageChange={onProposalMessageChange}
+              onSubmit={() => onSubmitProposal(table)}
+            />
           )}
+
+          <Message text={messageByKey[key]} type="info" />
+
+          <ApplicationsList
+            table={table}
+            isHost={isHost}
+            pendingApplications={pendingApplications}
+            busyKey={busyKey}
+            onAcceptApplication={onAcceptApplication}
+            onRejectApplication={onRejectApplication}
+          />
         </div>
+
+        <aside className="game-table-chat">
+          <GameTableMessagesPanel gameId={game.id} tableId={table.id} />
+        </aside>
       </div>
-
-      <div className="game-table-meta">
-        <div>
-          <b>System:</b> {gameTableSystemsLabel(table)}
-        </div>
-
-        {table.startTimeUtc && (
-          <div>
-            <b>Start:</b>{" "}
-            {new Date(table.startTimeUtc).toLocaleTimeString("de-DE", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
-        )}
-
-        {table.points != null && (
-          <div>
-            <b>Punkte:</b> {table.points}
-          </div>
-        )}
-
-        {table.scenario && (
-          <div>
-            <b>Szenario:</b> {table.scenario}
-          </div>
-        )}
-      </div>
-
-      {table.notes && <div className="game-table-notes">{table.notes}</div>}
-
-      {isEditingTable && (
-        <GameTableEditForm
-          table={table}
-          gameStartTimeUtc={game.startTimeUtc}
-          isBusy={busyKey === `table-edit-${table.id}`}
-          onCancel={() => setIsEditingTable(false)}
-          onSave={(request) => onUpdateTable(table.id, request)}
-        />
-      )}
-
-      <AssignedPlayersList
-        table={table}
-        isHost={isHost}
-        busyKey={busyKey}
-        onRemovePlayer={onRemovePlayer}
-        onDragPlayerStart={onDragPlayerStart}
-        onDragPlayerEnd={onDragPlayerEnd}
-      />
-
-      {openProposalTableId === table.id && (
-        <GameProposalForm
-          proposalStartTime={proposalStartTime}
-          proposalSystems={proposalSystems}
-          proposalCustomSystems={proposalCustomSystems}
-          proposalPoints={proposalPoints}
-          proposalMessage={proposalMessage}
-          availableSystems={availableSystems}
-          isBusy={busyKey === `proposal-submit-${table.id}`}
-          onProposalStartTimeChange={onProposalStartTimeChange}
-          onToggleProposalSystem={onToggleProposalSystem}
-          onProposalCustomSystemsChange={onProposalCustomSystemsChange}
-          onProposalPointsChange={onProposalPointsChange}
-          onProposalMessageChange={onProposalMessageChange}
-          onSubmit={() => onSubmitProposal(table)}
-        />
-      )}
-
-      <Message text={messageByKey[key]} type="info" />
-
-      <ApplicationsList
-        table={table}
-        isHost={isHost}
-        pendingApplications={pendingApplications}
-        busyKey={busyKey}
-        onAcceptApplication={onAcceptApplication}
-        onRejectApplication={onRejectApplication}
-      />
-
-      <GameTableMessagesPanel gameId={game.id} tableId={table.id} />
     </div>
   );
 }

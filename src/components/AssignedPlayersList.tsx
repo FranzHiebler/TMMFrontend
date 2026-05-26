@@ -48,12 +48,12 @@ export default function AssignedPlayersList({
               {isHost && (
                 <button
                   type="button"
-                  className="assigned-player-remove"
+                  className="assigned-player-remove icon-button icon-trash"
+                  aria-label={`${player.displayName} entfernen`}
+                  title="Entfernen"
                   disabled={busyKey === `player-remove-${player.userId}`}
                   onClick={() => onRemovePlayer(table.id, player.userId)}
-                >
-                  Entfernen
-                </button>
+                />
               )}
             </div>
           </div>

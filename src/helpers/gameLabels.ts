@@ -1,4 +1,6 @@
 import { GameJoinMode, type GameSessionState, type GameTableDto } from "../types/game";
+import type { SystemOption } from "../types/game";
+import { systemShortCode } from "./systemLabels";
 
 export function gameJoinModeLabel(joinMode: GameJoinMode) {
   if (joinMode === GameJoinMode.ApprovalRequired) return "Bewerbung erforderlich";
@@ -21,4 +23,11 @@ export function gameTableSystemsLabel(table: GameTableDto) {
   if (table.systems.some((x) => x.toLowerCase() === "egal")) return "Egal";
 
   return table.systems.join(", ");
+}
+
+export function gameTableSystemsShortLabel(table: GameTableDto, systems: SystemOption[]) {
+  if (!table.systems || table.systems.length === 0) return "Egal";
+  if (table.systems.some((x) => x.toLowerCase() === "egal")) return "Egal";
+
+  return table.systems.map((system) => systemShortCode(system, systems)).join(", ");
 }
