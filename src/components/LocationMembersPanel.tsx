@@ -68,8 +68,8 @@ export default function LocationMembersPanel({ location }: Props) {
   }, [location, user, canEdit]);
 
   const loadUsers = useCallback(async () => {
-    setUsers(await searchUsers(""));
-  }, []);
+    setUsers(await searchUsers("", user));
+  }, [user]);
 
   useEffect(() => {
     if (!success) return;

@@ -465,7 +465,7 @@ export default function MapDiscoveryPage() {
           },
           user
         ),
-        searchUsers(""),
+        searchUsers("", user),
         getPlayRequests(user),
       ]);
 
@@ -1042,7 +1042,6 @@ export default function MapDiscoveryPage() {
 
             <div className="preview-meta-grid">
               {selectedPlayer.city && <span>Ort: {selectedPlayer.city}</span>}
-              {selectedPlayer.streetAddress && <span>Adresse: {selectedPlayer.streetAddress}</span>}
               {selectedPlayer.postalCode && <span>PLZ: {selectedPlayer.postalCode}</span>}
               {selectedPlayer.lookingForGame?.isActive && (
                 <span>

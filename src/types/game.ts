@@ -302,6 +302,8 @@ export interface UserProfileVisibility {
 export interface UserProfileResponse {
   userId: string;
   displayName: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email?: string | null;
   phoneNumber?: string | null;
   streetAddress?: string | null;
@@ -329,6 +331,8 @@ export interface UserProfileResponse {
 
 export interface UpdateUserProfileRequest {
   displayName: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email?: string | null;
   phoneNumber?: string | null;
   streetAddress?: string | null;

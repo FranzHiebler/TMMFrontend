@@ -83,6 +83,8 @@ export default function ProfilePage() {
   const [calendarItems, setCalendarItems] = useState<CalendarItemResponse[]>([]);
   const [systems, setSystems] = useState<SystemOption[]>([]);
   const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
@@ -132,6 +134,8 @@ export default function ProfilePage() {
       setSystems(systemData);
       setCalendarItems(calendarData);
       setDisplayName(profileData.displayName);
+      setFirstName(profileData.firstName ?? "");
+      setLastName(profileData.lastName ?? "");
       setEmail(profileData.email ?? "");
       setPhoneNumber(profileData.phoneNumber ?? "");
       setStreetAddress(profileData.streetAddress ?? "");
@@ -270,6 +274,8 @@ export default function ProfilePage() {
       const updated = await updateCurrentUserProfile(
         {
           displayName,
+          firstName: emptyToNull(firstName),
+          lastName: emptyToNull(lastName),
           email: emptyToNull(email),
           phoneNumber: emptyToNull(phoneNumber),
           streetAddress: emptyToNull(streetAddress),
@@ -334,6 +340,18 @@ export default function ProfilePage() {
           <div className="field">
             <label>Anzeigename</label>
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          </div>
+
+          <div className="form-row-2">
+            <div className="field">
+              <label>Vorname</label>
+              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </div>
+
+            <div className="field">
+              <label>Nachname</label>
+              <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
           </div>
 
           <div className="field">
@@ -597,7 +615,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button type="submit" disabled={saving || latitude == null || longitude == null}>
+          <button type="submit" disabled={saving}>
             {saving ? "Speichert..." : "Profil speichern"}
           </button>
         </form>

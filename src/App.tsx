@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import CalendarPage from "./pages/CalendarPage";
 import CreateGamePage from "./pages/CreateGamePage";
+import DatenschutzPage from "./pages/DatenschutzPage";
 import DirectMessagesPage from "./pages/DirectMessagesPage";
 import EventSeriesPage from "./pages/EventSeriesPage";
 import FriendsPage from "./pages/FriendsPage";
 import GamesPage from "./pages/GamesPage";
+import ImpressumPage from "./pages/ImpressumPage";
 import LocationsPage from "./pages/LocationPage";
 import MapDiscoveryPage from "./pages/MapDiscoveryPage";
 import MyGamesPage from "./pages/MyGamesPage";
@@ -82,6 +84,13 @@ export default function App() {
               <div className="nav-more-divider" />
               {isAdmin && <Link to="/admin/systems">Admin: Systeme verwalten</Link>}
               <div className="nav-more-divider" />
+              <Link to="/impressum">Impressum</Link>
+              <Link to="/datenschutz">Datenschutz</Link>
+              <div className="nav-more-divider" />
+              <div className="test-mode-panel">
+                <b>Testmodus</b>
+                <small>Geschlossene Testerphase: Nutzerwechsel setzt nur die Dev-Header.</small>
+              </div>
               <UserSwitcher />
             </div>
           )}
@@ -104,6 +113,8 @@ export default function App() {
         <Route path="/friends" element={<FriendsPage />} />
         <Route path="/users/:userId" element={<PublicProfilePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/impressum" element={<ImpressumPage />} />
+        <Route path="/datenschutz" element={<DatenschutzPage />} />
         {isAdmin && <Route path="/admin/systems" element={<SystemsAdminPage />} />}
       </Routes>
 

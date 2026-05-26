@@ -24,10 +24,7 @@ function mergeUsers(currentUser: User, loadedUsers: User[]) {
 
 export default function UserSwitcher() {
   const user = useUser();
-  const fallbackUsers = useMemo(
-    () => mergeUsers(user, []),
-    [user]
-  );
+  const fallbackUsers = useMemo(() => mergeUsers(user, []), [user]);
   const [users, setUsers] = useState<User[]>(fallbackUsers);
 
   useEffect(() => {
@@ -35,7 +32,7 @@ export default function UserSwitcher() {
 
     async function loadUsers() {
       try {
-        const result = await searchUsers("");
+        const result = await searchUsers("", user);
 
         if (cancelled) return;
 
@@ -65,6 +62,7 @@ export default function UserSwitcher() {
     <select
       className="user-switcher"
       value={user.userId}
+      aria-label="Testnutzer wechseln"
       onChange={(e) => {
         const selected = users.find((u) => u.userId === e.target.value);
         if (selected) user.setUser(selected);

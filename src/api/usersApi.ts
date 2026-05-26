@@ -8,14 +8,16 @@ import type {
 import type { User } from "../context/UserContext";
 import { API, authHeaders, handleResponse } from "./apiClient";
 
-export async function searchUsers(query: string): Promise<UserSearchResponse[]> {
+export async function searchUsers(query: string, user?: User): Promise<UserSearchResponse[]> {
   const params = new URLSearchParams();
 
   if (query.trim()) {
     params.append("query", query.trim());
   }
 
-  const res = await fetch(`${API}/Users/search?${params.toString()}`);
+  const res = await fetch(`${API}/Users/search?${params.toString()}`, {
+    headers: user ? authHeaders(user) : undefined,
+  });
   return handleResponse<UserSearchResponse[]>(res, "User-Suche fehlgeschlagen");
 }
 

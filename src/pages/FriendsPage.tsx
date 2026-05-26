@@ -84,7 +84,7 @@ export default function FriendsPage() {
     const timeout = window.setTimeout(async () => {
       try {
         setSearchLoading(true);
-        const users = await searchUsers(normalizedQuery);
+        const users = await searchUsers(normalizedQuery, user);
 
         if (isCurrent) {
           setResults(users);
@@ -107,7 +107,7 @@ export default function FriendsPage() {
       isCurrent = false;
       window.clearTimeout(timeout);
     };
-  }, [query, showToast]);
+  }, [query, showToast, user]);
 
   async function requestFriend(result: UserSearchResponse) {
     setBusyKey(`request-${result.userId}`);
