@@ -1,5 +1,4 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
@@ -9,7 +8,32 @@ import { getPlayRequests } from "../api/playRequestsApi";
 import { getSystems } from "../api/systemsApi";
 import { getCurrentUserProfile, searchUsers, updateDiscoverySettings } from "../api/usersApi";
 import { useUser } from "../context/UserContext";
+import DiscoveryLegend from "../features/discovery/components/DiscoveryLegend";
 import { systemShortCode, systemShortCodes } from "../helpers/systemLabels";
+import { compactTimeText, dateTimeText, rangeToDates, shortDateText } from "../features/discovery/utils/discoveryDates";
+import {
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  distanceKm,
+  getBrowserPosition,
+  normalizeMapCenter,
+  readCenterParams,
+  readZoomParam,
+} from "../features/discovery/utils/discoveryGeo";
+import {
+  cleanSystemLabel,
+  gameMarkerIcon,
+  locationMarkerIcon,
+  playerMarkerIcon,
+  playRequestMarkerIcon,
+  systemLabelsFromSummary,
+} from "../features/discovery/utils/discoveryMarkers";
+import {
+  clampNumber,
+  hasDiscoveryUrlState,
+  readBoolParam,
+  readNumberParam,
+} from "../features/discovery/utils/discoveryUrlState";
 import type {
   GameDiscoveryResponse,
   GameResponse,
@@ -25,75 +49,6 @@ type Selection =
   | { type: "player"; id: string }
   | { type: "playRequest"; id: string }
   | null;
-
-const DEFAULT_CENTER: [number, number] = [50.2279, 9.3472];
-const DEFAULT_ZOOM = 10;
-const CENTRAL_EUROPE_BOUNDS = {
-  minLat: 44,
-  maxLat: 56,
-  minLng: 4,
-  maxLng: 16,
-};
-
-function clampNumber(value: number, min: number, max: number, fallback: number) {
-  if (!Number.isFinite(value)) return fallback;
-  return Math.min(max, Math.max(min, value));
-}
-
-function readNumberParam(params: URLSearchParams, key: string, fallback: number, min = 1, max = 250) {
-  const rawValue = params.get(key);
-  if (rawValue == null) return fallback;
-
-  const value = Number(rawValue);
-  return clampNumber(value, min, max, fallback);
-}
-
-function readBoolParam(params: URLSearchParams, key: string, fallback: boolean) {
-  const value = params.get(key);
-  if (value == null) return fallback;
-  return value === "1" || value.toLowerCase() === "true";
-}
-
-function isCentralEuropeCenter([lat, lng]: [number, number]) {
-  return (
-    lat >= CENTRAL_EUROPE_BOUNDS.minLat &&
-    lat <= CENTRAL_EUROPE_BOUNDS.maxLat &&
-    lng >= CENTRAL_EUROPE_BOUNDS.minLng &&
-    lng <= CENTRAL_EUROPE_BOUNDS.maxLng
-  );
-}
-
-function normalizeMapCenter(center: [number, number] | null): [number, number] | null {
-  if (!center) return null;
-  const [lat, lng] = center;
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  if (isCentralEuropeCenter(center)) return center;
-
-  const swapped: [number, number] = [lng, lat];
-  if (isCentralEuropeCenter(swapped)) {
-    return swapped;
-  }
-
-  return null;
-}
-
-function readCenterParams(params: URLSearchParams): [number, number] | null {
-  const lat = Number(params.get("lat"));
-  const lng = Number(params.get("lng"));
-  return normalizeMapCenter([lat, lng]);
-}
-
-function readZoomParam(params: URLSearchParams) {
-  return readNumberParam(params, "zoom", DEFAULT_ZOOM, 3, 18);
-}
-
-function hasDiscoveryUrlState(params: URLSearchParams) {
-  return ["days", "radius", "locations", "players", "mine", "public", "lat", "lng", "zoom"].some((key) =>
-    params.has(key)
-  );
-}
 
 function MapController({
   center,
@@ -141,176 +96,6 @@ function MapController({
   });
 
   return null;
-}
-
-function startOfToday() {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function rangeToDates(timeWindowDays: number) {
-  const from = startOfToday();
-  const to = new Date(from);
-  to.setDate(to.getDate() + timeWindowDays);
-  to.setHours(23, 59, 59, 999);
-  return { from, to };
-}
-
-function dateTimeText(startTimeUtc: string) {
-  return new Date(startTimeUtc).toLocaleString("de-DE", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function gameMarkerState(game: GameDiscoveryResponse) {
-  if (game.isHost) return "host";
-  if (game.isParticipant) return "participant";
-  return "event";
-}
-
-function cleanSystemLabel(value: string) {
-  const cleaned = value.trim();
-  if (!cleaned) return "";
-  if (cleaned.toLowerCase() === "egal") return "Egal";
-  return cleaned.length <= 8 ? cleaned : cleaned.slice(0, 8);
-}
-
-function systemLabelsFromSummary(summary: string, systems: SystemOption[]) {
-  if (!summary.trim()) return [];
-
-  return summary
-    .split("·")
-    .flatMap((part) => part.split(":").slice(1).join(":").split(","))
-    .map((value) => systemShortCode(cleanSystemLabel(value.replace(/\d+\s*Punkte/i, "")), systems))
-    .filter(Boolean)
-    .filter((value, index, array) => array.indexOf(value) === index)
-    .slice(0, 3);
-}
-
-function systemBadgesHtml(labels: string[]) {
-  if (labels.length === 0) return `<span class="map-system-badge">?</span>`;
-
-  return labels.map((label) => `<span class="map-system-badge">${label}</span>`).join("");
-}
-
-function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number, systems: SystemOption[]) {
-  const state = gameMarkerState(game);
-  const offset = Math.min(indexAtLocation, 3) * 8;
-  const systemLabels = systemLabelsFromSummary(game.tablesSummary, systems);
-
-  return L.divIcon({
-    className: "",
-    html: `
-      <div class="discovery-marker discovery-marker-${state}" style="transform: translate(${offset}px, -${offset}px)">
-        <div class="marker-main-row">
-          <span class="marker-symbol">S</span>
-          <span>${shortDateText(game.startTimeUtc)}</span>
-        </div>
-        <div class="marker-system-row">${systemBadgesHtml(systemLabels)}</div>
-      </div>
-    `,
-    iconSize: [104, 52],
-    iconAnchor: [52, 26],
-  });
-}
-
-function locationMarkerIcon(location: LocationDiscoveryResponse) {
-  const state = location.isOwnLocation ? "own-location-base" : "location";
-  const count = location.upcomingGameCount > 0 ? location.upcomingGameCount.toString() : "";
-
-  return L.divIcon({
-    className: "",
-    html: `
-      <div class="location-marker location-marker-${state}">
-        <span class="marker-icon marker-icon-house" aria-hidden="true"></span>
-        ${count ? `<strong>${count}</strong>` : ""}
-      </div>
-    `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-  });
-}
-
-function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
-  const isLooking = player.lookingForGame?.isActive;
-  const classes = [
-    "player-marker",
-    isMe ? "player-marker-me" : "player-marker-default",
-    isLooking ? "player-marker-looking" : "",
-  ].filter(Boolean).join(" ");
-
-  return L.divIcon({
-    className: "",
-    html: `
-      <div class="${classes}">
-        <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
-        ${isLooking ? `<span class="marker-mini-label">sucht</span>` : ""}
-      </div>
-    `,
-    iconSize: isLooking ? [36, 36] : [30, 30],
-    iconAnchor: isLooking ? [18, 18] : [15, 15],
-  });
-}
-
-function playRequestMarkerIcon() {
-  return L.divIcon({
-    className: "",
-    html: `
-      <div class="player-marker player-marker-looking">
-        <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
-        <span class="marker-mini-label">sucht</span>
-      </div>
-    `,
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
-  });
-}
-
-function shortDateText(startTimeUtc: string) {
-  return new Date(startTimeUtc).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
-
-function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
-  const r = 6371;
-  const dLat = ((bLat - aLat) * Math.PI) / 180;
-  const dLng = ((bLng - aLng) * Math.PI) / 180;
-  const lat1 = (aLat * Math.PI) / 180;
-  const lat2 = (bLat * Math.PI) / 180;
-
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-
-  return 2 * r * Math.asin(Math.sqrt(h));
-}
-
-function compactTimeText(game: GameDiscoveryResponse) {
-  if (game.timingMode === "Open") return "offen";
-  if (game.timeLabel) return `${shortDateText(game.startTimeUtc)} · ${game.timeLabel}`;
-  return shortDateText(game.startTimeUtc);
-}
-
-function getBrowserPosition(): Promise<[number, number]> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Browser-Geolocation nicht verfügbar."));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => resolve([position.coords.latitude, position.coords.longitude]),
-      reject,
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-    );
-  });
 }
 
 export default function MapDiscoveryPage() {
@@ -906,30 +691,10 @@ export default function MapDiscoveryPage() {
           )}
         </aside>
 
-        <div className={`discovery-map-legend ${legendCollapsed ? "legend-collapsed" : ""}`}>
-          <div className="discovery-legend-header">
-            <button
-              type="button"
-              className="overlay-toggle"
-              aria-label={legendCollapsed ? "Legende öffnen" : "Legende einklappen"}
-              onClick={() => setLegendCollapsed((value) => !value)}
-            >
-              {legendCollapsed ? "?" : "‹"}
-            </button>
-          </div>
-          {!legendCollapsed && (
-            <>
-              <span><i className="legend-dot location" /> Spielort</span>
-              <span><i className="legend-dot own-location-base" /> Eigener Spielort</span>
-              <span><i className="legend-dot event" /> Spiel</span>
-              <span><i className="legend-dot participant" /> Teilnahme</span>
-              <span><i className="legend-dot host" /> Host</span>
-              <span><i className="legend-dot player" /> Spieler</span>
-              <span><i className="legend-dot player-looking" /> Sucht</span>
-              <span><i className="legend-dot player-me" /> Ich</span>
-            </>
-          )}
-        </div>
+        <DiscoveryLegend
+          collapsed={legendCollapsed}
+          onToggle={() => setLegendCollapsed((value) => !value)}
+        />
 
         {!isLoading && !banner && visibleGames.length === 0 && visibleLocations.length > 0 && (
           <div className="discovery-empty-state">
