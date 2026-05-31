@@ -49,6 +49,23 @@ type Selection =
   | { type: "playRequest"; id: string }
   | null;
 
+type ActiveSelection = NonNullable<Selection>;
+
+type SelectionItem = {
+  selection: ActiveSelection;
+  latitude: number;
+  longitude: number;
+  priority: number;
+  sortTime: number;
+  sortLabel: string;
+};
+
+const SELECTION_RADIUS_KM = 0.35;
+
+function sameSelection(a: ActiveSelection, b: ActiveSelection) {
+  return a.type === b.type && a.id === b.id;
+}
+
 function MapController({
   center,
   zoom,
@@ -399,6 +416,72 @@ export default function MapDiscoveryPage() {
     });
   }, [center, players, radiusKm, showPlayers]);
 
+  const visiblePlayRequests = useMemo(
+    () =>
+      playRequests.filter(
+        (request) => request.latitude != null && request.longitude != null
+      ),
+    [playRequests]
+  );
+
+  const selectionItems = useMemo(() => {
+    const items: SelectionItem[] = [];
+
+    for (const game of visibleGames) {
+      if (game.latitude == null || game.longitude == null) continue;
+
+      items.push({
+        selection: { type: "game", id: game.gameId },
+        latitude: game.latitude,
+        longitude: game.longitude,
+        priority: game.isHost || game.isParticipant ? 0 : 1,
+        sortTime: new Date(game.startTimeUtc).getTime(),
+        sortLabel: game.title,
+      });
+    }
+
+    for (const location of visibleLocations) {
+      if (location.latitude == null || location.longitude == null) continue;
+
+      items.push({
+        selection: { type: "location", id: location.locationId },
+        latitude: location.latitude,
+        longitude: location.longitude,
+        priority: 2,
+        sortTime: Number.MAX_SAFE_INTEGER,
+        sortLabel: location.name,
+      });
+    }
+
+    for (const player of visiblePlayers) {
+      items.push({
+        selection: { type: "player", id: player.userId },
+        latitude: player.latitude!,
+        longitude: player.longitude!,
+        priority: 3,
+        sortTime: Number.MAX_SAFE_INTEGER,
+        sortLabel: player.displayName,
+      });
+    }
+
+    for (const request of visiblePlayRequests) {
+      items.push({
+        selection: { type: "playRequest", id: request.id },
+        latitude: request.latitude!,
+        longitude: request.longitude!,
+        priority: 4,
+        sortTime: Number.MAX_SAFE_INTEGER,
+        sortLabel: request.owner.displayName,
+      });
+    }
+
+    return items.sort((a, b) =>
+      a.priority - b.priority ||
+      a.sortTime - b.sortTime ||
+      a.sortLabel.localeCompare(b.sortLabel, "de")
+    );
+  }, [visibleGames, visibleLocations, visiblePlayRequests, visiblePlayers]);
+
   const gamesByLocation = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -409,6 +492,39 @@ export default function MapDiscoveryPage() {
       return { game, indexAtLocation: count };
     });
   }, [visibleGames]);
+
+  const selectedSelectionItem = useMemo(() => {
+    if (!selection) return null;
+    return selectionItems.find((item) => sameSelection(item.selection, selection)) ?? null;
+  }, [selection, selectionItems]);
+
+  const nearbySelectionItems = useMemo(() => {
+    if (!selectedSelectionItem) return [];
+
+    return selectionItems.filter((item) =>
+      distanceKm(
+        selectedSelectionItem.latitude,
+        selectedSelectionItem.longitude,
+        item.latitude,
+        item.longitude
+      ) <= SELECTION_RADIUS_KM
+    );
+  }, [selectedSelectionItem, selectionItems]);
+
+  const selectionItemIndex =
+    selection && nearbySelectionItems.length > 0
+      ? nearbySelectionItems.findIndex((item) => sameSelection(item.selection, selection))
+      : -1;
+
+  useEffect(() => {
+    if (!selection) return;
+
+    const stillVisible = selectionItems.some((item) => sameSelection(item.selection, selection));
+    if (!stillVisible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelection(selectionItems[0]?.selection ?? null);
+    }
+  }, [selection, selectionItems]);
 
   const selectedGame =
     selection?.type === "game"
@@ -427,23 +543,8 @@ export default function MapDiscoveryPage() {
 
   const selectedPlayRequest =
     selection?.type === "playRequest"
-      ? playRequests.find((request) => request.id === selection.id) ?? null
+      ? visiblePlayRequests.find((request) => request.id === selection.id) ?? null
       : null;
-
-  const selectedLocationGames = useMemo(() => {
-    if (!selectedGame) return [];
-
-    return visibleGames
-      .filter((game) => game.locationId === selectedGame.locationId)
-      .sort(
-        (a, b) =>
-          new Date(a.startTimeUtc).getTime() - new Date(b.startTimeUtc).getTime()
-      );
-  }, [selectedGame, visibleGames]);
-
-  const selectedGameIndex = selectedGame
-    ? selectedLocationGames.findIndex((game) => game.gameId === selectedGame.gameId)
-    : -1;
 
   const selectedOccupiedSeats = selectedFullGame?.assignedPlayers ?? 0;
   const selectedMaxSeats =
@@ -470,17 +571,14 @@ export default function MapDiscoveryPage() {
     return () => window.clearTimeout(timeout);
   }, [selectedGame]);
 
-  function selectGameAtOffset(offset: number) {
-    if (!selectedGame || selectedLocationGames.length === 0) return;
+  function selectSelectionAtOffset(offset: number) {
+    if (nearbySelectionItems.length === 0 || selectionItemIndex < 0) return;
 
     const nextIndex =
-      (selectedGameIndex + offset + selectedLocationGames.length) %
-      selectedLocationGames.length;
+      (selectionItemIndex + offset + nearbySelectionItems.length) %
+      nearbySelectionItems.length;
 
-    setSelection({
-      type: "game",
-      id: selectedLocationGames[nextIndex].gameId,
-    });
+    setSelection(nearbySelectionItems[nextIndex].selection);
   }
 
   const isLoading = loadingGames || loadingLocations || loadingPlayers || loadingPlayRequests || !centerReady;
@@ -578,9 +676,7 @@ export default function MapDiscoveryPage() {
             </Marker>
           ))}
 
-          {playRequests
-            .filter((request) => request.latitude != null && request.longitude != null)
-            .map((request) => (
+          {visiblePlayRequests.map((request) => (
               <Marker
                 key={request.id}
                 position={[request.latitude!, request.longitude!]}
@@ -631,14 +727,14 @@ export default function MapDiscoveryPage() {
           selectedLocation={selectedLocation}
           selectedPlayer={selectedPlayer}
           selectedPlayRequest={selectedPlayRequest}
-          selectedLocationGames={selectedLocationGames}
-          selectedGameIndex={selectedGameIndex}
+          selectionItemCount={nearbySelectionItems.length}
+          selectionItemIndex={selectionItemIndex}
           selectedHostName={selectedHostName}
           selectedOccupiedSeats={selectedOccupiedSeats}
           selectedMaxSeats={selectedMaxSeats}
           systems={systems}
           onClose={() => setSelection(null)}
-          onSelectGameAtOffset={selectGameAtOffset}
+          onSelectItemAtOffset={selectSelectionAtOffset}
           onCreateAtLocation={createAtLocation}
         />
       </section>

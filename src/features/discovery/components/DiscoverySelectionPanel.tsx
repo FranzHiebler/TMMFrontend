@@ -15,14 +15,14 @@ type Props = {
   selectedLocation: LocationDiscoveryResponse | null;
   selectedPlayer: UserSearchResponse | null;
   selectedPlayRequest: PlayRequestDto | null;
-  selectedLocationGames: GameDiscoveryResponse[];
-  selectedGameIndex: number;
+  selectionItemCount: number;
+  selectionItemIndex: number;
   selectedHostName: string | null;
   selectedOccupiedSeats: number;
   selectedMaxSeats: number;
   systems: SystemOption[];
   onClose: () => void;
-  onSelectGameAtOffset: (offset: number) => void;
+  onSelectItemAtOffset: (offset: number) => void;
   onCreateAtLocation: (locationId: string) => void;
 };
 
@@ -43,41 +43,45 @@ export default function DiscoverySelectionPanel({
   selectedLocation,
   selectedPlayer,
   selectedPlayRequest,
-  selectedLocationGames,
-  selectedGameIndex,
+  selectionItemCount,
+  selectionItemIndex,
   selectedHostName,
   selectedOccupiedSeats,
   selectedMaxSeats,
   systems,
   onClose,
-  onSelectGameAtOffset,
+  onSelectItemAtOffset,
   onCreateAtLocation,
 }: Props) {
+  const showSwitcher = selectionItemCount > 1 && selectionItemIndex >= 0;
+  const switcher = showSwitcher ? (
+    <div className="session-preview-switcher">
+      <button type="button" onClick={() => onSelectItemAtOffset(-1)} aria-label="Vorheriger Eintrag">
+        &lt;
+      </button>
+      <span>{selectionItemIndex + 1} / {selectionItemCount}</span>
+      <button type="button" onClick={() => onSelectItemAtOffset(1)} aria-label="Nächster Eintrag">
+        &gt;
+      </button>
+    </div>
+  ) : null;
+  const closeButton = (
+    <button className="preview-close" type="button" onClick={onClose} aria-label="Vorschau schließen">
+      ×
+    </button>
+  );
+
   return (
     <>
       {selectedGame && (
         <article className="session-preview">
           <div className="session-preview-topbar compact-preview-topbar">
             <time>{compactTimeText(selectedGame)}</time>
-
-            {selectedLocationGames.length > 1 && (
-              <div className="session-preview-switcher">
-                <button type="button" onClick={() => onSelectGameAtOffset(-1)} aria-label="Vorheriges Spiel">&lt;</button>
-                <span>{selectedGameIndex + 1} / {selectedLocationGames.length}</span>
-                <button type="button" onClick={() => onSelectGameAtOffset(1)} aria-label="Nächstes Spiel">&gt;</button>
-              </div>
-            )}
-
-            <button
-              className="preview-close"
-              type="button"
-              onClick={onClose}
-              aria-label="Vorschau schließen"
-            >
-              ×
-            </button>
+            {switcher}
+            {closeButton}
           </div>
 
+          <p className="panel-kicker">Session</p>
           <h2>{selectedGame.title}</h2>
 
           {selectedHostName && <p className="preview-host">von {selectedHostName}</p>}
@@ -93,29 +97,22 @@ export default function DiscoverySelectionPanel({
           </div>
 
           <div className="preview-actions">
-            <Link to={`/sessions/${encodeURIComponent(selectedGame.gameId)}`}>
-              Öffnen
-            </Link>
+            <Link to={`/sessions/${encodeURIComponent(selectedGame.gameId)}`}>Öffnen</Link>
           </div>
         </article>
       )}
 
       {selectedLocation && (
         <article className="session-preview location-preview">
-          <button
-            className="preview-close"
-            type="button"
-            onClick={onClose}
-            aria-label="Vorschau schließen"
-          >
-            ×
-          </button>
-
-          <p className="panel-kicker">
-            {selectedLocation.isOwnLocation
-              ? `Eigener Spielort${selectedLocation.role ? ` · ${selectedLocation.role}` : ""}`
-              : "Spielort"}
-          </p>
+          <div className="session-preview-topbar compact-preview-topbar">
+            <p className="panel-kicker">
+              {selectedLocation.isOwnLocation
+                ? `Eigener Spielort${selectedLocation.role ? ` · ${selectedLocation.role}` : ""}`
+                : "Spielort"}
+            </p>
+            {switcher}
+            {closeButton}
+          </div>
 
           <h2>{selectedLocation.name}</h2>
 
@@ -129,11 +126,13 @@ export default function DiscoverySelectionPanel({
           </div>
 
           <div className="system-badge-row">
-            {renderSystemBadges(systemShortCodes(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean))}
+            {renderSystemBadges(
+              systemShortCodes(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean)
+            )}
           </div>
 
           <div className="preview-actions">
-            <Link to="/locations">Details</Link>
+            <Link to="/locations">Spielort öffnen</Link>
 
             <button type="button" onClick={() => onCreateAtLocation(selectedLocation.locationId)}>
               Spiel hier erstellen
@@ -146,16 +145,12 @@ export default function DiscoverySelectionPanel({
 
       {selectedPlayer && (
         <article className="session-preview player-preview">
-          <button
-            className="preview-close"
-            type="button"
-            onClick={onClose}
-            aria-label="Vorschau schließen"
-          >
-            ×
-          </button>
+          <div className="session-preview-topbar compact-preview-topbar">
+            <p className="panel-kicker">Spieler</p>
+            {switcher}
+            {closeButton}
+          </div>
 
-          <p className="panel-kicker">Spieler</p>
           <h2>{selectedPlayer.displayName}</h2>
 
           <div className="preview-meta-grid">
@@ -165,7 +160,9 @@ export default function DiscoverySelectionPanel({
             {selectedPlayer.lookingForGame?.isActive && (
               <span>
                 Sucht Spiel
-                {selectedPlayer.lookingForGame.systemKey ? `: ${systemShortCode(selectedPlayer.lookingForGame.systemKey, systems)}` : ""}
+                {selectedPlayer.lookingForGame.systemKey
+                  ? `: ${systemShortCode(selectedPlayer.lookingForGame.systemKey, systems)}`
+                  : ""}
                 {selectedPlayer.lookingForGame.timeNote ? ` · ${selectedPlayer.lookingForGame.timeNote}` : ""}
               </span>
             )}
@@ -182,10 +179,12 @@ export default function DiscoverySelectionPanel({
 
       {selectedPlayRequest && (
         <article className="session-preview player-preview">
-          <button className="preview-close" type="button" onClick={onClose} aria-label="Vorschau schließen">
-            ×
-          </button>
-          <p className="panel-kicker">Spielgesuch</p>
+          <div className="session-preview-topbar compact-preview-topbar">
+            <p className="panel-kicker">Spielgesuch</p>
+            {switcher}
+            {closeButton}
+          </div>
+
           <h2>{selectedPlayRequest.owner.displayName}</h2>
           <div className="preview-meta-grid">
             <span>System: {systemShortCode(selectedPlayRequest.systemKey, systems)}</span>
@@ -194,7 +193,7 @@ export default function DiscoverySelectionPanel({
             {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}
           </div>
           <div className="preview-actions">
-            <Link to="/play-requests">Gesuche öffnen</Link>
+            <Link to="/play-requests">Ansehen</Link>
             <Link to={`/users/${encodeURIComponent(selectedPlayRequest.owner.userId)}`}>Profil öffnen</Link>
           </div>
         </article>
