@@ -3,9 +3,9 @@ import { systemShortCode } from "../../../helpers/systemLabels";
 import type {
   GameDiscoveryResponse,
   LocationDiscoveryResponse,
+  PlayRequestDto,
   SystemOption,
   UserSearchResponse,
-  PlayRequestDto,
 } from "../../../types/game";
 import { shortDateText } from "./discoveryDates";
 
@@ -38,6 +38,12 @@ function systemBadgesHtml(labels: string[]) {
   if (labels.length === 0) return `<span class="map-system-badge">?</span>`;
 
   return labels.map((label) => `<span class="map-system-badge">${label}</span>`).join("");
+}
+
+function approximateRingHtml(isApproximate: boolean) {
+  if (!isApproximate) return "";
+
+  return `<span class="marker-approx-ring" aria-hidden="true"><svg viewBox="0 0 44 44" focusable="false"><path d="M22 3 C28 3 31 7 36 10 C42 15 40 23 39 28 C37 36 30 39 23 41 C16 43 11 39 7 35 C2 30 3 22 5 16 C7 9 14 4 22 3 Z" /></svg></span>`;
 }
 
 export function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number, systems: SystemOption[]) {
@@ -92,7 +98,7 @@ export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
     className: "",
     html: `
       <div class="${classes}">
-        ${isApproximate ? `<span class="marker-approx-ring" aria-hidden="true"><svg viewBox="0 0 44 44" focusable="false"><path d="M22 3 C28 3 31 7 36 10 C42 15 40 23 39 28 C37 36 30 39 23 41 C16 43 11 39 7 35 C2 30 3 22 5 16 C7 9 14 4 22 3 Z" /></svg></span>` : ""}
+        ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
         ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
         ${isLooking ? `<span class="marker-mini-label">sucht</span>` : ""}
@@ -115,10 +121,10 @@ export function playRequestMarkerIcon(request: PlayRequestDto) {
     className: "",
     html: `
       <div class="${classes}">
-        ${isApproximate ? `<span class="marker-approx-ring" aria-hidden="true"><svg viewBox="0 0 44 44" focusable="false"><path d="M22 3 C28 3 31 7 36 10 C42 15 40 23 39 28 C37 36 30 39 23 41 C16 43 11 39 7 35 C2 30 3 22 5 16 C7 9 14 4 22 3 Z" /></svg></span>` : ""}
+        ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
         ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
-        <span class="marker-mini-label">sucht</span>
+        <span class="marker-mini-label">Gesuch</span>
       </div>
     `,
     iconSize: [42, 42],

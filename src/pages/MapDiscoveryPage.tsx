@@ -703,7 +703,19 @@ export default function MapDiscoveryPage() {
                   {request.city && (
                     <>
                       <br />
-                      {request.city}
+                      Ort: {request.city}
+                    </>
+                  )}
+                  {request.timeNote && (
+                    <>
+                      <br />
+                      Zeit: {request.timeNote}
+                    </>
+                  )}
+                  {request.radiusKm && (
+                    <>
+                      <br />
+                      Radius: {request.radiusKm} km
                     </>
                   )}
                   {request.locationPrecision === "approximate" && (

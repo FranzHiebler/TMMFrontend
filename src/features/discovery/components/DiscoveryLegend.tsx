@@ -13,7 +13,7 @@ export default function DiscoveryLegend({ collapsed, onToggle }: Props) {
           aria-label={collapsed ? "Legende öffnen" : "Legende einklappen"}
           onClick={onToggle}
         >
-          {collapsed ? "?" : "‹"}
+          {collapsed ? "?" : "<"}
         </button>
       </div>
       {!collapsed && (

@@ -190,8 +190,8 @@ export default function DiscoverySelectionPanel({
             <span>System: {systemShortCode(selectedPlayRequest.systemKey, systems)}</span>
             <span>Besitzer: {selectedPlayRequest.owner.displayName}</span>
             {selectedPlayRequest.locationName && <span>Spielort: {selectedPlayRequest.locationName}</span>}
-            {selectedPlayRequest.timeNote && <span>{selectedPlayRequest.timeNote}</span>}
-            {selectedPlayRequest.city && <span>{selectedPlayRequest.city}</span>}
+            {selectedPlayRequest.city && <span>Ort: {selectedPlayRequest.city}</span>}
+            {selectedPlayRequest.timeNote && <span>Zeit: {selectedPlayRequest.timeNote}</span>}
             {selectedPlayRequest.radiusKm && <span>Radius: {selectedPlayRequest.radiusKm} km</span>}
             {selectedPlayRequest.locationPrecision === "approximate" && <span>Ungefährer Standort</span>}
             {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}
