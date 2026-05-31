@@ -24,6 +24,7 @@ export default function DiscoveryLegend({ collapsed, onToggle }: Props) {
           <span><i className="legend-dot participant" /> Teilnahme</span>
           <span><i className="legend-dot host" /> Host</span>
           <span><i className="legend-dot player" /> Spieler</span>
+          <span><i className="legend-dot player-approximate" /> Ungefähr</span>
           <span><i className="legend-dot player-looking" /> Sucht</span>
           <span><i className="legend-dot player-me" /> Ich</span>
         </>
