@@ -272,11 +272,14 @@
 }
 
 .notification-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
+  top: 72px;
+  right: clamp(12px, 4vw, 72px);
   z-index: 12050;
   width: min(360px, calc(100vw - 24px));
+  max-height: min(70vh, calc(100dvh - 96px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
@@ -295,6 +298,7 @@
 .notification-item {
   display: grid;
   gap: 4px;
+  min-width: 0;
   padding: 10px;
   border-radius: 10px;
   color: #111827;
@@ -310,6 +314,7 @@
 .notification-empty {
   color: #6b7280;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .notification-empty {
