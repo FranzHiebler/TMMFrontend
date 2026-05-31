@@ -8,6 +8,7 @@ import { getPlayRequests } from "../api/playRequestsApi";
 import { getSystems } from "../api/systemsApi";
 import { getCurrentUserProfile, searchUsers, updateDiscoverySettings } from "../api/usersApi";
 import { useUser } from "../context/UserContext";
+import { systemShortCode } from "../helpers/systemLabels";
 import DiscoveryFilterPanel from "../features/discovery/components/DiscoveryFilterPanel";
 import DiscoveryLegend from "../features/discovery/components/DiscoveryLegend";
 import DiscoverySelectionPanel from "../features/discovery/components/DiscoverySelectionPanel";
@@ -291,11 +292,19 @@ export default function MapDiscoveryPage() {
           return current;
         }
 
+        if (
+          current?.type === "playRequest" &&
+          playRequestData.some((request) => request.id === current.id)
+        ) {
+          return current;
+        }
+
         const firstOwnGame = gameData.find((game) => game.isHost || game.isParticipant);
 
         if (firstOwnGame) return { type: "game", id: firstOwnGame.gameId };
         if (gameData[0]) return { type: "game", id: gameData[0].gameId };
         if (locationData[0]) return { type: "location", id: locationData[0].locationId };
+        if (playRequestData[0]) return { type: "playRequest", id: playRequestData[0].id };
 
         return null;
       });
@@ -418,10 +427,11 @@ export default function MapDiscoveryPage() {
 
   const visiblePlayRequests = useMemo(
     () =>
-      playRequests.filter(
-        (request) => request.latitude != null && request.longitude != null
-      ),
-    [playRequests]
+      playRequests.filter((request) => {
+        if (request.latitude == null || request.longitude == null) return false;
+        return distanceKm(center[0], center[1], request.latitude, request.longitude) <= radiusKm;
+      }),
+    [center, playRequests, radiusKm]
   );
 
   const selectionItems = useMemo(() => {
@@ -680,12 +690,30 @@ export default function MapDiscoveryPage() {
               <Marker
                 key={request.id}
                 position={[request.latitude!, request.longitude!]}
-                icon={playRequestMarkerIcon()}
+                icon={playRequestMarkerIcon(request)}
                 zIndexOffset={780}
                 eventHandlers={{
                   click: () => setSelection({ type: "playRequest", id: request.id }),
                 }}
-              />
+              >
+                <Popup>
+                  <strong>Spielgesuch: {systemShortCode(request.systemKey, systems)}</strong>
+                  <br />
+                  {request.owner.displayName}
+                  {request.city && (
+                    <>
+                      <br />
+                      {request.city}
+                    </>
+                  )}
+                  {request.locationPrecision === "approximate" && (
+                    <>
+                      <br />
+                      <small>Ungefährer Standort</small>
+                    </>
+                  )}
+                </Popup>
+              </Marker>
             ))}
         </MapContainer>
 

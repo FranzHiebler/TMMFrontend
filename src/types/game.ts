@@ -592,6 +592,7 @@ export interface PlayRequestDto extends CreatePlayRequestRequest {
   city?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  locationPrecision?: "exact" | "approximate" | "hidden";
   status: PlayRequestStatus;
   convertedGameId?: string | null;
   createdAtUtc: string;

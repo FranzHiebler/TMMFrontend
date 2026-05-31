@@ -188,12 +188,16 @@ export default function DiscoverySelectionPanel({
           <h2>{selectedPlayRequest.owner.displayName}</h2>
           <div className="preview-meta-grid">
             <span>System: {systemShortCode(selectedPlayRequest.systemKey, systems)}</span>
+            <span>Besitzer: {selectedPlayRequest.owner.displayName}</span>
+            {selectedPlayRequest.locationName && <span>Spielort: {selectedPlayRequest.locationName}</span>}
             {selectedPlayRequest.timeNote && <span>{selectedPlayRequest.timeNote}</span>}
             {selectedPlayRequest.city && <span>{selectedPlayRequest.city}</span>}
+            {selectedPlayRequest.radiusKm && <span>Radius: {selectedPlayRequest.radiusKm} km</span>}
+            {selectedPlayRequest.locationPrecision === "approximate" && <span>Ungefährer Standort</span>}
             {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}
           </div>
           <div className="preview-actions">
-            <Link to="/play-requests">Ansehen</Link>
+            <Link to="/play-requests">{selectedPlayRequest.isMine ? "Verwalten" : "Antworten"}</Link>
             <Link to={`/users/${encodeURIComponent(selectedPlayRequest.owner.userId)}`}>Profil öffnen</Link>
           </div>
         </article>
