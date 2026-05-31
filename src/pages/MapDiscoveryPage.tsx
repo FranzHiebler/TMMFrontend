@@ -568,6 +568,12 @@ export default function MapDiscoveryPage() {
                 <strong>{player.displayName}</strong>
                 <br />
                 {player.city ?? "Ort unbekannt"}
+                {player.locationPrecision === "approximate" && (
+                  <>
+                    <br />
+                    <small>Ungefährer Standort</small>
+                  </>
+                )}
               </Popup>
             </Marker>
           ))}

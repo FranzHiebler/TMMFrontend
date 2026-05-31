@@ -303,6 +303,32 @@
   text-transform: uppercase;
 }
 
+.player-marker-approximate {
+  opacity: 0.82;
+}
+
+.marker-approx-ring {
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.marker-approx-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.marker-approx-ring path {
+  fill: none;
+  stroke: rgba(15, 23, 42, 0.64);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .marker-icon {
   position: relative;
   display: inline-block;
@@ -370,6 +396,23 @@
   line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.marker-approx-label {
+  position: absolute;
+  right: -5px;
+  top: -6px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
 }
 
 .player-marker-looking {

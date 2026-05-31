@@ -161,6 +161,7 @@ export default function DiscoverySelectionPanel({
           <div className="preview-meta-grid">
             {selectedPlayer.city && <span>Ort: {selectedPlayer.city}</span>}
             {selectedPlayer.postalCode && <span>PLZ: {selectedPlayer.postalCode}</span>}
+            {selectedPlayer.locationPrecision === "approximate" && <span>Ungefährer Standort</span>}
             {selectedPlayer.lookingForGame?.isActive && (
               <span>
                 Sucht Spiel

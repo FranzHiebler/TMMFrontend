@@ -248,6 +248,7 @@ export interface UserSearchResponse {
   city?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  locationPrecision?: "exact" | "approximate" | "hidden";
   favoriteSystemKeys: string[];
   lookingForGame: LookingForGameStatusDto;
 }
