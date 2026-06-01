@@ -42,6 +42,13 @@ function visibilityValue(
   return visibility?.[key] ?? defaultVisibility[key];
 }
 
+function externalLink(value: string, baseUrl?: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return baseUrl ? `${baseUrl}${encodeURIComponent(trimmed)}` : `https://${trimmed}`;
+}
+
 type VisibilitySelectProps = {
   field: keyof UserProfileVisibility;
   visibility: UserProfileVisibility;
@@ -325,187 +332,258 @@ export default function ProfilePage() {
     <VisibilitySelect field={field} visibility={visibility} onChange={updateVisibility} />
   );
 
+  const profileLinkPreview = (value: string, baseUrl?: string) => {
+    const href = externalLink(value, baseUrl);
+    if (!href) return null;
+
+    return (
+      <a className="profile-preview-link" href={href} target="_blank" rel="noreferrer">
+        Link öffnen
+      </a>
+    );
+  };
+
   return (
     <main className="container">
-      <h1>Mein Profil</h1>
-
       <Message text={loading ? "Lade Profil..." : ""} type="info" />
       <Message text={error} type="error" />
       <Message text={success} type="success" />
 
       {!loading && profile && (
-        <form className="card form profile-form" onSubmit={handleSubmit}>
-          <h2>Basisdaten</h2>
-
-          <div className="field">
-            <label>Anzeigename</label>
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </div>
-
-          <div className="form-row-2">
-            <div className="field">
-              <label>Vorname</label>
-              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+        <form className="form profile-form profile-form-modern" onSubmit={handleSubmit}>
+          <section className="card profile-hero-card">
+            <div className="profile-avatar">
+              {profileImageUrl ? <img src={profileImageUrl} alt="" /> : <span>{displayName.slice(0, 2).toUpperCase()}</span>}
             </div>
-
-            <div className="field">
-              <label>Nachname</label>
-              <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Profilbild-URL</label>
-            <input value={profileImageUrl} onChange={(e) => setProfileImageUrl(e.target.value)} />
-            <small className="field-hint">Upload vorbereitet: aktuell URL, später Datei-Upload über Storage/API.</small>
-          </div>
-
-          <div className="field">
-            <label>Standard-Spielort</label>
-            <select value={defaultLocationId} onChange={(e) => setDefaultLocationId(e.target.value)}>
-              <option value="">Kein Standard-Spielort</option>
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name} ({location.city})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={canBeContacted}
-              onChange={(e) => setCanBeContacted(e.target.checked)}
-            />
-            Darf angeschrieben werden
-          </label>
-
-          <h2>Privatsphäre</h2>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!hideProfile} onChange={(e) => setHideProfile(!e.target.checked)} />
-            <span>
-              Mein Profil darf gefunden werden
-              <small className="field-hint">Andere Spieler können dein öffentliches Profil öffnen.</small>
-            </span>
-          </label>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!hideOnMap} onChange={(e) => setHideOnMap(!e.target.checked)} />
-            <span>
-              Mich auf der Karte anzeigen
-              <small className="field-hint">Zeigt dich als Spieler, wenn Ort und Koordinaten vorhanden sind.</small>
-            </span>
-          </label>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!hideParticipation} onChange={(e) => setHideParticipation(!e.target.checked)} />
-            <span>
-              Meine Teilnahmen anzeigen
-              <small className="field-hint">Vorbereitet: wird bei öffentlichen Spieltermin-Ansichten später vollständig berücksichtigt.</small>
-            </span>
-          </label>
-
-          <h2>Kontakt</h2>
-
-          <div className="profile-field-with-visibility">
-            <div className="field">
-              <label>E-Mail</label>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} />
-              {visibilitySelect("email")}
-            </div>
-
-            <div className="field">
-              <label>Telefonnummer</label>
-              <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-              {visibilitySelect("phoneNumber")}
-            </div>
-
-            <div className="field">
-              <label>Straße / Adresse</label>
-              <input
-                value={streetAddress}
-                onChange={(e) => {
-                  setStreetAddress(e.target.value);
-                  resetPosition();
-                }}
-              />
-              {visibilitySelect("streetAddress")}
-            </div>
-
-            <div className="field">
-              <label>PLZ</label>
-              <input
-                value={postalCode}
-                onChange={(e) => {
-                  setPostalCode(e.target.value);
-                  resetPosition();
-                }}
-              />
-              {visibilitySelect("postalCode")}
-            </div>
-
-            <div className="field">
-              <label>Ort</label>
-              <input
-                value={city}
-                onChange={(e) => {
-                  setCity(e.target.value);
-                  resetPosition();
-                }}
-              />
-              {visibilitySelect("city")}
-            </div>
-
-            <div className="field profile-geo-picker">
-              <label>Position für Suche</label>
-
-              <div className="profile-geo-actions">
-                <button type="button" disabled={resolvingPosition} onClick={resolvePositionFromAddress}>
-                  {resolvingPosition ? "Ermittle Position..." : "Position aus Adresse ermitteln"}
-                </button>
-
-                <button type="button" onClick={resetPosition}>
-                  Position zurücksetzen
-                </button>
+            <div>
+              <p className="panel-kicker">Mein Profil</p>
+              <h1>{displayName || "Mein Profil"}</h1>
+              <div className="profile-status-row">
+                <span className={!hideOnMap ? "status-ok" : "status-muted"}>
+                  {!hideOnMap ? "Auf Karte sichtbar" : "Nicht auf Karte"}
+                </span>
+                <span className={!hideProfile ? "status-ok" : "status-muted"}>
+                  {!hideProfile ? "Profil öffentlich" : "Profil versteckt"}
+                </span>
+                {lookingActive && <span className="status-accent">Sucht gerade ein Spiel</span>}
               </div>
-
-              <LocationPicker
-                latitude={latitude}
-                longitude={longitude}
-                onChange={(lat, lng) => {
-                  setLatitude(lat);
-                  setLongitude(lng);
-                }}
-              />
-
-              {latitude != null && longitude != null ? (
-                <p className="field-hint">
-                  Lat: {latitude.toFixed(5)}, Lng: {longitude.toFixed(5)}
-                </p>
-              ) : (
-                <p className="field-hint">
-                  Position fehlt. Das Profil kann gespeichert werden, erscheint dann aber nicht auf der Karte.
-                </p>
-              )}
             </div>
-          </div>
-
-          <h2>Tabletop-Profile</h2>
-
-          <section className="card">
-            <h3>Spielhistorie</h3>
-            {calendarItems.filter((item) => item.status === "Closed").length === 0 && (
-              <p className="field-hint">Noch keine abgeschlossenen Spiele.</p>
-            )}
-            {calendarItems.filter((item) => item.status === "Closed").slice(0, 8).map((item) => (
-              <div key={item.id} className="list-row">
-                <b>{item.title}</b>
-                <span>{item.startTimeUtc ? new Date(item.startTimeUtc).toLocaleDateString("de-DE") : "Termin offen"}</span>
-              </div>
-            ))}
           </section>
 
-          <div className="card profile-matchmaking-card">
-            <h3>Spielsysteme und Suche</h3>
+          <section className="card profile-section-card">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Öffentliche Angaben</h2>
+                <p>Diese Daten bilden dein Profil. Sichtbarkeit stellst du direkt am jeweiligen Feld ein.</p>
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Anzeigename</label>
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+            </div>
+
+            <div className="form-row-2">
+              <div className="field">
+                <label>Vorname</label>
+                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              </div>
+
+              <div className="field">
+                <label>Nachname</label>
+                <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Profilbild-URL</label>
+              <input value={profileImageUrl} onChange={(e) => setProfileImageUrl(e.target.value)} />
+              <small className="field-hint">Aktuell als URL. Profilbild-Upload kommt später.</small>
+            </div>
+
+            <label className="checkbox-row profile-toggle-card">
+              <input
+                type="checkbox"
+                checked={canBeContacted}
+                onChange={(e) => setCanBeContacted(e.target.checked)}
+              />
+              <span>
+                Darf angeschrieben werden
+                <small className="field-hint">Andere Spieler können dich über Nachrichten kontaktieren.</small>
+              </span>
+            </label>
+
+            <div className="profile-field-with-visibility">
+              <div className="field">
+                <label>E-Mail</label>
+                <input value={email} onChange={(e) => setEmail(e.target.value)} />
+                {visibilitySelect("email")}
+              </div>
+
+              <div className="field">
+                <label>Telefonnummer</label>
+                <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                {visibilitySelect("phoneNumber")}
+              </div>
+            </div>
+          </section>
+
+          <section className="card profile-section-card">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Standort & Karte</h2>
+                <p>Stadt öffentlich macht dich ungefähr auffindbar. Straße öffentlich kann einen genaueren Standort erlauben.</p>
+              </div>
+            </div>
+
+            <label className="checkbox-row profile-toggle-card">
+              <input type="checkbox" checked={hideOnMap} onChange={(e) => setHideOnMap(e.target.checked)} />
+              <span>
+                Mich nicht auf der Karte anzeigen
+                <small className="field-hint">Ungefähre Positionen werden auf der Karte entsprechend markiert.</small>
+              </span>
+            </label>
+
+            <div className="field">
+              <label>Standard-Spielort</label>
+              <select value={defaultLocationId} onChange={(e) => setDefaultLocationId(e.target.value)}>
+                <option value="">Kein Standard-Spielort</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name} ({location.city})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="profile-field-with-visibility">
+              <div className="field">
+                <label>Straße / Adresse</label>
+                <input
+                  value={streetAddress}
+                  onChange={(e) => {
+                    setStreetAddress(e.target.value);
+                    resetPosition();
+                  }}
+                />
+                {visibilitySelect("streetAddress")}
+              </div>
+
+              <div className="field">
+                <label>PLZ</label>
+                <input
+                  value={postalCode}
+                  onChange={(e) => {
+                    setPostalCode(e.target.value);
+                    resetPosition();
+                  }}
+                />
+                {visibilitySelect("postalCode")}
+              </div>
+
+              <div className="field">
+                <label>Ort</label>
+                <input
+                  value={city}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    resetPosition();
+                  }}
+                />
+                {visibilitySelect("city")}
+              </div>
+
+              <div className="field profile-geo-picker">
+                <label>Position für Karte und Suche</label>
+
+                <div className="profile-geo-actions">
+                  <button type="button" disabled={resolvingPosition} onClick={resolvePositionFromAddress}>
+                    {resolvingPosition ? "Ermittle Position..." : "Position aus Adresse ermitteln"}
+                  </button>
+
+                  <button type="button" onClick={resetPosition}>
+                    Position zurücksetzen
+                  </button>
+                </div>
+
+                <LocationPicker
+                  latitude={latitude}
+                  longitude={longitude}
+                  onChange={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
+                />
+
+                {latitude != null && longitude != null ? (
+                  <p className="field-hint">
+                    Koordinaten gesetzt: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                  </p>
+                ) : (
+                  <p className="field-hint">
+                    Position fehlt. Das Profil kann gespeichert werden, erscheint dann aber nicht auf der Karte.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="card profile-section-card">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Tabletop-Profile</h2>
+                <p>Diese Links können andere Spieler auf deinem öffentlichen Profil sehen, je nach Sichtbarkeit.</p>
+              </div>
+            </div>
+
+            <div className="profile-field-with-visibility">
+              <div className="field">
+                <label>Tabletop.to</label>
+                <input value={tabletopTo} onChange={(e) => setTabletopTo(e.target.value)} />
+                {profileLinkPreview(tabletopTo, "https://tabletop.to/")}
+                {visibilitySelect("tabletopTo")}
+              </div>
+
+              <div className="field">
+                <label>Tabletop Herald</label>
+                <input value={tabletopHerald} onChange={(e) => setTabletopHerald(e.target.value)} />
+                {profileLinkPreview(tabletopHerald, "https://tabletop-herald.com/")}
+                {visibilitySelect("tabletopHerald")}
+              </div>
+
+              <div className="field">
+                <label>T3</label>
+                <input value={t3} onChange={(e) => setT3(e.target.value)} />
+                {profileLinkPreview(t3, "https://www.tabletopturniere.de/t3_user.php?username=")}
+                {visibilitySelect("t3")}
+              </div>
+
+              <div className="field">
+                <label>NewRecruit</label>
+                <input value={newRecruit} onChange={(e) => setNewRecruit(e.target.value)} />
+                {profileLinkPreview(newRecruit, "https://www.newrecruit.eu/app/user/")}
+                {visibilitySelect("newRecruit")}
+              </div>
+
+              <div className="field">
+                <label>Best Coast Pairings / BCP</label>
+                <input
+                  value={bestSportsPairings}
+                  onChange={(e) => setBestSportsPairings(e.target.value)}
+                />
+                {profileLinkPreview(bestSportsPairings, "https://www.bestcoastpairings.com/profile/")}
+                {visibilitySelect("bestSportsPairings")}
+              </div>
+            </div>
+          </section>
+
+          <section className="card profile-section-card profile-matchmaking-card">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Systeme & Armeen</h2>
+                <p>Hilft bei Suche, Karte, Spielgesuchen und deinem öffentlichen Profil.</p>
+              </div>
+            </div>
 
             <div className="field">
               <label>Lieblingssysteme</label>
@@ -547,9 +625,12 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <label className="checkbox-row">
+            <label className="checkbox-row profile-toggle-card">
               <input type="checkbox" checked={lookingActive} onChange={(e) => setLookingActive(e.target.checked)} />
-              Spieler sucht
+              <span>
+                Spieler sucht
+                <small className="field-hint">Zeigt anderen, dass du aktuell ein Spiel suchst.</small>
+              </span>
             </label>
 
             {lookingActive && (
@@ -578,46 +659,50 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+          </section>
+
+          <section className="card profile-section-card">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Privatsphäre</h2>
+                <p>Öffentlich, Nur Freunde oder Privat steuerst du direkt an Kontakt-, Standort- und Profilfeldern.</p>
+              </div>
+            </div>
+
+            <label className="checkbox-row profile-toggle-card">
+              <input type="checkbox" checked={!hideProfile} onChange={(e) => setHideProfile(!e.target.checked)} />
+              <span>
+                Mein Profil darf gefunden werden
+                <small className="field-hint">Andere Spieler können dein öffentliches Profil öffnen.</small>
+              </span>
+            </label>
+            <label className="checkbox-row profile-toggle-card">
+              <input type="checkbox" checked={!hideParticipation} onChange={(e) => setHideParticipation(!e.target.checked)} />
+              <span>
+                Meine Teilnahmen anzeigen
+                <small className="field-hint">Vorbereitet: wird bei öffentlichen Spieltermin-Ansichten später vollständig berücksichtigt.</small>
+              </span>
+            </label>
+          </section>
+
+          <section className="card profile-section-card">
+            <h2>Spielhistorie</h2>
+            {calendarItems.filter((item) => item.status === "Closed").length === 0 && (
+              <p className="field-hint">Noch keine abgeschlossenen Spiele.</p>
+            )}
+            {calendarItems.filter((item) => item.status === "Closed").slice(0, 8).map((item) => (
+              <div key={item.id} className="list-row">
+                <b>{item.title}</b>
+                <span>{item.startTimeUtc ? new Date(item.startTimeUtc).toLocaleDateString("de-DE") : "Termin offen"}</span>
+              </div>
+            ))}
+          </section>
+
+          <div className="profile-save-bar">
+            <button type="submit" disabled={saving}>
+              {saving ? "Speichert..." : "Profil speichern"}
+            </button>
           </div>
-
-          <div className="profile-field-with-visibility">
-            <div className="field">
-              <label>TabletopTO</label>
-              <input value={tabletopTo} onChange={(e) => setTabletopTo(e.target.value)} />
-              {visibilitySelect("tabletopTo")}
-            </div>
-
-            <div className="field">
-              <label>Tabletop Herald</label>
-              <input value={tabletopHerald} onChange={(e) => setTabletopHerald(e.target.value)} />
-              {visibilitySelect("tabletopHerald")}
-            </div>
-
-            <div className="field">
-              <label>T3</label>
-              <input value={t3} onChange={(e) => setT3(e.target.value)} />
-              {visibilitySelect("t3")}
-            </div>
-
-            <div className="field">
-              <label>NewRecruit</label>
-              <input value={newRecruit} onChange={(e) => setNewRecruit(e.target.value)} />
-              {visibilitySelect("newRecruit")}
-            </div>
-
-            <div className="field">
-              <label>Best Coast Pairings / BCP</label>
-              <input
-                value={bestSportsPairings}
-                onChange={(e) => setBestSportsPairings(e.target.value)}
-              />
-              {visibilitySelect("bestSportsPairings")}
-            </div>
-          </div>
-
-          <button type="submit" disabled={saving}>
-            {saving ? "Speichert..." : "Profil speichern"}
-          </button>
         </form>
       )}
     </main>
