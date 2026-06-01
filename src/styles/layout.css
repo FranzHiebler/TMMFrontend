@@ -48,13 +48,14 @@
 }
 
 .hamburger-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 10px);
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  top: calc(64px + env(safe-area-inset-top, 0px));
   z-index: 12000;
-  width: min(320px, calc(100vw - 20px));
-  max-height: min(70vh, 520px);
+  width: min(320px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+  max-height: calc(100dvh - 82px - env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   gap: 6px;
   padding: 10px;
@@ -258,6 +259,9 @@
   right: 8px;
   bottom: calc(100% + 10px);
   width: min(300px, calc(100vw - 28px));
+  max-height: calc(100dvh - 160px - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   gap: 8px;
   padding: 10px;
@@ -550,6 +554,13 @@
   .app-top-nav {
     min-height: 58px;
     padding: 8px 12px;
+  }
+
+  .hamburger-menu {
+    top: calc(58px + env(safe-area-inset-top, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    width: min(320px, calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+    max-height: calc(100dvh - 76px - env(safe-area-inset-bottom, 0px));
   }
 
   .app-bottom-nav {
