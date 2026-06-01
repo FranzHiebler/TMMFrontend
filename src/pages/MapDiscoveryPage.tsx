@@ -52,6 +52,16 @@ type Selection =
 
 type ActiveSelection = NonNullable<Selection>;
 
+type MapMode = "all" | "games" | "players" | "locations" | "mine";
+
+const mapModes: Array<{ key: MapMode; label: string }> = [
+  { key: "all", label: "Alles" },
+  { key: "games", label: "Spieltermine" },
+  { key: "players", label: "Spieler" },
+  { key: "locations", label: "Spielorte" },
+  { key: "mine", label: "Meine" },
+];
+
 type SelectionItem = {
   selection: ActiveSelection;
   latitude: number;
@@ -65,6 +75,10 @@ const SELECTION_RADIUS_KM = 0.35;
 
 function sameSelection(a: ActiveSelection, b: ActiveSelection) {
   return a.type === b.type && a.id === b.id;
+}
+
+function isOwnGame(game: GameDiscoveryResponse) {
+  return game.isHost || game.isParticipant;
 }
 
 function MapController({
@@ -128,7 +142,8 @@ export default function MapDiscoveryPage() {
   const [timeWindowDays, setTimeWindowDays] = useState(() => readNumberParam(searchParams, "days", 7, 1, 56));
   const [radiusKm, setRadiusKm] = useState(() => readNumberParam(searchParams, "radius", 80, 10, 200));
   const [filterCollapsed, setFilterCollapsed] = useState(() => readBoolParam(searchParams, "filtersClosed", true));
-  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [legendCollapsed, setLegendCollapsed] = useState(true);
+  const [mapMode, setMapMode] = useState<MapMode>("all");
   
   const [showLocations, setShowLocations] = useState(() => readBoolParam(searchParams, "locations", true));
   const [showPlayers, setShowPlayers] = useState(() => readBoolParam(searchParams, "players", true));
@@ -299,7 +314,7 @@ export default function MapDiscoveryPage() {
           return current;
         }
 
-        const firstOwnGame = gameData.find((game) => game.isHost || game.isParticipant);
+        const firstOwnGame = gameData.find(isOwnGame);
 
         if (firstOwnGame) return { type: "game", id: firstOwnGame.gameId };
         if (gameData[0]) return { type: "game", id: gameData[0].gameId };
@@ -402,37 +417,52 @@ export default function MapDiscoveryPage() {
   }, [centerReady, loadDiscovery]);
 
   const visibleLocations = useMemo(() => {
+    if (mapMode === "games" || mapMode === "players") return [];
+
+    if (mapMode === "mine") {
+      return locations.filter((location) => location.isOwnLocation);
+    }
+
     if (!showLocations) return [];
     return locations;
-  }, [locations, showLocations]);
+  }, [locations, mapMode, showLocations]);
 
   const visibleGames = useMemo(() => {
+    if (mapMode === "players" || mapMode === "locations") return [];
+
+    if (mapMode === "mine") {
+      return games.filter(isOwnGame);
+    }
+
     if (showAllSessions) return games;
 
     if (showMySessions) {
-      return games.filter((game) => game.isHost || game.isParticipant);
+      return games.filter(isOwnGame);
     }
 
     return [];
-  }, [games, showAllSessions, showMySessions]);
+  }, [games, mapMode, showAllSessions, showMySessions]);
 
   const visiblePlayers = useMemo(() => {
+    if (mapMode === "games" || mapMode === "locations" || mapMode === "mine") return [];
     if (!showPlayers) return [];
 
     return players.filter((player) => {
       if (player.latitude == null || player.longitude == null) return false;
       return distanceKm(center[0], center[1], player.latitude, player.longitude) <= radiusKm;
     });
-  }, [center, players, radiusKm, showPlayers]);
+  }, [center, mapMode, players, radiusKm, showPlayers]);
 
-  const visiblePlayRequests = useMemo(
-    () =>
-      playRequests.filter((request) => {
+  const visiblePlayRequests = useMemo(() => {
+    if (mapMode === "games" || mapMode === "locations") return [];
+
+    return playRequests
+      .filter((request) => {
         if (request.latitude == null || request.longitude == null) return false;
         return distanceKm(center[0], center[1], request.latitude, request.longitude) <= radiusKm;
-      }),
-    [center, playRequests, radiusKm]
-  );
+      })
+      .filter((request) => (mapMode === "mine" ? request.isMine : true));
+  }, [center, mapMode, playRequests, radiusKm]);
 
   const selectionItems = useMemo(() => {
     const items: SelectionItem[] = [];
@@ -604,7 +634,7 @@ export default function MapDiscoveryPage() {
           <MapController
             center={center}
             zoom={zoom}
-            refreshKey={`${filterCollapsed}-${legendCollapsed}-${selection?.type ?? "none"}`}
+            refreshKey={`${filterCollapsed}-${legendCollapsed}-${mapMode}-${selection?.type ?? "none"}`}
             onViewportChanged={updateMapViewport}
           />
 
@@ -729,6 +759,20 @@ export default function MapDiscoveryPage() {
               </Marker>
             ))}
         </MapContainer>
+
+        <div className="discovery-mode-tabs" role="tablist" aria-label="Kartenmodus">
+          {mapModes.map((mode) => (
+            <button
+              key={mode.key}
+              type="button"
+              className={mapMode === mode.key ? "active" : ""}
+              aria-pressed={mapMode === mode.key}
+              onClick={() => setMapMode(mode.key)}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
 
         <DiscoveryFilterPanel
           collapsed={filterCollapsed}

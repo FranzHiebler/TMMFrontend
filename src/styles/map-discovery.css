@@ -16,6 +16,53 @@
   z-index: 0;
 }
 
+.discovery-mode-tabs {
+  position: absolute;
+  top: 10px;
+  left: 44px;
+  right: 252px;
+  z-index: 510;
+  display: flex;
+  gap: 5px;
+  max-width: 560px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(10px);
+  scrollbar-width: none;
+}
+
+.discovery-mode-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.discovery-mode-tabs button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.discovery-mode-tabs button:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.discovery-mode-tabs button.active {
+  background: #111827;
+  color: #ffffff;
+}
+
 .discovery-panel,
 .session-preview {
   position: absolute;
@@ -694,6 +741,21 @@
   .discovery-map {
     height: calc(100dvh - 72px);
     min-height: 560px;
+  }
+
+  .discovery-mode-tabs {
+    top: 8px;
+    left: 42px;
+    right: 128px;
+    max-width: none;
+    padding: 3px;
+    gap: 4px;
+  }
+
+  .discovery-mode-tabs button {
+    min-height: 28px;
+    padding: 6px 9px;
+    font-size: 11px;
   }
 
   .discovery-panel {
