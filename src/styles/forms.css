@@ -97,6 +97,111 @@ label input[type="checkbox"] {
   margin: 0 auto;
 }
 
+.create-game-wizard {
+  gap: 20px;
+}
+
+.wizard-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wizard-progress button {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-height: 64px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.15;
+  text-align: center;
+  box-shadow: none;
+}
+
+.wizard-progress button span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.wizard-progress button.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+.wizard-progress button.active span {
+  background: #ffffff;
+  color: #111827;
+}
+
+.wizard-progress button.done {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.wizard-progress button.done span {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.wizard-step {
+  display: grid;
+  gap: 16px;
+  min-height: 280px;
+  align-content: start;
+}
+
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.wizard-actions button {
+  min-width: 128px;
+}
+
+.create-preview-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.create-preview-card div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.create-preview-card small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.create-preview-card strong {
+  color: #111827;
+  overflow-wrap: anywhere;
+}
+
 .simple-session-card {
   display: grid;
   gap: 18px;
@@ -152,6 +257,39 @@ label input[type="checkbox"] {
 }
 
 @media (max-width: 700px) {
+  .wizard-progress {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .wizard-progress::-webkit-scrollbar {
+    display: none;
+  }
+
+  .wizard-progress button {
+    flex: 0 0 124px;
+  }
+
+  .wizard-actions {
+    position: sticky;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    z-index: 5;
+    margin: 0 -4px;
+    padding: 10px 4px 0;
+    background: linear-gradient(rgba(255, 255, 255, 0), #ffffff 28%);
+  }
+
+  .wizard-actions button {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .create-preview-card {
+    grid-template-columns: 1fr;
+  }
+
   .segmented-control {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
