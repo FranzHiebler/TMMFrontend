@@ -85,12 +85,10 @@ export function locationMarkerIcon(location: LocationDiscoveryResponse) {
 }
 
 export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
-  const isLooking = player.lookingForGame?.isActive;
   const isApproximate = player.locationPrecision === "approximate";
   const classes = [
     "player-marker",
     isMe ? "player-marker-me" : "player-marker-default",
-    isLooking ? "player-marker-looking" : "",
     isApproximate ? "player-marker-approximate" : "",
   ].filter(Boolean).join(" ");
 
@@ -101,11 +99,10 @@ export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
         ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
         ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
-        ${isLooking ? `<span class="marker-mini-label">sucht</span>` : ""}
       </div>
     `,
-    iconSize: isLooking ? [36, 36] : [30, 30],
-    iconAnchor: isLooking ? [18, 18] : [15, 15],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   });
 }
 
@@ -124,7 +121,7 @@ export function playRequestMarkerIcon(request: PlayRequestDto) {
         ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
         ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
-        <span class="marker-mini-label">Gesuch</span>
+        <span class="marker-mini-label">Sucht</span>
       </div>
     `,
     iconSize: [42, 42],

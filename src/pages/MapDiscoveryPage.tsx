@@ -667,7 +667,7 @@ export default function MapDiscoveryPage() {
               key={player.userId}
               position={[player.latitude!, player.longitude!]}
               icon={playerMarkerIcon(player, player.userId === user.userId)}
-              zIndexOffset={player.lookingForGame?.isActive ? 760 : 720}
+              zIndexOffset={720}
               eventHandlers={{
                 click: () => setSelection({ type: "player", id: player.userId }),
               }}
@@ -697,7 +697,7 @@ export default function MapDiscoveryPage() {
                 }}
               >
                 <Popup>
-                  <strong>Spielgesuch: {systemShortCode(request.systemKey, systems)}</strong>
+                  <strong>Sucht: {systemShortCode(request.systemKey, systems)}</strong>
                   <br />
                   {request.owner.displayName}
                   {request.city && (

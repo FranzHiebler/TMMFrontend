@@ -237,11 +237,6 @@
   transform: rotate(-15deg);
 }
 
-.legend-dot.player-looking,
-.player-marker-looking {
-  background: #0891b2;
-}
-
 .legend-dot.play-request,
 .play-request-marker {
   background: #7c3aed;
@@ -432,12 +427,6 @@
   font-size: 11px;
   font-weight: 950;
   line-height: 1;
-}
-
-.player-marker-looking {
-  width: 36px;
-  height: 36px;
-  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.24), 0 10px 24px rgba(15, 23, 42, 0.28);
 }
 
 .session-preview {

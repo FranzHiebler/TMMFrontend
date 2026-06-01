@@ -157,15 +157,6 @@ export default function DiscoverySelectionPanel({
             {selectedPlayer.city && <span>Ort: {selectedPlayer.city}</span>}
             {selectedPlayer.postalCode && <span>PLZ: {selectedPlayer.postalCode}</span>}
             {selectedPlayer.locationPrecision === "approximate" && <span>Ungefährer Standort</span>}
-            {selectedPlayer.lookingForGame?.isActive && (
-              <span>
-                Sucht Spiel
-                {selectedPlayer.lookingForGame.systemKey
-                  ? `: ${systemShortCode(selectedPlayer.lookingForGame.systemKey, systems)}`
-                  : ""}
-                {selectedPlayer.lookingForGame.timeNote ? ` · ${selectedPlayer.lookingForGame.timeNote}` : ""}
-              </span>
-            )}
             {(selectedPlayer.favoriteSystemKeys ?? []).length > 0 && (
               <span>Systeme: {systemShortCodes(selectedPlayer.favoriteSystemKeys, systems).join(", ")}</span>
             )}
@@ -180,7 +171,7 @@ export default function DiscoverySelectionPanel({
       {selectedPlayRequest && (
         <article className="session-preview player-preview">
           <div className="session-preview-topbar compact-preview-topbar">
-            <p className="panel-kicker">Spielgesuch</p>
+            <p className="panel-kicker">Sucht</p>
             {switcher}
             {closeButton}
           </div>

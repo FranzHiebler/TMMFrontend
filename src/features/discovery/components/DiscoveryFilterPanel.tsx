@@ -137,7 +137,7 @@ export default function DiscoveryFilterPanel({
             <p className="discovery-count">
               {visibleLocationCount} Spielorte · {visiblePlayerCount} Spieler ·{" "}
               {visibleGameCount} {visibleGameCount === 1 ? "Session" : "Sessions"} ·{" "}
-              {visiblePlayRequestCount} {visiblePlayRequestCount === 1 ? "Spielgesuch" : "Spielgesuche"}
+              {visiblePlayRequestCount} {visiblePlayRequestCount === 1 ? "Sucht" : "Suchen"}
             </p>
           )}
         </>
