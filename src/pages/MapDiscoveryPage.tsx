@@ -742,6 +742,7 @@ export default function MapDiscoveryPage() {
           visibleLocationCount={visibleLocations.length}
           visiblePlayerCount={visiblePlayers.length}
           visibleGameCount={visibleGames.length}
+          visiblePlayRequestCount={visiblePlayRequests.length}
           onToggleCollapsed={() => setFilterCollapsed((value) => !value)}
           onShowLocationsChange={setShowLocations}
           onShowPlayersChange={setShowPlayers}

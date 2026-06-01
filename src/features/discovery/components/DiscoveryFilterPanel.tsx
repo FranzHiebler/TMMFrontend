@@ -11,6 +11,7 @@ type Props = {
   visibleLocationCount: number;
   visiblePlayerCount: number;
   visibleGameCount: number;
+  visiblePlayRequestCount: number;
   onToggleCollapsed: () => void;
   onShowLocationsChange: (value: boolean) => void;
   onShowPlayersChange: (value: boolean) => void;
@@ -33,6 +34,7 @@ export default function DiscoveryFilterPanel({
   visibleLocationCount,
   visiblePlayerCount,
   visibleGameCount,
+  visiblePlayRequestCount,
   onToggleCollapsed,
   onShowLocationsChange,
   onShowPlayersChange,
@@ -134,7 +136,8 @@ export default function DiscoveryFilterPanel({
           {!isLoading && !banner && (
             <p className="discovery-count">
               {visibleLocationCount} Spielorte · {visiblePlayerCount} Spieler ·{" "}
-              {visibleGameCount} {visibleGameCount === 1 ? "Session" : "Sessions"}
+              {visibleGameCount} {visibleGameCount === 1 ? "Session" : "Sessions"} ·{" "}
+              {visiblePlayRequestCount} {visiblePlayRequestCount === 1 ? "Spielgesuch" : "Spielgesuche"}
             </p>
           )}
         </>
