@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { getFriends } from "../api/friendsApi";
 import { getAllGames } from "../api/gamesApi";
 import {
   getConversation,
@@ -11,7 +12,7 @@ import MessageThreadPanel from "../components/MessageThreadPanel";
 import NotificationBell from "../components/NotificationBell";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
-import type { ConversationDto, GameResponse, MessageDto } from "../types/game";
+import type { ConversationDto, FriendDto, GameResponse, MessageDto } from "../types/game";
 
 export default function DirectMessagesPage() {
   const user = useUser();
@@ -25,6 +26,7 @@ export default function DirectMessagesPage() {
   const [recipientId, setRecipientId] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [games, setGames] = useState<GameResponse[]>([]);
+  const [friends, setFriends] = useState<FriendDto[]>([]);
   const [proposalOpen, setProposalOpen] = useState(false);
   const [proposalSystem, setProposalSystem] = useState("");
   const [proposalTime, setProposalTime] = useState("");
@@ -45,6 +47,11 @@ export default function DirectMessagesPage() {
 
   const chatPartner =
     selectedConversation?.participants.find((participant) => participant.userId !== user.userId) ?? null;
+
+  const chatPartnerFriend = useMemo(() => {
+    if (!chatPartner) return null;
+    return friends.find((friend) => friend.userId === chatPartner.userId) ?? null;
+  }, [chatPartner, friends]);
 
   const sharedFutureGames = useMemo(() => {
     if (!chatPartner) return [];
@@ -101,10 +108,16 @@ export default function DirectMessagesPage() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setNow(Date.now());
-      void getAllGames().then(setGames).catch(() => setGames([]));
+      void Promise.all([
+        getAllGames().catch(() => []),
+        getFriends(user).catch(() => []),
+      ]).then(([nextGames, nextFriends]) => {
+        setGames(nextGames);
+        setFriends(nextFriends);
+      });
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const conversationId = searchParams.get("conversationId");
@@ -219,6 +232,18 @@ export default function DirectMessagesPage() {
                 />
               </label>
             </div>
+          )}
+
+          {chatPartner && (
+            <section className="chat-context-card">
+              <div>
+                <b>{chatPartner.displayName}</b>
+                <span className={`friend-status-pill ${chatPartnerFriend ? "is-friend" : ""}`}>
+                  {chatPartnerFriend ? "Freund" : "Noch nicht befreundet"}
+                </span>
+              </div>
+              <Link to={`/users/${chatPartner.userId}`}>Profil öffnen</Link>
+            </section>
           )}
 
           <MessageThreadPanel
