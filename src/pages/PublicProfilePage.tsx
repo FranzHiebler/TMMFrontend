@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { sendFriendRequest } from "../api/friendsApi";
 import { getSystems } from "../api/systemsApi";
 import { getPublicUserProfile } from "../api/usersApi";
 import DirectMessageButton from "../components/DirectMessageButton";
 import Message from "../components/Message";
+import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import { listLabel, systemName, systemNames } from "../helpers/systemLabels";
 import type { PublicUserProfileResponse, SystemOption } from "../types/game";
@@ -64,11 +66,13 @@ function ProfileValue({
 export default function PublicProfilePage() {
   const { userId } = useParams();
   const user = useUser();
+  const { showToast } = useToast();
 
   const [profile, setProfile] = useState<PublicUserProfileResponse | null>(null);
   const [systems, setSystems] = useState<SystemOption[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [friendBusy, setFriendBusy] = useState(false);
 
   const hiddenFields = useMemo(
     () => new Set(profile?.hiddenFields ?? []),
@@ -101,6 +105,23 @@ export default function PublicProfilePage() {
 
     void load();
   }, [user, userId]);
+
+  async function addFriend() {
+    if (!profile) return;
+
+    setFriendBusy(true);
+    try {
+      await sendFriendRequest(
+        { receiverUserId: profile.userId, receiverDisplayName: profile.displayName },
+        user
+      );
+      showToast("success", "Freundschaftsanfrage gesendet");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Anfrage konnte nicht gesendet werden");
+    } finally {
+      setFriendBusy(false);
+    }
+  }
 
   return (
     <main className="container public-profile-page">
@@ -135,6 +156,12 @@ export default function PublicProfilePage() {
                 recipientDisplayName={profile.displayName}
                 contextLabel="aus dem öffentlichen Profil"
               />
+            )}
+
+            {profile.userId !== user.userId && !profile.isFriend && (
+              <button type="button" disabled={friendBusy} onClick={addFriend}>
+                {friendBusy ? "Sendet..." : "Freund hinzufügen"}
+              </button>
             )}
           </div>
 

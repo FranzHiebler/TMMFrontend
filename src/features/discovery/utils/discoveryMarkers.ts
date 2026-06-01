@@ -84,11 +84,12 @@ export function locationMarkerIcon(location: LocationDiscoveryResponse) {
   });
 }
 
-export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
+export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean, isFriend = false) {
   const isApproximate = player.locationPrecision === "approximate";
   const classes = [
     "player-marker",
     isMe ? "player-marker-me" : "player-marker-default",
+    isFriend ? "player-marker-friend" : "",
     isApproximate ? "player-marker-approximate" : "",
   ].filter(Boolean).join(" ");
 
@@ -98,6 +99,7 @@ export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean) {
       <div class="${classes}">
         ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
+        ${isFriend ? `<span class="marker-friend-label">Freund</span>` : ""}
         ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
       </div>
     `,

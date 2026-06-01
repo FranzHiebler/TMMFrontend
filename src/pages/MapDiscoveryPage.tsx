@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { getDiscoveryGames, getGameById } from "../api/gamesApi";
+import { getFriends } from "../api/friendsApi";
 import { getDiscoveryLocations, getMyLocations } from "../api/locationsApi";
 import { getPlayRequests } from "../api/playRequestsApi";
 import { getSystems } from "../api/systemsApi";
@@ -154,6 +155,7 @@ export default function MapDiscoveryPage() {
   const [games, setGames] = useState<GameDiscoveryResponse[]>([]);
   const [locations, setLocations] = useState<LocationDiscoveryResponse[]>([]);
   const [playRequests, setPlayRequests] = useState<PlayRequestDto[]>([]);
+  const [friendUserIds, setFriendUserIds] = useState<Set<string>>(new Set());
   const [systems, setSystems] = useState<SystemOption[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
   const [selectedFullGame, setSelectedFullGame] = useState<GameResponse | null>(null);
@@ -270,7 +272,7 @@ export default function MapDiscoveryPage() {
     setLoadingPlayRequests(true);
 
     try {
-      const [locationData, gameData, playerData, playRequestData] = await Promise.all([
+      const [locationData, gameData, playerData, playRequestData, friendData] = await Promise.all([
         getDiscoveryLocations({ latitude: center[0], longitude: center[1], radiusKm }, user),
         getDiscoveryGames(
           {
@@ -284,12 +286,14 @@ export default function MapDiscoveryPage() {
         ),
         searchUsers("", user),
         getPlayRequests(user),
+        getFriends(user).catch(() => []),
       ]);
 
       setLocations(locationData);
       setGames(gameData);
       setPlayers(playerData);
       setPlayRequests(playRequestData);
+      setFriendUserIds(new Set(friendData.map((friend) => friend.userId)));
 
       setSelection((current) => {
         if (current?.type === "game" && gameData.some((game) => game.gameId === current.id)) {
@@ -697,7 +701,7 @@ export default function MapDiscoveryPage() {
             <Marker
               key={player.userId}
               position={[player.latitude!, player.longitude!]}
-              icon={playerMarkerIcon(player, player.userId === user.userId)}
+              icon={playerMarkerIcon(player, player.userId === user.userId, friendUserIds.has(player.userId))}
               zIndexOffset={720}
               eventHandlers={{
                 click: () => setSelection({ type: "player", id: player.userId }),

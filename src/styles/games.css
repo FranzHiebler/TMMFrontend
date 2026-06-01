@@ -734,6 +734,13 @@
   font-weight: 800;
 }
 
+.session-empty-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
+
 .session-inline-invite {
   display: flex;
   gap: 8px;

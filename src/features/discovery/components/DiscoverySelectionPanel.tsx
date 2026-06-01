@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import DirectMessageButton from "../../../components/DirectMessageButton";
 import { systemShortCode, systemShortCodes } from "../../../helpers/systemLabels";
 import type {
   GameDiscoveryResponse,
@@ -164,6 +165,12 @@ export default function DiscoverySelectionPanel({
 
           <div className="preview-actions">
             <Link to={`/users/${encodeURIComponent(selectedPlayer.userId)}`}>Profil öffnen</Link>
+            <DirectMessageButton
+              recipientUserId={selectedPlayer.userId}
+              recipientDisplayName={selectedPlayer.displayName}
+              contextLabel="von der Karte"
+              compact
+            />
           </div>
         </article>
       )}
@@ -190,6 +197,12 @@ export default function DiscoverySelectionPanel({
           <div className="preview-actions">
             <Link to="/play-requests">{selectedPlayRequest.isMine ? "Verwalten" : "Antworten"}</Link>
             <Link to={`/users/${encodeURIComponent(selectedPlayRequest.owner.userId)}`}>Profil öffnen</Link>
+            <DirectMessageButton
+              recipientUserId={selectedPlayRequest.owner.userId}
+              recipientDisplayName={selectedPlayRequest.owner.displayName}
+              contextLabel="aus einem Spielgesuch"
+              compact
+            />
           </div>
         </article>
       )}

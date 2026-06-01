@@ -263,7 +263,9 @@ export default function FriendsPage() {
 
           {loading && <div className="thread-empty">Freunde werden geladen...</div>}
           {!loading && friends.length === 0 && (
-            <div className="thread-empty">Noch keine Freunde.</div>
+            <div className="thread-empty">
+              Suche Spieler in deiner Nähe und füge sie als Freund hinzu.
+            </div>
           )}
 
           <div className="friend-list">
@@ -273,6 +275,7 @@ export default function FriendsPage() {
                   <Link className="profile-link" to={`/users/${friend.userId}`}>
                     {friend.displayName}
                   </Link>
+                  <span className="friend-badge">Freund</span>
                   <small>
                     Verbunden seit {new Date(friend.updatedAtUtc).toLocaleDateString("de-DE")}
                   </small>
@@ -285,6 +288,10 @@ export default function FriendsPage() {
                     contextLabel="aus deiner Freundesliste"
                     compact
                   />
+
+                  <Link className="button-compact" to={`/users/${friend.userId}`}>
+                    Profil
+                  </Link>
 
                   <button
                     type="button"

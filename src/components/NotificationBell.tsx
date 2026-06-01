@@ -60,6 +60,12 @@ export default function NotificationBell() {
     }
   }
 
+  function notificationTarget(notification: NotificationDto) {
+    const link = notification.linkUrl ?? "/messages";
+    const oldGameMatch = link.match(/^\/games\?gameId=([^&]+)/);
+    return oldGameMatch ? `/sessions/${encodeURIComponent(decodeURIComponent(oldGameMatch[1]))}` : link;
+  }
+
   return (
     <div className="notification-bell">
       <button
@@ -80,13 +86,13 @@ export default function NotificationBell() {
           </div>
 
           {notifications.length === 0 && (
-            <div className="notification-empty">Noch keine Benachrichtigungen.</div>
+            <div className="notification-empty">Keine neuen Einladungen oder Nachrichten.</div>
           )}
 
           {notifications.slice(0, 8).map((notification) => (
             <Link
               key={notification.id}
-              to={notification.linkUrl ?? "/messages"}
+              to={notificationTarget(notification)}
               className={`notification-item ${notification.isRead ? "" : "unread"}`}
               onClick={() => void markRead(notification)}
             >

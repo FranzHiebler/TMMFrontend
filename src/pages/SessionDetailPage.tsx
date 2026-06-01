@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { API } from "../api/apiClient";
 import { getFriends } from "../api/friendsApi";
-import { cancelGame, getGameById, inviteFriendToSession } from "../api/gamesApi";
+import { cancelGame, getGameById, inviteFriendToSession, respondInvitation } from "../api/gamesApi";
 import { getSystems } from "../api/systemsApi";
 import { useJoinGame } from "../api/useJoinGame";
 import GameCard from "../components/GameCard";
@@ -178,11 +178,24 @@ export default function SessionDetailPage() {
     setShowInvite(false);
   }
 
+  async function answerInvitation(invitationId: string, accept: boolean) {
+    if (!game) return;
+
+    try {
+      const updated = await respondInvitation(game.id, invitationId, accept, user);
+      setGame(updated);
+      setCopyMessage(accept ? "Einladung angenommen." : "Einladung abgelehnt.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Einladung konnte nicht beantwortet werden.");
+    }
+  }
+
   const isHost = game?.host.userId === user.userId;
   const alreadyInGame = !!game && participants(game).some((player) => player.userId === user.userId);
-  const canJoin = !!game && !isHost && !alreadyInGame && game.openSlots > 0;
   const pendingInvitations =
     game?.invitations.filter((invitation) => invitation.status === "Pending") ?? [];
+  const myPendingInvitation = pendingInvitations.find((invitation) => invitation.user.userId === user.userId);
+  const canJoin = !!game && !isHost && !alreadyInGame && !myPendingInvitation && game.openSlots > 0;
   const pendingApplications =
     game?.tables.flatMap((table) => table.applications.filter((application) => application.status === "Pending")) ?? [];
   const pendingWaitlist = game?.waitlist ?? [];
@@ -263,6 +276,20 @@ export default function SessionDetailPage() {
                   </button>
                 )}
                 {!canJoin && !isHost && alreadyInGame && <strong>Du bist dabei.</strong>}
+                {myPendingInvitation && !alreadyInGame && (
+                  <>
+                    <button type="button" onClick={() => answerInvitation(myPendingInvitation.id, true)}>
+                      Einladung annehmen
+                    </button>
+                    <button
+                      type="button"
+                      className="session-secondary-action"
+                      onClick={() => answerInvitation(myPendingInvitation.id, false)}
+                    >
+                      Ablehnen
+                    </button>
+                  </>
+                )}
                 {!canJoin && !isHost && !alreadyInGame && game.openSlots <= 0 && <strong>Aktuell keine freien Plätze.</strong>}
                 {isHost && (
                   <a className="session-manage-link" href="#session-management">
@@ -291,6 +318,10 @@ export default function SessionDetailPage() {
                     Einladen
                   </button>
                 </div>
+              )}
+
+              {isHost && pendingInvitations.length === 0 && (
+                <p className="session-empty-note">Noch keine offenen Einladungen.</p>
               )}
             </div>
 
