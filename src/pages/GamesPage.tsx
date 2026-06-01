@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllGames } from "../api/gamesApi";
 import { useJoinGame } from "../api/useJoinGame";
 import GameList from "../components/GameList";
@@ -46,6 +47,8 @@ function priority(game: GameResponse, userId: string) {
 
 export default function GamesPage() {
   const user = useUser();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [games, setGames] = useState<GameResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +75,13 @@ export default function GamesPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadGames();
   }, [loadGames]);
+
+  useEffect(() => {
+    const legacyGameId = searchParams.get("gameId");
+    if (legacyGameId) {
+      navigate(`/sessions/${encodeURIComponent(legacyGameId)}`, { replace: true });
+    }
+  }, [navigate, searchParams]);
 
   function handleGameUpdated(updatedGame: GameResponse) {
     setGames((prev) =>
