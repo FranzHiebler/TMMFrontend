@@ -39,6 +39,19 @@ function publicSessionUrl(game: GameResponse) {
   return `${backendBaseUrl}/s/${encodeURIComponent(publicId)}`;
 }
 
+function statusLabel(status: GameResponse["status"]) {
+  switch (status) {
+    case "Cancelled":
+      return "Abgesagt";
+    case "Closed":
+      return "Geschlossen";
+    case "Full":
+      return "Voll";
+    default:
+      return "Offen";
+  }
+}
+
 export default function SessionDetailPage() {
   const { gameId } = useParams();
   const user = useUser();
@@ -168,15 +181,16 @@ export default function SessionDetailPage() {
   const isHost = game?.host.userId === user.userId;
   const alreadyInGame = !!game && participants(game).some((player) => player.userId === user.userId);
   const canJoin = !!game && !isHost && !alreadyInGame && game.openSlots > 0;
+  const pendingInvitations =
+    game?.invitations.filter((invitation) => invitation.status === "Pending") ?? [];
+  const pendingApplications =
+    game?.tables.flatMap((table) => table.applications.filter((application) => application.status === "Pending")) ?? [];
+  const pendingWaitlist = game?.waitlist ?? [];
+  const primaryActionLabel =
+    game?.joinMode === GameJoinMode.ApprovalRequired ? "Mitspielen anfragen" : "Freien Platz nehmen";
 
   return (
     <main className="container session-detail-page">
-      <div className="page-header">
-        <div>
-          <h1>Spieltermin</h1>
-        </div>
-      </div>
-
       <Message text={successMessage} type="success" />
       <Message text={errorMessage} type="error" />
       <Message text={error} type="error" />
@@ -186,49 +200,81 @@ export default function SessionDetailPage() {
       {!loading && !error && game && (
         <>
           <section className="session-overview-grid">
-            <div className="card session-hero-card">
-              <div className="session-hero-main">
-                <div>
-                  <div className="session-title-row">
-                    <h2>{game.title}</h2>
-                    <button
-                      type="button"
-                      className="icon-button icon-share"
-                      aria-label="Teilen-Text kopieren"
-                      title="Teilen"
-                      onClick={copyShareText}
-                    />
-                  </div>
-                  <p>{systemsLabel(game, systems)}</p>
-                </div>
-                <strong>{game.assignedPlayers}/{game.maxPlayers}</strong>
+            <div className="card session-hero-card session-detail-hero">
+              <div className="session-hero-topline">
+                <span className={`session-status-pill status-${game.status.toLowerCase()}`}>
+                  {statusLabel(game.status)}
+                </span>
+                <span>{systemsLabel(game, systems)}</span>
               </div>
 
-              <div className="session-fact-grid">
-                <span>{timeLabel(game)}</span>
-                <span>{game.location.name}</span>
-                <span>{game.location.city}</span>
-                <span>{game.openSlots} frei</span>
+              <div className="session-title-row">
+                <h1>{game.title}</h1>
+                <button
+                  type="button"
+                  className="icon-button icon-share"
+                  aria-label="Teilen-Text kopieren"
+                  title="Teilen"
+                  onClick={copyShareText}
+                />
+              </div>
+
+              <div className="session-hero-focus">
+                <div>
+                  <strong>{timeLabel(game)}</strong>
+                  <span>{game.location.name}, {game.location.city}</span>
+                </div>
+                <b>{game.assignedPlayers}/{game.maxPlayers}</b>
+              </div>
+
+              {game.description && <p className="session-hero-description">{game.description}</p>}
+
+              <div className="session-fact-grid session-fact-grid-modern">
+                <span>
+                  <small>Spielort</small>
+                  {game.location.name}
+                </span>
+                <span>
+                  <small>Ort</small>
+                  {game.location.city}
+                </span>
+                <span>
+                  <small>Plätze</small>
+                  {game.openSlots} frei
+                </span>
+                <span>
+                  <small>Host</small>
+                  {game.host.displayName}
+                </span>
               </div>
 
               <div className="session-participants">
+                <b>Wer?</b>
                 {participants(game).length === 0 && <span>Noch keine Teilnehmer.</span>}
                 {participants(game).map((participant) => (
                   <span key={participant.userId}>{participant.displayName}</span>
                 ))}
               </div>
 
-              <div className="session-action-bar">
+              <div className="session-primary-action">
                 {canJoin && (
                   <button type="button" disabled={!!joiningKey} onClick={joinFirstOpenTable}>
-                    {game.joinMode === GameJoinMode.ApprovalRequired ? "Bewerben" : "Mitspielen"}
+                    {primaryActionLabel}
                   </button>
                 )}
+                {!canJoin && !isHost && alreadyInGame && <strong>Du bist dabei.</strong>}
+                {!canJoin && !isHost && !alreadyInGame && game.openSlots <= 0 && <strong>Aktuell keine freien Plätze.</strong>}
                 {isHost && (
-                  <button type="button" className="icon-link icon-invite" onClick={toggleInvite}>
+                  <a className="session-manage-link" href="#session-management">
+                    Spieltermin verwalten
+                  </a>
+                )}
+                {isHost && (
+                  <button type="button" className="icon-link icon-invite session-secondary-action" onClick={toggleInvite}>
                     Freunde einladen
                   </button>
                 )}
+                {isHost && <span className="session-host-hint">Verwaltung und Tische findest du weiter unten.</span>}
               </div>
 
               {showInvite && isHost && (
@@ -248,29 +294,72 @@ export default function SessionDetailPage() {
               )}
             </div>
 
-            <aside className="card session-chat-card" id="session-chat">
-              <GameSessionMessagesPanel gameId={game.id} />
+            <aside className="card session-side-card" id="session-chat">
+              <div className="session-side-section">
+                <h2>Chat</h2>
+                <GameSessionMessagesPanel gameId={game.id} />
+              </div>
+              <div className="session-side-section session-share-box">
+                <h2>Teilen</h2>
+                <p>Öffentliche Vorschau für WhatsApp, Discord und Browser.</p>
+                <button type="button" className="icon-link icon-share" onClick={copyShareText}>
+                  Link kopieren
+                </button>
+              </div>
             </aside>
           </section>
 
+          <section className="session-management-summary">
+            <div className="session-summary-item">
+              <strong>{game.tables.length}</strong>
+              <span>{game.tables.length === 1 ? "Tisch" : "Tische"}</span>
+            </div>
+            <div className="session-summary-item">
+              <strong>{pendingApplications.length}</strong>
+              <span>Bewerbungen</span>
+            </div>
+            <div className="session-summary-item">
+              <strong>{pendingWaitlist.length}</strong>
+              <span>Warteliste</span>
+            </div>
+            <div className="session-summary-item">
+              <strong>{pendingInvitations.length}</strong>
+              <span>Einladungen</span>
+            </div>
+          </section>
+
+          <section className="session-detail-section" id="session-management">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Tische & Plätze</p>
+                <h2>Spieltermin organisieren</h2>
+              </div>
+              {isHost && <span>Bearbeiten, Bewerbungen und Zuweisungen sind hier gebündelt.</span>}
+            </div>
+
+            <GameCard
+              game={game}
+              joiningKey={joiningKey}
+              currentUserId={user.userId}
+              messageByKey={messageByKey}
+              onJoin={join}
+              onGameUpdated={setGame}
+              showMessages={false}
+              showHeader={false}
+            />
+          </section>
+
           {isHost && (
-            <div className="session-cancel-row">
+            <section className="session-danger-zone">
+              <div>
+                <h2>Spieltermin absagen</h2>
+                <p>Teilnehmer werden benachrichtigt. Der Spieltermin wird nicht hart gelöscht.</p>
+              </div>
               <button type="button" className="danger-button" onClick={cancelSession}>
                 Spiel absagen
               </button>
-            </div>
+            </section>
           )}
-
-          <GameCard
-            game={game}
-            joiningKey={joiningKey}
-            currentUserId={user.userId}
-            messageByKey={messageByKey}
-            onJoin={join}
-            onGameUpdated={setGame}
-            showMessages={false}
-            showHeader={false}
-          />
         </>
       )}
     </main>
