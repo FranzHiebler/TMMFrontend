@@ -98,7 +98,7 @@ export default function App() {
             <div className="hamburger-menu">
               <Link to="/calendar">Kalender</Link>
               <Link to="/locations">Meine Spielorte</Link>
-              <Link to="/series">Serien verwalten</Link>
+              <Link to="/series">Regelmäßige Runden</Link>
               <div className="nav-more-divider" />
               {isAdmin && <Link to="/admin/systems">Admin: Systeme verwalten</Link>}
               <div className="nav-more-divider" />
@@ -139,7 +139,7 @@ export default function App() {
       <div className="app-bottom-nav" ref={createRef}>
         <NavLink to="/my-games" className={navClass}>
           <span className="app-icon app-icon-home" aria-hidden="true" />
-          Meine
+          Meine Spiele
         </NavLink>
         <NavLink to="/friends" className={navClass}>
           <span className="app-icon app-icon-friends" aria-hidden="true" />
@@ -147,7 +147,7 @@ export default function App() {
         </NavLink>
         <NavLink to="/messages" className={navClass}>
           <span className="app-icon app-icon-inbox" aria-hidden="true" />
-          Postfach
+          Nachrichten
         </NavLink>
         <NavLink to="/profile" className={navClass}>
           <span className="app-icon app-icon-profile" aria-hidden="true" />
@@ -165,9 +165,9 @@ export default function App() {
 
         {createOpen && (
           <div className="create-sheet">
-            <Link to="/games/create">Spiel erstellen</Link>
+            <Link to="/games/create">Spieltermin anbieten</Link>
             <Link to="/play-requests">Spielgesuch erstellen</Link>
-            <Link to="/series">Wiederkehrendes Spiel erstellen</Link>
+            <Link to="/series">Regelmäßige Runde planen</Link>
           </div>
         )}
       </div>

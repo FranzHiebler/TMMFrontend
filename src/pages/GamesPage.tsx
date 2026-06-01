@@ -144,7 +144,7 @@ export default function GamesPage() {
               onChange={(e) => setViewFilter(e.target.value as ViewFilter)}
             >
               <option value="all">Alle anzeigen</option>
-              <option value="own">Nur meine Sessions</option>
+              <option value="own">Nur meine Spieltermine</option>
               <option value="joined">Nur angemeldet / beworben</option>
             </select>
           </div>
@@ -184,7 +184,7 @@ export default function GamesPage() {
               checked={showPast}
               onChange={(e) => setShowPast(e.target.checked)}
             />
-            Vergangene Sessions anzeigen
+            Vergangene Spieltermine anzeigen
           </label>
         </div>
       </div>

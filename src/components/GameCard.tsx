@@ -151,8 +151,8 @@ export default function GameCard({
           <button
             type="button"
             className="icon-button icon-edit"
-            aria-label={isEditingSession ? "Sessionbearbeitung schließen" : "Session bearbeiten"}
-            title={isEditingSession ? "Schließen" : "Session bearbeiten"}
+            aria-label={isEditingSession ? "Spieltermin-Bearbeitung schließen" : "Spieltermin bearbeiten"}
+            title={isEditingSession ? "Schließen" : "Spieltermin bearbeiten"}
             onClick={() => setIsEditingSession((prev) => !prev)}
           />
         </div>

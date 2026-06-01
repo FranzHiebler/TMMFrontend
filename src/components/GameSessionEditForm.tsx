@@ -31,7 +31,7 @@ export default function GameSessionEditForm({ game, isBusy, onCancel, onSave }: 
 
   return (
     <div className="card form session-edit-form">
-      <h3>Session bearbeiten</h3>
+      <h3>Spieltermin bearbeiten</h3>
 
       <div className="field">
         <label>Titel</label>
@@ -39,7 +39,7 @@ export default function GameSessionEditForm({ game, isBusy, onCancel, onSave }: 
       </div>
 
       <div className="field">
-        <label>Start der Session</label>
+        <label>Startzeit</label>
         <input
           type="datetime-local"
           value={startTime}

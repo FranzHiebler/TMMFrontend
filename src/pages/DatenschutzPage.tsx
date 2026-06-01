@@ -24,7 +24,7 @@ export default function DatenschutzPage() {
           Verarbeitet werden insbesondere Nutzerprofil, Vorname, Nachname, Anzeigename,
           optionale Kontaktdaten, Adresse, Ort, Postleitzahl, Koordinaten, Freundschaften,
           Spielsessions, Bewerbungen, Einladungen, Nachrichten, Benachrichtigungen,
-          öffentliche Profilseiten und öffentliche Session-Links.
+          öffentliche Profilseiten und öffentliche Spieltermin-Links.
         </p>
 
         <h2>4. Sichtbarkeit und Standortdaten</h2>
@@ -37,13 +37,13 @@ export default function DatenschutzPage() {
 
         <h2>5. Nachrichten und Benachrichtigungen</h2>
         <p>
-          Direktnachrichten, Session-Kommentare, Tisch-Nachrichten und Benachrichtigungen werden
+          Direktnachrichten, Spieltermin-Kommentare, Tisch-Nachrichten und Benachrichtigungen werden
           gespeichert, damit die Abstimmung rund um Spiele innerhalb der App möglich ist.
         </p>
 
         <h2>6. Öffentliche Inhalte</h2>
         <p>
-          Öffentliche Profile und öffentliche Session-Links zeigen nur Daten, die für diese Ansicht
+          Öffentliche Profile und öffentliche Spieltermin-Links zeigen nur Daten, die für diese Ansicht
           vorgesehen sind. Private Kontaktdaten und genaue Standortdaten werden abhängig von den
           gewählten Einstellungen nicht öffentlich angezeigt.
         </p>

@@ -400,7 +400,7 @@ export default function ProfilePage() {
             <input type="checkbox" checked={!hideParticipation} onChange={(e) => setHideParticipation(!e.target.checked)} />
             <span>
               Meine Teilnahmen anzeigen
-              <small className="field-hint">Vorbereitet: wird bei öffentlichen Session-Ansichten später vollständig berücksichtigt.</small>
+              <small className="field-hint">Vorbereitet: wird bei öffentlichen Spieltermin-Ansichten später vollständig berücksichtigt.</small>
             </span>
           </label>
 
@@ -549,7 +549,7 @@ export default function ProfilePage() {
 
             <label className="checkbox-row">
               <input type="checkbox" checked={lookingActive} onChange={(e) => setLookingActive(e.target.checked)} />
-              Ich suche aktuell ein Spiel
+              Spieler sucht
             </label>
 
             {lookingActive && (

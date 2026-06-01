@@ -61,10 +61,10 @@ export function useGameCardActions({ game, user, onGameUpdated }: Options) {
 
       const updated = await updateGameSession(game.id, request, user);
       onGameUpdated?.(updated);
-      showSuccess("Session gespeichert");
+      showSuccess("Spieltermin gespeichert");
       return true;
     } catch (err) {
-      showError(err, "Session konnte nicht gespeichert werden");
+      showError(err, "Spieltermin konnte nicht gespeichert werden");
       return false;
     } finally {
       setBusyKey(null);

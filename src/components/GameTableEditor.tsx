@@ -75,7 +75,7 @@ export default function GameTableEditor({
             }
           />
           {!sessionStartTime && (
-            <small>Bitte zuerst Startdatum der Session wählen.</small>
+            <small>Bitte zuerst Startzeit des Spieltermins wählen.</small>
           )}
         </div>
 

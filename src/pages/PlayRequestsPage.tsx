@@ -84,7 +84,7 @@ export default function PlayRequestsPage() {
           <h1>Spielgesuche</h1>
           <p className="page-subtitle">Leichter Einstieg: Ich suche ein Spiel.</p>
         </div>
-        <Link className="nav-create-button" to="/games/create">Session erstellen</Link>
+        <Link className="nav-create-button" to="/games/create">Spieltermin anbieten</Link>
       </div>
 
       <Message text={message} type="success" />
@@ -124,7 +124,7 @@ export default function PlayRequestsPage() {
             <b>{systemName(request.systemKey, systems)}</b>
             <span>{request.timeNote || "Zeit offen"} · {request.status}</span>
             {request.status === "Open" && <button type="button" onClick={() => close(request.id)}>Schließen</button>}
-            {request.convertedGameId && <Link to={`/sessions/${request.convertedGameId}`}>Session öffnen</Link>}
+            {request.convertedGameId && <Link to={`/sessions/${request.convertedGameId}`}>Spieltermin öffnen</Link>}
           </div>
         ))}
       </section>

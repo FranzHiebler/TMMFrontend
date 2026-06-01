@@ -158,8 +158,8 @@ export default function PublicProfilePage() {
               <span>Suchstatus</span>
               <b>
                 {profile.lookingForGame?.isActive
-                  ? `Sucht Spiel${profile.lookingForGame.systemKey ? `: ${systemName(profile.lookingForGame.systemKey, systems)}` : ""}`
-                  : "Sucht aktuell nicht aktiv"}
+                  ? `Spieler sucht${profile.lookingForGame.systemKey ? `: ${systemName(profile.lookingForGame.systemKey, systems)}` : ""}`
+                  : "Spieler sucht aktuell nicht"}
               </b>
               {profile.lookingForGame?.timeNote && <small>{profile.lookingForGame.timeNote}</small>}
             </div>

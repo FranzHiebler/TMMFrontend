@@ -13,7 +13,7 @@ export default function PublicSessionPage() {
     if (!slugOrId) return;
     getPublicGame(slugOrId)
       .then(setGame)
-      .catch((err) => setError(err instanceof Error ? err.message : "Session konnte nicht geladen werden."));
+      .catch((err) => setError(err instanceof Error ? err.message : "Spieltermin konnte nicht geladen werden."));
   }, [slugOrId]);
 
   return (
@@ -21,7 +21,7 @@ export default function PublicSessionPage() {
       <Message text={error} type="error" />
       {game && (
         <section className="card public-profile-card">
-          <p className="panel-kicker">Öffentliche Session</p>
+          <p className="panel-kicker">Öffentlicher Spieltermin</p>
           <h1>{game.title}</h1>
           <p>{game.location.name}, {game.location.city}</p>
           <p>{game.timingMode === "Open" ? "Termin offen" : new Date(game.startTimeUtc).toLocaleString("de-DE")}</p>

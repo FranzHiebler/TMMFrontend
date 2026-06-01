@@ -110,7 +110,7 @@ export default function MyGamesPage() {
     <main className="container">
       <div className="page-header">
         <div>
-          <h1>Meine</h1>
+          <h1>Meine Spiele</h1>
           <p className="page-subtitle">Kommende und aktuelle Spiele zuerst. Ältere Spiele liegen im Archiv.</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function MyGamesPage() {
       {!loading && !error && activeGames.length === 0 && archiveGames.length === 0 && (
         <section className="card">
           <p className="muted">Du hast noch keine Spiele.</p>
-          <Link to="/games/create">Spiel erstellen</Link>
+          <Link to="/games/create">Spieltermin anbieten</Link>
         </section>
       )}
 

@@ -81,22 +81,22 @@ export default function DiscoveryFilterPanel({
               <span>Spieler</span>
             </label>
 
-            <label title="Sessions, die du veranstaltest oder an denen du teilnimmst">
+            <label title="Spieltermine, die du veranstaltest oder an denen du teilnimmst">
               <input
                 type="checkbox"
                 checked={showMySessions}
                 onChange={(event) => onShowMySessionsChange(event.target.checked)}
               />
-              <span>Meine Sessions</span>
+              <span>Meine Spieltermine</span>
             </label>
 
-            <label title="Alle sichtbaren Sessions im Umkreis">
+            <label title="Alle sichtbaren Spieltermine im Umkreis">
               <input
                 type="checkbox"
                 checked={showAllSessions}
                 onChange={(event) => onShowAllSessionsChange(event.target.checked)}
               />
-              <span>Öffentliche Sessions</span>
+              <span>Öffentliche Spieltermine</span>
             </label>
           </div>
 
@@ -136,8 +136,8 @@ export default function DiscoveryFilterPanel({
           {!isLoading && !banner && (
             <p className="discovery-count">
               {visibleLocationCount} Spielorte · {visiblePlayerCount} Spieler ·{" "}
-              {visibleGameCount} {visibleGameCount === 1 ? "Session" : "Sessions"} ·{" "}
-              {visiblePlayRequestCount} {visiblePlayRequestCount === 1 ? "Sucht" : "Suchen"}
+              {visibleGameCount} {visibleGameCount === 1 ? "Spieltermin" : "Spieltermine"} ·{" "}
+              {visiblePlayRequestCount} {visiblePlayRequestCount === 1 ? "Spielgesuch" : "Spielgesuche"}
             </p>
           )}
         </>

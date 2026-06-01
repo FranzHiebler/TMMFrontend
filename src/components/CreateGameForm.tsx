@@ -271,7 +271,7 @@ export default function CreateGameForm() {
       setLoading(true);
       setError("");
       await createGame(request, user);
-      showToast("success", "Session gespeichert");
+      showToast("success", "Spieltermin gespeichert");
       setTitle("");
       setDescription("");
       setGameDate("");
@@ -297,8 +297,8 @@ export default function CreateGameForm() {
       <form onSubmit={handleSubmit} className="form create-game-form create-game-form-v2">
         <section className="card simple-session-card">
           <div>
-            <p className="panel-kicker">Neue Session</p>
-            <h1>Spiel anlegen</h1>
+            <p className="panel-kicker">Neuer Spieltermin</p>
+            <h1>Spieltermin anbieten</h1>
             <p className="page-subtitle">Erst das Nötigste. Details kannst du aufklappen.</p>
           </div>
 
@@ -470,7 +470,7 @@ export default function CreateGameForm() {
         )}
 
         <button type="submit" disabled={loading}>
-          {loading ? "Speichere..." : "Spiel anlegen"}
+          {loading ? "Speichere..." : "Spieltermin anbieten"}
         </button>
       </form>
 

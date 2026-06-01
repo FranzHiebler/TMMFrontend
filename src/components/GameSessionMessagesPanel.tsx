@@ -31,7 +31,7 @@ export default function GameSessionMessagesPanel({ gameId }: Props) {
   return (
     <>
       <MessageThreadPanel
-        title="Session-Nachrichten"
+        title="Spieltermin-Nachrichten"
         messages={messages}
         loading={loading}
         onLoad={load}

@@ -81,7 +81,7 @@ export default function DiscoverySelectionPanel({
             {closeButton}
           </div>
 
-          <p className="panel-kicker">Session</p>
+          <p className="panel-kicker">Spieltermin</p>
           <h2>{selectedGame.title}</h2>
 
           {selectedHostName && <p className="preview-host">von {selectedHostName}</p>}
@@ -119,7 +119,7 @@ export default function DiscoverySelectionPanel({
           <div className="preview-meta-grid">
             <span>{selectedLocation.city}</span>
             {selectedLocation.address && <span>{selectedLocation.address}</span>}
-            <span>{selectedLocation.upcomingGameCount} kommende Spiele</span>
+            <span>{selectedLocation.upcomingGameCount} kommende Spieltermine</span>
             {selectedLocation.nextGameStartTimeUtc && (
               <span>nächste: {dateTimeText(selectedLocation.nextGameStartTimeUtc)}</span>
             )}
@@ -135,7 +135,7 @@ export default function DiscoverySelectionPanel({
             <Link to="/locations">Spielort öffnen</Link>
 
             <button type="button" onClick={() => onCreateAtLocation(selectedLocation.locationId)}>
-              Spiel hier erstellen
+              Spieltermin hier anbieten
             </button>
 
             {selectedLocation.isOwnLocation && <Link to="/locations">Mitglieder</Link>}
@@ -171,7 +171,7 @@ export default function DiscoverySelectionPanel({
       {selectedPlayRequest && (
         <article className="session-preview player-preview">
           <div className="session-preview-topbar compact-preview-topbar">
-            <p className="panel-kicker">Sucht</p>
+            <p className="panel-kicker">Spielgesuch</p>
             {switcher}
             {closeButton}
           </div>

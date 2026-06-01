@@ -121,7 +121,7 @@ export function playRequestMarkerIcon(request: PlayRequestDto) {
         ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
         ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
-        <span class="marker-mini-label">Sucht</span>
+        <span class="marker-mini-label">Gesuch</span>
       </div>
     `,
     iconSize: [42, 42],

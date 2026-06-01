@@ -73,7 +73,7 @@ export default function SessionDetailPage() {
 
     async function loadGame() {
       if (!gameId) {
-        setError("Session-ID fehlt.");
+        setError("Spieltermin-ID fehlt.");
         setLoading(false);
         return;
       }
@@ -88,7 +88,7 @@ export default function SessionDetailPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Session konnte nicht geladen werden.");
+          setError(err instanceof Error ? err.message : "Spieltermin konnte nicht geladen werden.");
         }
       } finally {
         if (!cancelled) {
@@ -173,7 +173,7 @@ export default function SessionDetailPage() {
     <main className="container session-detail-page">
       <div className="page-header">
         <div>
-          <h1>Session</h1>
+          <h1>Spieltermin</h1>
         </div>
       </div>
 
@@ -181,7 +181,7 @@ export default function SessionDetailPage() {
       <Message text={errorMessage} type="error" />
       <Message text={error} type="error" />
       <Message text={copyMessage} type="success" />
-      {loading && <Message text="Lade Session..." type="info" />}
+      {loading && <Message text="Lade Spieltermin..." type="info" />}
 
       {!loading && !error && game && (
         <>

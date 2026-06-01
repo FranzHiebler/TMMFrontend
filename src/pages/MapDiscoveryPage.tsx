@@ -632,8 +632,9 @@ export default function MapDiscoveryPage() {
                   {location.upcomingGameCount > 0 && (
                     <>
                       <br />
-                      {location.upcomingGameCount} kommende Session
-                      {location.upcomingGameCount === 1 ? "" : "s"}
+                      {location.upcomingGameCount === 1
+                        ? "1 kommender Spieltermin"
+                        : `${location.upcomingGameCount} kommende Spieltermine`}
                     </>
                   )}
                 </Popup>
@@ -697,7 +698,7 @@ export default function MapDiscoveryPage() {
                 }}
               >
                 <Popup>
-                  <strong>Sucht: {systemShortCode(request.systemKey, systems)}</strong>
+                  <strong>Spielgesuch: {systemShortCode(request.systemKey, systems)}</strong>
                   <br />
                   {request.owner.displayName}
                   {request.city && (

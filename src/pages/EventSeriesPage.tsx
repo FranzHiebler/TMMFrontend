@@ -106,7 +106,7 @@ export default function EventSeriesPage() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      void load().catch((err) => setError(err instanceof Error ? err.message : "Event-Serien konnten nicht geladen werden."));
+      void load().catch((err) => setError(err instanceof Error ? err.message : "Regelmäßige Runden konnten nicht geladen werden."));
     }, 0);
     return () => window.clearTimeout(timeout);
   }, [load]);
@@ -117,32 +117,32 @@ export default function EventSeriesPage() {
       setError("");
       if (editingId) {
         await updateEventSeries(editingId, toRequest(form), user);
-        setMessage("Serie gespeichert.");
+        setMessage("Regelmäßige Runde gespeichert.");
       } else {
         await createEventSeries(toRequest(form), user);
-        setMessage("Serie erstellt.");
+        setMessage("Regelmäßige Runde erstellt.");
       }
       setEditingId(null);
       setForm(emptyForm(locations[0]?.id || ""));
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Serie konnte nicht gespeichert werden.");
+      setError(err instanceof Error ? err.message : "Regelmäßige Runde konnte nicht gespeichert werden.");
     }
   }
 
   async function createNext(id: string) {
     const game = await createNextSeriesSession(id, user);
-    setMessage(`Session erstellt: ${game.title}`);
+    setMessage(`Spieltermin erstellt: ${game.title}`);
   }
 
   return (
     <main className="container">
-      <h1>Wiederkehrende Spiele</h1>
+      <h1>Regelmäßige Runden</h1>
       <Message text={message} type="success" />
       <Message text={error} type="error" />
 
       <form className="card form" onSubmit={submit}>
-        <h2>{editingId ? "Serie bearbeiten" : "Serie anlegen"}</h2>
+        <h2>{editingId ? "Regelmäßige Runde bearbeiten" : "Regelmäßige Runde planen"}</h2>
         <div className="form-row-2">
           <input value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="z.B. Clubabend" />
           <select value={form.locationId} onChange={(e) => setForm((prev) => ({ ...prev, locationId: e.target.value }))}>
@@ -172,13 +172,13 @@ export default function EventSeriesPage() {
           <textarea value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="Beschreibung" />
         </div>
         <div className="button-row">
-          <button type="submit">{editingId ? "Änderungen speichern" : "Serie speichern"}</button>
+          <button type="submit">{editingId ? "Änderungen speichern" : "Regelmäßige Runde speichern"}</button>
           {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm(locations[0]?.id || "")); }}>Abbrechen</button>}
         </div>
       </form>
 
       <section className="card">
-        <h2>Serien</h2>
+        <h2>Regelmäßige Runden</h2>
         {series.map((item) => (
           <div key={item.id} className="list-row">
             <b>{item.title}</b>
@@ -186,7 +186,7 @@ export default function EventSeriesPage() {
             <small>Nächste: {item.upcomingStartTimesUtc.slice(0, 3).map((date) => new Date(date).toLocaleDateString("de-DE")).join(", ") || "keine im Zeitraum"}</small>
             <div className="button-row">
               <button type="button" onClick={() => { setEditingId(item.id); setForm(formFromSeries(item)); }}>Bearbeiten</button>
-              <button type="button" onClick={() => createNext(item.id)}>Nächste Session erzeugen</button>
+              <button type="button" onClick={() => createNext(item.id)}>Nächsten Spieltermin erzeugen</button>
             </div>
           </div>
         ))}
