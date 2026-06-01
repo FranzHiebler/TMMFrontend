@@ -158,17 +158,41 @@ export default function App() {
           type="button"
           className="app-tab app-tab-plus"
           aria-expanded={createOpen}
+          aria-label={createOpen ? "Aktionsmenü schließen" : "Aktionsmenü öffnen"}
           onClick={() => setCreateOpen((open) => !open)}
         >
           +
         </button>
 
         {createOpen && (
-          <div className="create-sheet">
-            <Link to="/games/create">Spieltermin anbieten</Link>
-            <Link to="/play-requests">Spielgesuch erstellen</Link>
-            <Link to="/series">Regelmäßige Runde planen</Link>
-          </div>
+          <>
+            <button
+              type="button"
+              className="create-sheet-backdrop"
+              aria-label="Aktionsmenü schließen"
+              onClick={() => setCreateOpen(false)}
+            />
+            <div className="create-sheet" role="menu" aria-label="Neue Aktion">
+              <Link to="/games/create" className="create-action-card" role="menuitem">
+                <span className="create-action-title">Spieltermin anbieten</span>
+                <span className="create-action-description">
+                  Plane ein konkretes Spiel mit Ort, Tisch und freien Plätzen.
+                </span>
+              </Link>
+              <Link to="/play-requests" className="create-action-card" role="menuitem">
+                <span className="create-action-title">Spiel suchen</span>
+                <span className="create-action-description">
+                  Erstelle ein Gesuch und lass andere dich finden.
+                </span>
+              </Link>
+              <Link to="/series" className="create-action-card" role="menuitem">
+                <span className="create-action-title">Regelmäßige Runde planen</span>
+                <span className="create-action-description">
+                  Für Clubabende, Kampagnen oder feste Treffen.
+                </span>
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </>
