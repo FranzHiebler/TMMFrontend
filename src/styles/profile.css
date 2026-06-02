@@ -117,6 +117,26 @@
   text-decoration: underline;
 }
 
+.profile-image-upload-field {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-image-upload-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-image-upload-row input[type="file"] {
+  flex: 1 1 240px;
+}
+
+.profile-image-upload-row button {
+  flex: 0 0 auto;
+}
+
 .profile-save-bar {
   position: sticky;
   bottom: calc(84px + env(safe-area-inset-bottom, 0px));
@@ -237,6 +257,16 @@
   }
 
   .profile-save-bar button {
+    width: 100%;
+  }
+
+  .profile-image-upload-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-image-upload-row input[type="file"],
+  .profile-image-upload-row button {
     width: 100%;
   }
 

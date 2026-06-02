@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useState } from "react";
 import { getMyLocations } from "../api/locationsApi";
 import { getCalendar } from "../api/gamesApi";
-import { getCurrentUserProfile, updateCurrentUserProfile } from "../api/usersApi";
+import { getCurrentUserProfile, updateCurrentUserProfile, uploadProfileImage } from "../api/usersApi";
 import { getSystems } from "../api/systemsApi";
 import Message from "../components/Message";
 import LocationPicker from "../components/LocationPicker";
@@ -105,6 +105,7 @@ export default function ProfilePage() {
   const [newRecruit, setNewRecruit] = useState("");
   const [bestSportsPairings, setBestSportsPairings] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [defaultLocationId, setDefaultLocationId] = useState("");
   const [canBeContacted, setCanBeContacted] = useState(true);
   const [hideProfile, setHideProfile] = useState(false);
@@ -121,6 +122,7 @@ export default function ProfilePage() {
   const [lookingTimeNote, setLookingTimeNote] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [resolvingPosition, setResolvingPosition] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -265,6 +267,39 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleProfileImageUpload() {
+    if (!profileImageFile) {
+      setError("Bitte wähle ein Bild aus.");
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(profileImageFile.type)) {
+      setError("Bitte lade ein JPG-, PNG- oder WEBP-Bild hoch.");
+      return;
+    }
+
+    if (profileImageFile.size > 2 * 1024 * 1024) {
+      setError("Profilbild darf maximal 2 MB groß sein.");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setError("");
+      setSuccess("");
+
+      const updated = await uploadProfileImage(profileImageFile, user);
+      setProfile(updated);
+      setProfileImageUrl(updated.profileImageUrl ?? "");
+      setProfileImageFile(null);
+      setSuccess("Profilbild hochgeladen.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Profilbild konnte nicht hochgeladen werden.");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -395,11 +430,35 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="field">
-              <label>Profilbild-URL</label>
-              <input value={profileImageUrl} onChange={(e) => setProfileImageUrl(e.target.value)} />
-              <small className="field-hint">Aktuell als URL. Profilbild-Upload kommt später.</small>
+            <div className="field profile-image-upload-field">
+              <label>Profilbild hochladen</label>
+              <div className="profile-image-upload-row">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => setProfileImageFile(e.target.files?.[0] ?? null)}
+                />
+                <button
+                  type="button"
+                  disabled={!profileImageFile || uploadingImage}
+                  onClick={handleProfileImageUpload}
+                >
+                  {uploadingImage ? "Lade hoch..." : "Bild hochladen"}
+                </button>
+              </div>
+              <small className="field-hint">JPG, PNG oder WEBP bis maximal 2 MB.</small>
             </div>
+
+            <details className="optional-section">
+              <summary>Bild-URL verwenden</summary>
+              <div className="optional-section-body">
+                <div className="field">
+                  <label>Profilbild-URL</label>
+                  <input value={profileImageUrl} onChange={(e) => setProfileImageUrl(e.target.value)} />
+                  <small className="field-hint">Falls du lieber ein externes Bild verwenden möchtest.</small>
+                </div>
+              </div>
+            </details>
 
             <label className="checkbox-row profile-toggle-card">
               <input

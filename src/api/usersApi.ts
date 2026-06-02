@@ -43,6 +43,22 @@ export async function updateCurrentUserProfile(
   return handleResponse<UserProfileResponse>(res, "Profil speichern fehlgeschlagen");
 }
 
+export async function uploadProfileImage(file: File, user: User): Promise<UserProfileResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API}/Users/me/profile-image`, {
+    method: "POST",
+    headers: {
+      "x-user-id": user.userId,
+      "x-display-name": user.displayName,
+    },
+    body: formData,
+  });
+
+  return handleResponse<UserProfileResponse>(res, "Profilbild hochladen fehlgeschlagen");
+}
+
 export async function getCurrentUserPermissions(user: User): Promise<UserPermissionsResponse> {
   const res = await fetch(`${API}/Users/me/permissions`, {
     headers: authHeaders(user),
