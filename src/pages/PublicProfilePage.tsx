@@ -10,6 +10,14 @@ import { useUser } from "../context/UserContext";
 import { listLabel, systemName, systemNames } from "../helpers/systemLabels";
 import type { PublicUserProfileResponse, SystemOption } from "../types/game";
 
+type PlatformProfile = {
+  label: string;
+  value?: string | null;
+  hidden: boolean;
+  baseUrl: string;
+  description: string;
+};
+
 function getUsername(value: string) {
   const trimmed = value.trim();
   if (!trimmed.startsWith("http")) return trimmed.replace(/^@/, "");
@@ -23,43 +31,64 @@ function getUsername(value: string) {
   }
 }
 
+function profileHref(value: string, baseUrl?: string) {
+  const username = getUsername(value);
+  if (value.trim().startsWith("http")) return value.trim();
+  return baseUrl && username ? `${baseUrl}${encodeURIComponent(username)}` : null;
+}
+
 function ProfileValue({
   label,
   value,
   hidden,
-  baseUrl,
 }: {
   label: string;
   value?: string | null;
   hidden?: boolean;
-  baseUrl?: string;
 }) {
-  if (!value && !hidden) return null;
-
-  const username = value ? getUsername(value) : "";
-  const href = value?.trim().startsWith("http")
-    ? value.trim()
-    : baseUrl && username
-      ? `${baseUrl}${encodeURIComponent(username)}`
-      : null;
+  if (!value && !hidden) {
+    return (
+      <div className="public-profile-row is-empty">
+        <span>{label}</span>
+        <b>Nicht angegeben</b>
+      </div>
+    );
+  }
 
   return (
     <div className={`public-profile-row ${hidden ? "is-hidden" : ""}`}>
       <span>{label}</span>
-
       {hidden ? (
-        <>
-          <b>••••••</b>
-          <small>Ausgeblendet</small>
-        </>
-      ) : href ? (
-        <a className="profile-link" href={href} target="_blank" rel="noreferrer">
-          {username}
-        </a>
+        <b>Nicht öffentlich</b>
       ) : (
-        <b>{username}</b>
+        <b>{value}</b>
       )}
     </div>
+  );
+}
+
+function PlatformCard({ platform }: { platform: PlatformProfile }) {
+  if (!platform.value && !platform.hidden) return null;
+
+  if (platform.hidden) {
+    return (
+      <div className="platform-card is-hidden">
+        <span>{platform.label}</span>
+        <b>Nicht öffentlich</b>
+        <small>{platform.description}</small>
+      </div>
+    );
+  }
+
+  const username = getUsername(platform.value ?? "");
+  const href = profileHref(platform.value ?? "", platform.baseUrl);
+
+  return (
+    <a className="platform-card" href={href ?? undefined} target="_blank" rel="noreferrer">
+      <span>{platform.label}</span>
+      <b>{username || "Profil öffnen"}</b>
+      <small>{platform.description}</small>
+    </a>
   );
 }
 
@@ -73,11 +102,24 @@ export default function PublicProfilePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [friendBusy, setFriendBusy] = useState(false);
+  const [friendRequestSent, setFriendRequestSent] = useState(false);
 
   const hiddenFields = useMemo(
     () => new Set(profile?.hiddenFields ?? []),
     [profile?.hiddenFields]
   );
+
+  const favoriteSystems = useMemo(
+    () => systemNames(profile?.favoriteSystemKeys ?? [], systems),
+    [profile?.favoriteSystemKeys, systems]
+  );
+
+  const lookingSystem = profile?.lookingForGame?.systemKey
+    ? systemName(profile.lookingForGame.systemKey, systems)
+    : null;
+  const statusText = profile?.lookingForGame?.isActive
+    ? lookingSystem ? `Sucht ${lookingSystem}` : "Spieler sucht"
+    : "Sucht aktuell kein Spiel";
 
   useEffect(() => {
     async function load() {
@@ -115,6 +157,7 @@ export default function PublicProfilePage() {
         { receiverUserId: profile.userId, receiverDisplayName: profile.displayName },
         user
       );
+      setFriendRequestSent(true);
       showToast("success", "Freundschaftsanfrage gesendet");
     } catch (err) {
       showToast("error", err instanceof Error ? err.message : "Anfrage konnte nicht gesendet werden");
@@ -123,18 +166,58 @@ export default function PublicProfilePage() {
     }
   }
 
+  const platforms: PlatformProfile[] = profile
+    ? [
+        {
+          label: "Tabletop.to",
+          value: profile.tabletopTo,
+          hidden: hiddenFields.has("tabletopTo"),
+          baseUrl: "https://tabletop.to/",
+          description: "Turniere und Events",
+        },
+        {
+          label: "T3",
+          value: profile.t3,
+          hidden: hiddenFields.has("t3"),
+          baseUrl: "https://www.tabletopturniere.de/t3_user.php?username=",
+          description: "Tabletopturniere-Profil",
+        },
+        {
+          label: "NewRecruit",
+          value: profile.newRecruit,
+          hidden: hiddenFields.has("newRecruit"),
+          baseUrl: "https://www.newrecruit.eu/app/user/",
+          description: "Listen und Armeen",
+        },
+        {
+          label: "Best Coast Pairings",
+          value: profile.bestSportsPairings,
+          hidden: hiddenFields.has("bestSportsPairings"),
+          baseUrl: "https://www.bestcoastpairings.com/profile/",
+          description: "Event- und Pairing-Profil",
+        },
+        {
+          label: "Tabletop Herald",
+          value: profile.tabletopHerald,
+          hidden: hiddenFields.has("tabletopHerald"),
+          baseUrl: "https://tabletop-herald.com/",
+          description: "Community-Profil",
+        },
+      ]
+    : [];
+
   return (
     <main className="container public-profile-page">
       <Link to="/friends" className="back-link">
-        ← Zurück zu Freunde
+        Zurück zu Freunde
       </Link>
 
       <Message text={loading ? "Lade Profil..." : ""} type="info" />
       <Message text={error} type="error" />
 
       {!loading && profile && (
-        <section className="card public-profile-card">
-          <div className="public-profile-header">
+        <>
+          <section className="card public-profile-hero">
             <div className="public-profile-avatar">
               {profile.profileImageUrl ? (
                 <img src={profile.profileImageUrl} alt={profile.displayName} />
@@ -143,71 +226,127 @@ export default function PublicProfilePage() {
               )}
             </div>
 
-            <div>
-              <h1>{profile.displayName}</h1>
-              <p className="page-subtitle">
-                {profile.isFriend ? "Freund" : "Öffentliches Profil"}
-              </p>
-            </div>
-
-            {profile.canBeContacted && profile.userId !== user.userId && (
-              <DirectMessageButton
-                recipientUserId={profile.userId}
-                recipientDisplayName={profile.displayName}
-                contextLabel="aus dem öffentlichen Profil"
-              />
-            )}
-
-            {profile.userId !== user.userId && !profile.isFriend && (
-              <button type="button" disabled={friendBusy} onClick={addFriend}>
-                {friendBusy ? "Sendet..." : "Freund hinzufügen"}
-              </button>
-            )}
-          </div>
-
-          <h2>Kontakt</h2>
-          <div className="public-profile-grid">
-            <ProfileValue label="E-Mail" value={profile.email} hidden={hiddenFields.has("email")} />
-            <ProfileValue label="Telefon" value={profile.phoneNumber} hidden={hiddenFields.has("phoneNumber")} />
-            <ProfileValue label="Straße" value={profile.streetAddress} hidden={hiddenFields.has("streetAddress")} />
-            <ProfileValue label="PLZ" value={profile.postalCode} hidden={hiddenFields.has("postalCode")} />
-            <ProfileValue label="Ort" value={profile.city} hidden={hiddenFields.has("city")} />
-          </div>
-
-          <h2>Spielprofil</h2>
-          <div className="public-profile-grid">
-            <div className="public-profile-row">
-              <span>Lieblingssysteme</span>
-              <b>{listLabel(systemNames(profile.favoriteSystemKeys, systems))}</b>
-            </div>
-
-            <div className="public-profile-row">
-              <span>Suchstatus</span>
-              <b>
-                {profile.lookingForGame?.isActive
-                  ? `Spieler sucht${profile.lookingForGame.systemKey ? `: ${systemName(profile.lookingForGame.systemKey, systems)}` : ""}`
-                  : "Spieler sucht aktuell nicht"}
-              </b>
-              {profile.lookingForGame?.timeNote && <small>{profile.lookingForGame.timeNote}</small>}
-            </div>
-
-            {(profile.armies ?? []).map((army, index) => (
-              <div key={`${army.systemKey}-${army.armyName}-${index}`} className="public-profile-row">
-                <span>{systemName(army.systemKey, systems)}</span>
-                <b>{army.armyName}</b>
+            <div className="public-profile-hero-main">
+              <div>
+                <h1>{profile.displayName}</h1>
+                <p>
+                  {profile.city
+                    ? profile.postalCode
+                      ? `${profile.postalCode} ${profile.city}`
+                      : profile.city
+                    : "Region nicht öffentlich"}
+                </p>
               </div>
-            ))}
-          </div>
 
-          <h2>Tabletop-Profile</h2>
-          <div className="public-profile-grid">
-            <ProfileValue label="TabletopTO" value={profile.tabletopTo} hidden={hiddenFields.has("tabletopTo")} baseUrl="https://tabletop.to/" />
-            <ProfileValue label="Tabletop Herald" value={profile.tabletopHerald} hidden={hiddenFields.has("tabletopHerald")} baseUrl="https://tabletop-herald.com/" />
-            <ProfileValue label="T3" value={profile.t3} hidden={hiddenFields.has("t3")} baseUrl="https://www.tabletopturniere.de/t3_user.php?username=" />
-            <ProfileValue label="NewRecruit" value={profile.newRecruit} hidden={hiddenFields.has("newRecruit")} baseUrl="https://www.newrecruit.eu/app/user/" />
-            <ProfileValue label="Best Coast Pairings / BCP" value={profile.bestSportsPairings} hidden={hiddenFields.has("bestSportsPairings")} baseUrl="https://www.bestcoastpairings.com/profile/" />
-          </div>
-        </section>
+              <div className="public-profile-badges">
+                <span className={profile.lookingForGame?.isActive ? "status-accent" : "status-muted"}>
+                  {statusText}
+                </span>
+                <span className={profile.isFriend ? "status-ok" : "status-muted"}>
+                  {profile.isFriend ? "Freund" : "Profil öffentlich"}
+                </span>
+                {favoriteSystems.slice(0, 3).map((system) => (
+                  <span key={system}>{system}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="public-profile-actions">
+              {profile.canBeContacted && profile.userId !== user.userId && (
+                <DirectMessageButton
+                  recipientUserId={profile.userId}
+                  recipientDisplayName={profile.displayName}
+                  contextLabel="aus dem öffentlichen Profil"
+                />
+              )}
+
+              {profile.userId !== user.userId && profile.isFriend && (
+                <span className="friend-state-card">Bereits Freund</span>
+              )}
+
+              {profile.userId !== user.userId && !profile.isFriend && friendRequestSent && (
+                <span className="friend-state-card">Freundschaftsanfrage gesendet</span>
+              )}
+
+              {profile.userId !== user.userId && !profile.isFriend && !friendRequestSent && (
+                <button type="button" disabled={friendBusy} onClick={addFriend}>
+                  {friendBusy ? "Sendet..." : "Freund hinzufügen"}
+                </button>
+              )}
+            </div>
+          </section>
+
+          <section className="card public-profile-section">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Öffentliche Angaben</h2>
+                <p>Sichtbare Daten werden angezeigt. Verborgene Felder bleiben als nicht öffentlich erkennbar.</p>
+              </div>
+            </div>
+            <div className="public-profile-grid">
+              <ProfileValue label="E-Mail" value={profile.email} hidden={hiddenFields.has("email")} />
+              <ProfileValue label="Telefon" value={profile.phoneNumber} hidden={hiddenFields.has("phoneNumber")} />
+              <ProfileValue label="Straße" value={profile.streetAddress} hidden={hiddenFields.has("streetAddress")} />
+              <ProfileValue label="PLZ" value={profile.postalCode} hidden={hiddenFields.has("postalCode")} />
+              <ProfileValue label="Ort" value={profile.city} hidden={hiddenFields.has("city")} />
+            </div>
+          </section>
+
+          <section className="card public-profile-section">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Spielprofil</h2>
+                <p>Systeme, Armeen und Suchstatus helfen anderen Spielern beim Einschätzen.</p>
+              </div>
+            </div>
+            <div className="public-profile-grid">
+              <div className="public-profile-row highlight">
+                <span>Lieblingssysteme</span>
+                <b>{listLabel(favoriteSystems)}</b>
+              </div>
+
+              <div className="public-profile-row highlight">
+                <span>Suchstatus</span>
+                <b>{statusText}</b>
+                {profile.lookingForGame?.timeNote && <small>{profile.lookingForGame.timeNote}</small>}
+                {profile.lookingForGame?.radiusKm && <small>Umkreis: {profile.lookingForGame.radiusKm} km</small>}
+              </div>
+
+              {(profile.armies ?? []).length === 0 && (
+                <div className="public-profile-row is-empty">
+                  <span>Armeen</span>
+                  <b>Nicht angegeben</b>
+                </div>
+              )}
+
+              {(profile.armies ?? []).map((army, index) => (
+                <div key={`${army.systemKey}-${army.armyName}-${index}`} className="public-profile-row">
+                  <span>{systemName(army.systemKey, systems)}</span>
+                  <b>{army.armyName}</b>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card public-profile-section">
+            <div className="profile-section-heading">
+              <div>
+                <h2>Tabletop-Profile</h2>
+                <p>Externe Profile werden als Plattformlinks angezeigt, ohne rohe URLs im Profiltext.</p>
+              </div>
+            </div>
+            <div className="platform-grid">
+              {platforms.some((platform) => platform.value || platform.hidden) ? (
+                platforms.map((platform) => <PlatformCard key={platform.label} platform={platform} />)
+              ) : (
+                <div className="public-profile-row is-empty">
+                  <span>Externe Profile</span>
+                  <b>Nicht angegeben</b>
+                </div>
+              )}
+            </div>
+          </section>
+        </>
       )}
     </main>
   );
