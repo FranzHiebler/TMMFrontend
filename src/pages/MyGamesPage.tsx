@@ -1,30 +1,92 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { getAllGames } from "../api/gamesApi";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { getCalendar } from "../api/gamesApi";
 import Message from "../components/Message";
 import { useUser } from "../context/UserContext";
-import type { GameResponse } from "../types/game";
+import type { CalendarItemResponse } from "../types/game";
 
-function participates(game: GameResponse, userId: string) {
-  return game.tables.some((table) =>
-    table.assignedPlayers.some((player) => player.userId === userId) ||
-    table.applications.some((application) => application.player.userId === userId)
-  );
+type ViewMode = "list" | "calendar";
+type MyGamesFilter = "all" | "host" | "participant" | "application" | "invitation" | "waitlist" | "past";
+
+const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+const filters: Array<{ key: MyGamesFilter; label: string }> = [
+  { key: "all", label: "Alle" },
+  { key: "host", label: "Ich hoste" },
+  { key: "participant", label: "Ich spiele mit" },
+  { key: "application", label: "Bewerbungen" },
+  { key: "invitation", label: "Einladungen" },
+  { key: "waitlist", label: "Warteliste" },
+  { key: "past", label: "Vergangen" },
+];
+
+function monthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function systemsLabel(game: GameResponse) {
-  const systems = game.tables.flatMap((table) => table.systems).filter(Boolean);
-  return [...new Set(systems)].join(", ") || "System offen";
+function dayKey(date: Date) {
+  return date.toISOString().slice(0, 10);
 }
 
-function gameTime(game: GameResponse) {
-  return game.startTimeUtc ? new Date(game.startTimeUtc).getTime() : 0;
+function calendarDays(month: Date) {
+  const start = monthStart(month);
+  const mondayOffset = (start.getDay() + 6) % 7;
+  const cursor = new Date(start);
+  cursor.setDate(cursor.getDate() - mondayOffset);
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const next = new Date(cursor);
+    next.setDate(cursor.getDate() + index);
+    return next;
+  });
 }
 
-function timeLabel(game: GameResponse) {
-  if (game.timingMode === "Open") return "Termin offen";
-  if (game.timeLabel) return game.timeLabel;
-  return new Date(game.startTimeUtc).toLocaleString("de-DE", {
+function itemDate(item: CalendarItemResponse) {
+  return item.startTimeUtc ? new Date(item.startTimeUtc).getTime() : Number.POSITIVE_INFINITY;
+}
+
+function isPast(item: CalendarItemResponse, now: number) {
+  if (item.status === "Closed" || item.status === "Cancelled") return true;
+  return item.startTimeUtc ? new Date(item.startTimeUtc).getTime() < now : false;
+}
+
+function roleLabel(kind: string) {
+  switch (kind) {
+    case "Host":
+      return "Host";
+    case "Teilnahme":
+      return "Teilnehmer";
+    case "Bewerbung":
+      return "Bewerbung";
+    case "Einladung":
+      return "Einladung";
+    case "Warteliste":
+      return "Warteliste";
+    default:
+      return kind || "Spieltermin";
+  }
+}
+
+function statusLabel(status?: string | null) {
+  switch (status) {
+    case "Cancelled":
+      return "Abgesagt";
+    case "Closed":
+      return "Geschlossen";
+    case "Full":
+      return "Voll";
+    case "Open":
+      return "Offen";
+    default:
+      return status || "Offen";
+  }
+}
+
+function timeLabel(item: CalendarItemResponse) {
+  if (!item.startTimeUtc) return item.timeLabel || "Termin offen";
+  if (item.timingMode === "Open") return "Termin offen";
+  if (item.timeLabel) return item.timeLabel;
+  return new Date(item.startTimeUtc).toLocaleString("de-DE", {
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
@@ -33,121 +95,205 @@ function timeLabel(game: GameResponse) {
   });
 }
 
-function GameRow({ game }: { game: GameResponse }) {
+function matchesFilter(item: CalendarItemResponse, filter: MyGamesFilter, now: number) {
+  if (filter === "past") return isPast(item, now);
+  if (isPast(item, now)) return false;
+  if (filter === "all") return true;
+  if (filter === "host") return item.kind === "Host";
+  if (filter === "participant") return item.kind === "Teilnahme";
+  if (filter === "application") return item.kind === "Bewerbung";
+  if (filter === "invitation") return item.kind === "Einladung";
+  if (filter === "waitlist") return item.kind === "Warteliste";
+  return true;
+}
+
+function MyGameItem({ item }: { item: CalendarItemResponse }) {
   return (
-    <details className="my-game-row">
-      <summary>
-        <strong>{game.title}</strong>
-        <span>{timeLabel(game)}</span>
-        <span>{game.location.name}</span>
-        <span>{game.location.city}</span>
-        <span>{systemsLabel(game)}</span>
-      </summary>
-      <div className="my-game-row-details">
-        <span>{game.assignedPlayers}/{game.maxPlayers} Plätze</span>
-        <span>{game.status}</span>
-        {game.description && <p>{game.description}</p>}
-        <Link to={`/sessions/${game.id}`}>Öffnen</Link>
+    <article className="my-overview-card">
+      <div className="my-overview-main">
+        <span className={`role-pill role-${item.kind.toLowerCase()}`}>{roleLabel(item.kind)}</span>
+        <h2>{item.title}</h2>
+        <div className="my-overview-meta">
+          <span>{timeLabel(item)}</span>
+          <span>{item.locationName || "Spielort offen"}</span>
+          {item.locationCity && <span>{item.locationCity}</span>}
+          <span>{statusLabel(item.status)}</span>
+        </div>
       </div>
-    </details>
+      <Link to={`/sessions/${item.id}`}>Öffnen</Link>
+    </article>
   );
 }
 
 export default function MyGamesPage() {
   const user = useUser();
-  const [games, setGames] = useState<GameResponse[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [items, setItems] = useState<CalendarItemResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const loadGames = useCallback(async () => {
-    try {
-      setGames(await getAllGames());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Meine Liste konnte nicht geladen werden.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [filter, setFilter] = useState<MyGamesFilter>("all");
+  const [view, setView] = useState<ViewMode>(() => searchParams.get("view") === "calendar" ? "calendar" : "list");
+  const [month, setMonth] = useState(() => monthStart(new Date()));
+  const [selectedDay, setSelectedDay] = useState(() => dayKey(new Date()));
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => void loadGames(), 0);
-    return () => window.clearTimeout(timeout);
-  }, [loadGames]);
+    let cancelled = false;
 
-  const recentCutoff = useMemo(() => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - 7);
-    return date.getTime();
-  }, []);
+    async function load() {
+      try {
+        setLoading(true);
+        setError("");
+        const next = await getCalendar(user);
+        if (!cancelled) setItems(next);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Meine Spiele konnten nicht geladen werden.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
 
-  const myGames = useMemo(
-    () => games.filter((game) => game.host.userId === user.userId || participates(game, user.userId)),
-    [games, user.userId]
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get("view") === view) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("view", view);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, view]);
+
+  const filteredItems = useMemo(
+    () => items.filter((item) => matchesFilter(item, filter, now)),
+    [filter, items, now]
   );
 
-  const activeGames = useMemo(
-    () =>
-      myGames
-        .filter((game) => gameTime(game) >= recentCutoff)
-        .sort((a, b) => gameTime(a) - gameTime(b)),
-    [myGames, recentCutoff]
+  const sortedItems = useMemo(
+    () => [...filteredItems].sort((a, b) => itemDate(a) - itemDate(b)),
+    [filteredItems]
   );
 
-  const archiveGames = useMemo(
-    () =>
-      myGames
-        .filter((game) => gameTime(game) < recentCutoff)
-        .sort((a, b) => gameTime(b) - gameTime(a)),
-    [myGames, recentCutoff]
-  );
+  const timedItems = filteredItems.filter((item) => item.startTimeUtc);
+  const openItems = filteredItems.filter((item) => !item.startTimeUtc);
 
-  const hosted = activeGames.filter((game) => game.host.userId === user.userId);
-  const joined = activeGames.filter((game) => game.host.userId !== user.userId);
-  const showHeaders = hosted.length > 0 && joined.length > 0;
+  const itemsByDay = useMemo(() => {
+    return timedItems.reduce<Record<string, CalendarItemResponse[]>>((acc, item) => {
+      const key = dayKey(new Date(item.startTimeUtc!));
+      acc[key] = [...(acc[key] ?? []), item];
+      return acc;
+    }, {});
+  }, [timedItems]);
+
+  const selectedItems = itemsByDay[selectedDay] ?? [];
+  const monthLabel = month.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+
+  function moveMonth(delta: number) {
+    const next = new Date(month);
+    next.setMonth(next.getMonth() + delta);
+    setMonth(monthStart(next));
+  }
 
   return (
-    <main className="container">
+    <main className="container my-games-page">
       <div className="page-header">
         <div>
           <h1>Meine Spiele</h1>
-          <p className="page-subtitle">Kommende und aktuelle Spiele zuerst. Ältere Spiele liegen im Archiv.</p>
+          <p className="page-subtitle">
+            Deine Spieltermine, Einladungen, Bewerbungen und Warteliste an einem Ort.
+          </p>
         </div>
       </div>
 
-      <Message text={loading ? "Lade Spiele..." : ""} type="info" />
+      <Message text={loading ? "Lade Meine Spiele..." : ""} type="info" />
       <Message text={error} type="error" />
 
-      {!loading && !error && activeGames.length === 0 && archiveGames.length === 0 && (
-        <section className="card">
-          <p className="muted">Du hast noch keine Spiele.</p>
-          <Link to="/games/create">Spieltermin anbieten</Link>
+      <div className="my-games-view-tabs">
+        <button type="button" className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
+          Liste
+        </button>
+        <button type="button" className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>
+          Kalender
+        </button>
+      </div>
+
+      <div className="calendar-filters my-games-filters">
+        {filters.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={filter === item.key ? "active" : ""}
+            onClick={() => setFilter(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {!loading && !error && sortedItems.length === 0 && (
+        <section className="card my-games-empty">
+          <h2>Du hast noch keine Spieltermine.</h2>
+          <p>Starte mit einem eigenen Spieltermin oder erstelle ein Spielgesuch.</p>
+          <div className="button-row">
+            <Link to="/games/create">Spieltermin anbieten</Link>
+            <Link to="/play-requests">Spiel suchen</Link>
+          </div>
         </section>
       )}
 
-      {hosted.length > 0 && (
-        <section className="card my-games-compact">
-          {showHeaders && <h2>Ich veranstalte</h2>}
-          {hosted.map((game) => <GameRow key={game.id} game={game} />)}
+      {!loading && !error && sortedItems.length > 0 && view === "list" && (
+        <section className="my-overview-list">
+          {sortedItems.map((item) => <MyGameItem key={`${item.kind}-${item.id}`} item={item} />)}
         </section>
       )}
 
-      {joined.length > 0 && (
-        <section className="card my-games-compact">
-          {showHeaders && <h2>Ich nehme teil</h2>}
-          {joined.map((game) => <GameRow key={game.id} game={game} />)}
-        </section>
-      )}
+      {!loading && !error && sortedItems.length > 0 && view === "calendar" && (
+        <>
+          <div className="calendar-toolbar">
+            <button type="button" onClick={() => moveMonth(-1)}>Vorheriger Monat</button>
+            <strong>{monthLabel}</strong>
+            <button type="button" onClick={() => moveMonth(1)}>Nächster Monat</button>
+          </div>
 
-      {archiveGames.length > 0 && (
-        <section className="card my-games-compact">
-          <details>
-            <summary>
-              <strong>Archiv ({archiveGames.length})</strong>
-            </summary>
-            {archiveGames.map((game) => <GameRow key={game.id} game={game} />)}
-          </details>
-        </section>
+          <section className="calendar-grid card">
+            {weekdays.map((day) => <b key={day}>{day}</b>)}
+            {calendarDays(month).map((day) => {
+              const key = dayKey(day);
+              const dayItems = itemsByDay[key] ?? [];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`calendar-day ${day.getMonth() === month.getMonth() ? "" : "muted"} ${selectedDay === key ? "selected" : ""}`}
+                  onClick={() => setSelectedDay(key)}
+                >
+                  <span>{day.getDate()}</span>
+                  {dayItems.slice(0, 3).map((item) => (
+                    <small key={`${item.kind}-${item.id}`}>{item.title}</small>
+                  ))}
+                  {dayItems.length > 3 && <em>+{dayItems.length - 3}</em>}
+                </button>
+              );
+            })}
+          </section>
+
+          <section className="card calendar-agenda">
+            <h2>{new Date(selectedDay).toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "2-digit" })}</h2>
+            {selectedItems.length === 0 && <p className="muted">Keine Einträge an diesem Tag.</p>}
+            {selectedItems.map((item) => <MyGameItem key={`${item.kind}-${item.id}`} item={item} />)}
+          </section>
+
+          {openItems.length > 0 && (
+            <section className="card calendar-agenda">
+              <h2>Ohne Termin</h2>
+              {openItems.map((item) => <MyGameItem key={`${item.kind}-${item.id}`} item={item} />)}
+            </section>
+          )}
+        </>
       )}
     </main>
   );

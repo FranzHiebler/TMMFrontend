@@ -573,6 +573,7 @@ export interface CalendarItemResponse {
   timingMode?: SessionTimingMode | null;
   timeLabel?: string | null;
   locationName?: string | null;
+  locationCity?: string | null;
   status?: string | null;
 }
 
