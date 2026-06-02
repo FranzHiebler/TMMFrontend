@@ -394,6 +394,10 @@
   opacity: 0.82;
 }
 
+.location-marker-approximate {
+  opacity: 0.82;
+}
+
 .marker-approx-ring {
   position: absolute;
   inset: -8px;

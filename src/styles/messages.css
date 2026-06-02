@@ -202,6 +202,54 @@
   margin-bottom: 12px;
 }
 
+.recipient-search-field {
+  grid-column: 1 / -1;
+}
+
+.friend-recipient-list {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.friend-recipient-list span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.friend-recipient-list button {
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: #1e293b;
+  font-weight: 900;
+}
+
+.friend-recipient-list button.active {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.testmode-recipient-fields {
+  grid-column: 1 / -1;
+}
+
+.testmode-recipient-fields summary {
+  cursor: pointer;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .shared-games-strip,
 .message-proposal-box {
   display: grid;

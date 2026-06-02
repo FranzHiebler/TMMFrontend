@@ -120,6 +120,7 @@ export default function DiscoverySelectionPanel({
           <div className="preview-meta-grid">
             <span>{selectedLocation.city}</span>
             {selectedLocation.address && <span>{selectedLocation.address}</span>}
+            {selectedLocation.locationPrecision === "approximate" && <span>Ungefährer Spielort</span>}
             <span>{selectedLocation.upcomingGameCount} kommende Spieltermine</span>
             {selectedLocation.nextGameStartTimeUtc && (
               <span>nächste: {dateTimeText(selectedLocation.nextGameStartTimeUtc)}</span>

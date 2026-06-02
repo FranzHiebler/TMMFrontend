@@ -177,6 +177,7 @@ export interface GameDiscoveryResponse {
   city: string;
   latitude?: number | null;
   longitude?: number | null;
+  locationPrecision?: "exact" | "approximate" | "hidden";
   status: GameSessionState;
   isHost: boolean;
   isParticipant: boolean;
@@ -215,6 +216,7 @@ export interface LocationDiscoveryResponse {
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  locationPrecision?: "exact" | "approximate" | "hidden";
   isOwnLocation: boolean;
   isOpen: boolean;
   role?: LocationRole | null;

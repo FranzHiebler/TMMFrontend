@@ -8,11 +8,12 @@ import {
   markConversationRead,
   sendDirectMessage,
 } from "../api/messagesApi";
+import { searchUsers } from "../api/usersApi";
 import MessageThreadPanel from "../components/MessageThreadPanel";
 import NotificationBell from "../components/NotificationBell";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
-import type { ConversationDto, FriendDto, GameResponse, MessageDto } from "../types/game";
+import type { ConversationDto, FriendDto, GameResponse, MessageDto, UserSearchResponse } from "../types/game";
 
 export default function DirectMessagesPage() {
   const user = useUser();
@@ -25,6 +26,8 @@ export default function DirectMessagesPage() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [recipientId, setRecipientId] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [recipientSearchResults, setRecipientSearchResults] = useState<UserSearchResponse[]>([]);
   const [games, setGames] = useState<GameResponse[]>([]);
   const [friends, setFriends] = useState<FriendDto[]>([]);
   const [proposalOpen, setProposalOpen] = useState(false);
@@ -127,6 +130,24 @@ export default function DirectMessagesPage() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (selectedId || recipientSearch.trim().length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRecipientSearchResults([]);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void searchUsers(recipientSearch, user)
+        .then((results) => {
+          setRecipientSearchResults(results.filter((result) => result.userId !== user.userId).slice(0, 6));
+        })
+        .catch(() => setRecipientSearchResults([]));
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [recipientSearch, selectedId, user]);
+
   async function send(body: string) {
     const proposalText = proposalOpen && (proposalSystem || proposalTime || proposalLocation)
       ? [
@@ -215,14 +236,64 @@ export default function DirectMessagesPage() {
         <section className="conversation-detail-panel">
           {!selectedId && (
             <div className="new-conversation-fields">
-              <label>
-                User-ID
+              <label className="recipient-search-field">
+                Spieler suchen
                 <input
-                  value={recipientId}
-                  placeholder="ObjectId des Empfängers"
-                  onChange={(e) => setRecipientId(e.target.value)}
+                  value={recipientSearch}
+                  placeholder="Name eingeben"
+                  onChange={(e) => setRecipientSearch(e.target.value)}
                 />
               </label>
+
+              {recipientSearchResults.length > 0 && (
+                <div className="friend-recipient-list">
+                  <span>Suchergebnisse</span>
+                  {recipientSearchResults.map((result) => (
+                    <button
+                      key={result.userId}
+                      type="button"
+                      className={recipientId === result.userId ? "active" : ""}
+                      onClick={() => {
+                        setRecipientId(result.userId);
+                        setRecipientName(result.displayName);
+                      }}
+                    >
+                      {result.displayName}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {friends.length > 0 && (
+                <div className="friend-recipient-list">
+                  <span>Freund auswählen</span>
+                  {friends.map((friend) => (
+                    <button
+                      key={friend.userId}
+                      type="button"
+                      className={recipientId === friend.userId ? "active" : ""}
+                      onClick={() => {
+                        setRecipientId(friend.userId);
+                        setRecipientName(friend.displayName);
+                      }}
+                    >
+                      {friend.displayName}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <details className="testmode-recipient-fields">
+                <summary>Testmodus: per User-ID starten</summary>
+                <label>
+                  User-ID
+                  <input
+                    value={recipientId}
+                    placeholder="User-ID"
+                    onChange={(e) => setRecipientId(e.target.value)}
+                  />
+                </label>
+              </details>
               <label>
                 Anzeigename
                 <input

@@ -145,11 +145,6 @@ export default function MapDiscoveryPage() {
   const [filterCollapsed, setFilterCollapsed] = useState(() => readBoolParam(searchParams, "filtersClosed", true));
   const [legendCollapsed, setLegendCollapsed] = useState(true);
   const [mapMode, setMapMode] = useState<MapMode>("all");
-  
-  const [showLocations, setShowLocations] = useState(() => readBoolParam(searchParams, "locations", true));
-  const [showPlayers, setShowPlayers] = useState(() => readBoolParam(searchParams, "players", true));
-  const [showMySessions, setShowMySessions] = useState(() => readBoolParam(searchParams, "mine", true));
-  const [showAllSessions, setShowAllSessions] = useState(() => readBoolParam(searchParams, "public", true));
 
   const [players, setPlayers] = useState<UserSearchResponse[]>([]);
   const [games, setGames] = useState<GameDiscoveryResponse[]>([]);
@@ -189,10 +184,6 @@ export default function MapDiscoveryPage() {
 
         setTimeWindowDays(clampNumber(saved?.timeWindowDays ?? 7, 1, 56, 7));
         setRadiusKm(clampNumber(saved?.radiusKm ?? 80, 10, 200, 80));
-        setShowLocations(saved?.showLocations ?? true);
-        setShowPlayers(saved?.showPlayers ?? true);
-        setShowMySessions(saved?.showMySessions ?? true);
-        setShowAllSessions(saved?.showPublicSessions ?? true);
         setZoom(clampNumber(saved?.zoom ?? DEFAULT_ZOOM, 3, 18, DEFAULT_ZOOM));
 
         const savedCenter = normalizeMapCenter([
@@ -349,10 +340,6 @@ export default function MapDiscoveryPage() {
     const next = new URLSearchParams();
     next.set("days", String(timeWindowDays));
     next.set("radius", String(radiusKm));
-    next.set("locations", showLocations ? "1" : "0");
-    next.set("players", showPlayers ? "1" : "0");
-    next.set("mine", showMySessions ? "1" : "0");
-    next.set("public", showAllSessions ? "1" : "0");
     next.set("filtersClosed", filterCollapsed ? "1" : "0");
     next.set("lat", center[0].toFixed(5));
     next.set("lng", center[1].toFixed(5));
@@ -364,10 +351,6 @@ export default function MapDiscoveryPage() {
     filterCollapsed,
     radiusKm,
     setSearchParams,
-    showAllSessions,
-    showLocations,
-    showMySessions,
-    showPlayers,
     timeWindowDays,
     zoom,
   ]);
@@ -378,10 +361,10 @@ export default function MapDiscoveryPage() {
     const timeout = window.setTimeout(() => {
       void updateDiscoverySettings(
         {
-          showLocations,
-          showPlayers,
-          showMySessions,
-          showPublicSessions: showAllSessions,
+          showLocations: true,
+          showPlayers: true,
+          showMySessions: true,
+          showPublicSessions: true,
           timeWindowDays,
           radiusKm,
           latitude: center[0],
@@ -399,10 +382,6 @@ export default function MapDiscoveryPage() {
     center,
     centerReady,
     radiusKm,
-    showAllSessions,
-    showLocations,
-    showMySessions,
-    showPlayers,
     timeWindowDays,
     user,
     zoom,
@@ -427,9 +406,8 @@ export default function MapDiscoveryPage() {
       return locations.filter((location) => location.isOwnLocation);
     }
 
-    if (!showLocations) return [];
     return locations;
-  }, [locations, mapMode, showLocations]);
+  }, [locations, mapMode]);
 
   const visibleGames = useMemo(() => {
     if (mapMode === "players" || mapMode === "locations") return [];
@@ -438,24 +416,17 @@ export default function MapDiscoveryPage() {
       return games.filter(isOwnGame);
     }
 
-    if (showAllSessions) return games;
-
-    if (showMySessions) {
-      return games.filter(isOwnGame);
-    }
-
-    return [];
-  }, [games, mapMode, showAllSessions, showMySessions]);
+    return games;
+  }, [games, mapMode]);
 
   const visiblePlayers = useMemo(() => {
     if (mapMode === "games" || mapMode === "locations" || mapMode === "mine") return [];
-    if (!showPlayers) return [];
 
     return players.filter((player) => {
       if (player.latitude == null || player.longitude == null) return false;
       return distanceKm(center[0], center[1], player.latitude, player.longitude) <= radiusKm;
     });
-  }, [center, mapMode, players, radiusKm, showPlayers]);
+  }, [center, mapMode, players, radiusKm]);
 
   const visiblePlayRequests = useMemo(() => {
     if (mapMode === "games" || mapMode === "locations") return [];
@@ -663,6 +634,12 @@ export default function MapDiscoveryPage() {
                   <strong>{location.name}</strong>
                   <br />
                   {location.city}
+                  {location.locationPrecision === "approximate" && (
+                    <>
+                      <br />
+                      <small>Ungefährer Spielort</small>
+                    </>
+                  )}
                   {location.upcomingGameCount > 0 && (
                     <>
                       <br />
@@ -823,12 +800,12 @@ export default function MapDiscoveryPage() {
           visiblePlayerCount={visiblePlayers.length}
           visibleGameCount={visibleGames.length}
           visiblePlayRequestCount={visiblePlayRequests.length}
-          onToggleCollapsed={() => setFilterCollapsed((value) => !value)}
+          onToggleCollapsed={() => setFilterCollapsed((value: boolean) => !value)}
         />
 
         <DiscoveryLegend
           collapsed={legendCollapsed}
-          onToggle={() => setLegendCollapsed((value) => !value)}
+          onToggle={() => setLegendCollapsed((value: boolean) => !value)}
         />
 
         {!isLoading && !banner && visibleGames.length === 0 && visibleLocations.length > 0 && (

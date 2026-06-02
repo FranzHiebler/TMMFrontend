@@ -70,11 +70,13 @@ export function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: num
 export function locationMarkerIcon(location: LocationDiscoveryResponse) {
   const state = location.isOwnLocation ? "own-location-base" : "location";
   const count = location.upcomingGameCount > 0 ? location.upcomingGameCount.toString() : "";
+  const isApproximate = location.locationPrecision === "approximate";
 
   return L.divIcon({
     className: "",
     html: `
-      <div class="location-marker location-marker-${state}">
+      <div class="location-marker location-marker-${state} ${isApproximate ? "location-marker-approximate" : ""}">
+        ${approximateRingHtml(isApproximate)}
         <span class="marker-icon marker-icon-house" aria-hidden="true"></span>
         ${count ? `<strong>${count}</strong>` : ""}
       </div>
