@@ -33,6 +33,7 @@ function precisionLabel(precision?: PlayRequestDto["locationPrecision"]) {
 export default function PlayRequestsPage() {
   const user = useUser();
   const [searchParams] = useSearchParams();
+  const highlightedRequestId = searchParams.get("requestId");
   const [requests, setRequests] = useState<PlayRequestDto[]>([]);
   const [mine, setMine] = useState<PlayRequestDto[]>([]);
   const [systems, setSystems] = useState<SystemOption[]>([]);
@@ -88,6 +89,18 @@ export default function PlayRequestsPage() {
     const timeout = window.setTimeout(() => setNote(prompt), 0);
     return () => window.clearTimeout(timeout);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!highlightedRequestId) return;
+
+    const timeout = window.setTimeout(() => {
+      document
+        .getElementById(`play-request-${highlightedRequestId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+
+    return () => window.clearTimeout(timeout);
+  }, [highlightedRequestId, requests, mine]);
 
   function validateStep(step: WizardStep) {
     if (step === 0 && !systemKey) {
@@ -354,7 +367,11 @@ export default function PlayRequestsPage() {
         <h2>Meine Spielgesuche</h2>
         {mine.length === 0 && <p className="muted">Noch keine eigenen Spielgesuche.</p>}
         {mine.map((request) => (
-          <div key={request.id} className="list-row">
+          <div
+            key={request.id}
+            id={request.isMine ? undefined : `play-request-${request.id}`}
+            className={`list-row ${!request.isMine && highlightedRequestId === request.id ? "context-highlight" : ""}`}
+          >
             <b>{systemName(request.systemKey, systems)}</b>
             <span>
               {request.timeNote || "Zeit offen"} · {request.status} · {precisionLabel(request.locationPrecision)}
@@ -370,7 +387,11 @@ export default function PlayRequestsPage() {
         <h2>Offene Gesuche</h2>
         {requests.length === 0 && <p className="muted">Keine offenen Spielgesuche.</p>}
         {requests.map((request) => (
-          <div key={request.id} className="list-row">
+          <div
+            key={request.id}
+            id={`play-request-${request.id}`}
+            className={`list-row ${highlightedRequestId === request.id ? "context-highlight" : ""}`}
+          >
             <b>{request.owner.displayName}</b>
             <span>
               {systemName(request.systemKey, systems)} · {request.timeNote || "Zeit offen"} ·{" "}

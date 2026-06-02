@@ -54,6 +54,12 @@ small {
   box-shadow: none;
 }
 
+.context-highlight {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18), 0 14px 36px rgba(15, 23, 42, 0.12);
+  scroll-margin: 120px;
+}
+
 button {
   border: none;
   border-radius: 12px;

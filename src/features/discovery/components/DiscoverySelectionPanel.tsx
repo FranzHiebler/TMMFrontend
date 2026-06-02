@@ -134,13 +134,19 @@ export default function DiscoverySelectionPanel({
           </div>
 
           <div className="preview-actions">
-            <Link to="/locations">Spielort öffnen</Link>
+            <Link to={`/locations?locationId=${encodeURIComponent(selectedLocation.locationId)}`}>
+              Spielort öffnen
+            </Link>
 
             <button type="button" onClick={() => onCreateAtLocation(selectedLocation.locationId)}>
               Spieltermin hier anbieten
             </button>
 
-            {selectedLocation.isOwnLocation && <Link to="/locations">Mitglieder</Link>}
+            {selectedLocation.isOwnLocation && (
+              <Link to={`/locations?locationId=${encodeURIComponent(selectedLocation.locationId)}`}>
+                Mitglieder
+              </Link>
+            )}
           </div>
         </article>
       )}
@@ -196,7 +202,9 @@ export default function DiscoverySelectionPanel({
             {selectedPlayRequest.note && <span>{selectedPlayRequest.note}</span>}
           </div>
           <div className="preview-actions">
-            <Link to="/play-requests">{selectedPlayRequest.isMine ? "Verwalten" : "Antworten"}</Link>
+            <Link to={`/play-requests?requestId=${encodeURIComponent(selectedPlayRequest.id)}`}>
+              {selectedPlayRequest.isMine ? "Spielgesuch öffnen" : "Antworten"}
+            </Link>
             <Link to={`/users/${encodeURIComponent(selectedPlayRequest.owner.userId)}`}>Profil öffnen</Link>
             <DirectMessageButton
               recipientUserId={selectedPlayRequest.owner.userId}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getMyLocations } from "../api/locationsApi";
 import type { LocationResponse } from "../types/game";
 import LocationList from "../components/LocationList";
@@ -8,6 +9,8 @@ import Message from "../components/Message";
 
 export default function LocationsPage() {
   const user = useUser();
+  const [searchParams] = useSearchParams();
+  const highlightedLocationId = searchParams.get("locationId");
 
   const [locations, setLocations] = useState<LocationResponse[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -32,6 +35,18 @@ export default function LocationsPage() {
     void loadLocations();
   }, [loadLocations]);
 
+  useEffect(() => {
+    if (!highlightedLocationId || loading) return;
+
+    const timeout = window.setTimeout(() => {
+      document
+        .getElementById(`location-${highlightedLocationId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+
+    return () => window.clearTimeout(timeout);
+  }, [highlightedLocationId, loading, locations]);
+
   return (
     <div className="container">
       <div className="page-header">
@@ -48,6 +63,7 @@ export default function LocationsPage() {
       {!loading && !error && (
         <LocationList
           locations={locations}
+          highlightedLocationId={highlightedLocationId}
           onEdit={(loc) => setEditLocation(loc)}
           editLocation={editLocation}
           onEditCancel={() => setEditLocation(null)}

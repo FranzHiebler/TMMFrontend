@@ -8,13 +8,21 @@ import { systemNames } from "../helpers/systemLabels";
 
 type Props = {
   locations: LocationResponse[];
+  highlightedLocationId?: string | null;
   onEdit: (location: LocationResponse) => void;
   editLocation?: LocationResponse | null;
   onEditDone: (location: LocationResponse) => void;
   onEditCancel: () => void;
 };
 
-export default function LocationList({ locations, onEdit, editLocation, onEditDone, onEditCancel }: Props) {
+export default function LocationList({
+  locations,
+  highlightedLocationId,
+  onEdit,
+  editLocation,
+  onEditDone,
+  onEditCancel,
+}: Props) {
   const [systems, setSystems] = useState<SystemOption[]>([]);
 
   useEffect(() => {
@@ -26,7 +34,11 @@ export default function LocationList({ locations, onEdit, editLocation, onEditDo
   return (
     <div className="location-list">
       {locations.map((loc) => (
-        <div key={loc.id} className="card location-card-grid">
+        <div
+          key={loc.id}
+          id={`location-${loc.id}`}
+          className={`card location-card-grid ${highlightedLocationId === loc.id ? "context-highlight" : ""}`}
+        >
           <div className="location-main">
             <h3>{loc.name}</h3>
             <p>{loc.city}</p>
