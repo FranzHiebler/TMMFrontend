@@ -102,6 +102,16 @@
   margin-top: 12px;
 }
 
+.thread-readonly-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .thread-composer textarea {
   min-height: 76px;
   resize: vertical;

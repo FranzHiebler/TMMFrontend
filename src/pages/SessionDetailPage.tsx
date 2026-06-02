@@ -199,6 +199,8 @@ export default function SessionDetailPage() {
   const pendingApplications =
     game?.tables.flatMap((table) => table.applications.filter((application) => application.status === "Pending")) ?? [];
   const pendingWaitlist = game?.waitlist ?? [];
+  const hasInvitation = !!game && game.invitations.some((invitation) => invitation.user.userId === user.userId);
+  const canWriteSessionComments = !!game && (isHost || alreadyInGame || hasInvitation);
   const primaryActionLabel =
     game?.joinMode === GameJoinMode.ApprovalRequired ? "Mitspielen anfragen" : "Freien Platz nehmen";
 
@@ -327,8 +329,8 @@ export default function SessionDetailPage() {
 
             <aside className="card session-side-card" id="session-chat">
               <div className="session-side-section">
-                <h2>Chat</h2>
-                <GameSessionMessagesPanel gameId={game.id} />
+                <h2>Kommunikation</h2>
+                <GameSessionMessagesPanel gameId={game.id} canWrite={canWriteSessionComments} />
               </div>
               <div className="session-side-section session-share-box">
                 <h2>Teilen</h2>

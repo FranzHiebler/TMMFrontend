@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { Link } from "react-router-dom";
 import { getGameMessages, sendGameMessage } from "../api/messagesApi";
 import { useUser } from "../context/UserContext";
 import type { MessageDto } from "../types/game";
@@ -7,9 +6,10 @@ import MessageThreadPanel from "./MessageThreadPanel";
 
 type Props = {
   gameId: string;
+  canWrite?: boolean;
 };
 
-export default function GameSessionMessagesPanel({ gameId }: Props) {
+export default function GameSessionMessagesPanel({ gameId, canWrite = true }: Props) {
   const user = useUser();
   const [messages, setMessages] = useState<MessageDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,17 +29,25 @@ export default function GameSessionMessagesPanel({ gameId }: Props) {
   }, [gameId, user]);
 
   return (
-    <>
+    <div className="session-comments-panel">
       <MessageThreadPanel
-        title="Spieltermin-Nachrichten"
+        title="Kommunikation"
+        initiallyOpen
         messages={messages}
         loading={loading}
         onLoad={load}
         onSend={send}
+        canWrite={canWrite}
+        emptyText="Noch keine Kommentare. Starte die Absprache für diesen Spieltermin."
+        readOnlyText="Du kannst die Kommentare lesen. Schreiben ist für Host, Teilnehmer und eingeladene Spieler möglich."
+        loadingText="Kommentare werden geladen..."
+        placeholder="Kommentar schreiben..."
+        submitLabel="Kommentieren"
+        sendingLabel="Sendet..."
+        successText="Kommentar gesendet"
+        itemLabelSingular="Kommentar"
+        itemLabelPlural="Kommentare"
       />
-      <div className="button-row">
-        <Link to={`/sessions/${gameId}`}>Termin / Einladungen verwalten</Link>
-      </div>
-    </>
+    </div>
   );
 }

@@ -9,6 +9,16 @@ type Props = {
   loading: boolean;
   onLoad: () => Promise<void>;
   onSend: (body: string) => Promise<void>;
+  canWrite?: boolean;
+  emptyText?: string;
+  readOnlyText?: string;
+  loadingText?: string;
+  placeholder?: string;
+  submitLabel?: string;
+  sendingLabel?: string;
+  successText?: string;
+  itemLabelSingular?: string;
+  itemLabelPlural?: string;
 };
 
 const maxLength = 2000;
@@ -20,6 +30,16 @@ export default function MessageThreadPanel({
   loading,
   onLoad,
   onSend,
+  canWrite = true,
+  emptyText = "Noch keine Nachrichten.",
+  readOnlyText = "Du kannst hier mitlesen. Schreiben ist nur für beteiligte Nutzer möglich.",
+  loadingText = "Nachrichten werden geladen...",
+  placeholder = "Nachricht schreiben...",
+  submitLabel = "Senden",
+  sendingLabel = "Sendet...",
+  successText = "Nachricht gesendet",
+  itemLabelSingular = "Nachricht",
+  itemLabelPlural = "Nachrichten",
 }: Props) {
   const { showToast } = useToast();
   const [isOpen, setIsOpen] = useState(initiallyOpen);
@@ -56,7 +76,7 @@ export default function MessageThreadPanel({
     try {
       await onSend(trimmed);
       setBody("");
-      showToast("success", "Nachricht gesendet");
+      showToast("success", successText);
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Nachricht konnte nicht gesendet werden");
     } finally {
@@ -69,16 +89,18 @@ export default function MessageThreadPanel({
       <button type="button" className="thread-toggle" onClick={() => setIsOpen((prev) => !prev)}>
         <span>{title}</span>
         <span className="thread-toggle-meta">
-          {messages.length ? `${messages.length} Nachrichten` : "Nachrichten"}
+          {messages.length
+            ? `${messages.length} ${messages.length === 1 ? itemLabelSingular : itemLabelPlural}`
+            : itemLabelPlural}
         </span>
       </button>
 
       {isOpen && (
         <div className="thread-body">
           <div ref={listRef} className="thread-list">
-            {loading && <div className="thread-empty">Nachrichten werden geladen...</div>}
+            {loading && <div className="thread-empty">{loadingText}</div>}
             {!loading && messages.length === 0 && (
-              <div className="thread-empty">Noch keine Nachrichten.</div>
+              <div className="thread-empty">{emptyText}</div>
             )}
 
             {messages.map((message) => (
@@ -102,24 +124,28 @@ export default function MessageThreadPanel({
             ))}
           </div>
 
-          <div className="thread-composer">
-            <textarea
-              value={body}
-              maxLength={maxLength}
-              rows={3}
-              placeholder="Nachricht schreiben..."
-              onChange={(e) => setBody(e.target.value)}
-            />
-            <div className="thread-composer-footer">
-              <span className={body.length > maxLength - 120 ? "field-hint warning" : "field-hint"}>
-                {body.length}/{maxLength}
-              </span>
-              <button type="button" disabled={isSending} onClick={submit}>
-                {isSending ? "Sendet..." : "Senden"}
-              </button>
+          {canWrite ? (
+            <div className="thread-composer">
+              <textarea
+                value={body}
+                maxLength={maxLength}
+                rows={3}
+                placeholder={placeholder}
+                onChange={(e) => setBody(e.target.value)}
+              />
+              <div className="thread-composer-footer">
+                <span className={body.length > maxLength - 120 ? "field-hint warning" : "field-hint"}>
+                  {body.length}/{maxLength}
+                </span>
+                <button type="button" disabled={isSending} onClick={submit}>
+                  {isSending ? sendingLabel : submitLabel}
+                </button>
+              </div>
+              {inlineError && <div className="field-error">{inlineError}</div>}
             </div>
-            {inlineError && <div className="field-error">{inlineError}</div>}
-          </div>
+          ) : (
+            <div className="thread-readonly-note">{readOnlyText}</div>
+          )}
         </div>
       )}
     </section>
