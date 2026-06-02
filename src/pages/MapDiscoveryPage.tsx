@@ -764,28 +764,59 @@ export default function MapDiscoveryPage() {
             ))}
         </MapContainer>
 
-        <div className="discovery-mode-tabs" role="tablist" aria-label="Kartenmodus">
-          {mapModes.map((mode) => (
-            <button
-              key={mode.key}
-              type="button"
-              className={mapMode === mode.key ? "active" : ""}
-              aria-pressed={mapMode === mode.key}
-              onClick={() => setMapMode(mode.key)}
-            >
-              {mode.label}
-            </button>
-          ))}
+        <div className="discovery-map-controls">
+          <div className="discovery-mode-tabs" role="tablist" aria-label="Kartenmodus">
+            {mapModes.map((mode) => (
+              <button
+                key={mode.key}
+                type="button"
+                className={mapMode === mode.key ? "active" : ""}
+                aria-pressed={mapMode === mode.key}
+                onClick={() => setMapMode(mode.key)}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="discovery-range-controls" aria-label="Kartenfilter">
+            <label className="day-slider">
+              <span>Zeitraum: {timeWindowDays} Tage</span>
+              <input
+                type="range"
+                min={1}
+                max={56}
+                value={timeWindowDays}
+                onChange={(event) => setTimeWindowDays(Number(event.target.value))}
+              />
+              <span className="range-scale">
+                <small>1</small>
+                <small>{timeWindowDays}</small>
+                <small>56</small>
+              </span>
+            </label>
+
+            <label className="day-slider radius-slider">
+              <span>Umkreis: {radiusKm} km</span>
+              <input
+                type="range"
+                min={10}
+                max={200}
+                step={10}
+                value={radiusKm}
+                onChange={(event) => setRadiusKm(Number(event.target.value))}
+              />
+              <span className="range-scale">
+                <small>10</small>
+                <small>{radiusKm}</small>
+                <small>200</small>
+              </span>
+            </label>
+          </div>
         </div>
 
         <DiscoveryFilterPanel
           collapsed={filterCollapsed}
-          showLocations={showLocations}
-          showPlayers={showPlayers}
-          showMySessions={showMySessions}
-          showAllSessions={showAllSessions}
-          timeWindowDays={timeWindowDays}
-          radiusKm={radiusKm}
           banner={banner}
           isLoading={isLoading}
           visibleLocationCount={visibleLocations.length}
@@ -793,12 +824,6 @@ export default function MapDiscoveryPage() {
           visibleGameCount={visibleGames.length}
           visiblePlayRequestCount={visiblePlayRequests.length}
           onToggleCollapsed={() => setFilterCollapsed((value) => !value)}
-          onShowLocationsChange={setShowLocations}
-          onShowPlayersChange={setShowPlayers}
-          onShowMySessionsChange={setShowMySessions}
-          onShowAllSessionsChange={setShowAllSessions}
-          onTimeWindowDaysChange={setTimeWindowDays}
-          onRadiusKmChange={setRadiusKm}
         />
 
         <DiscoveryLegend
