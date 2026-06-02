@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import "leaflet/dist/leaflet.css";
+import { useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { getDiscoveryGames, getGameById } from "../api/gamesApi";
@@ -73,6 +74,7 @@ type SelectionItem = {
 };
 
 const SELECTION_RADIUS_KM = 0.35;
+const DISCOVERY_RELOAD_DEBOUNCE_MS = 350;
 
 function sameSelection(a: ActiveSelection, b: ActiveSelection) {
   return a.type === b.type && a.id === b.id;
@@ -80,6 +82,17 @@ function sameSelection(a: ActiveSelection, b: ActiveSelection) {
 
 function isOwnGame(game: GameDiscoveryResponse) {
   return game.isHost || game.isParticipant;
+}
+
+function useDebouncedValue<T,>(value: T, delayMs: number) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(timeout);
+  }, [delayMs, value]);
+
+  return debounced;
 }
 
 function MapController({
@@ -163,8 +176,26 @@ export default function MapDiscoveryPage() {
   const [center, setCenter] = useState<[number, number]>(initialCenter);
   const [zoom, setZoom] = useState(() => readZoomParam(searchParams));
   const [centerReady, setCenterReady] = useState(() => readCenterParams(searchParams) != null);
+  const loadRequestId = useRef(0);
+  const latestDiscoveryData = useRef({
+    locations: [] as LocationDiscoveryResponse[],
+    games: [] as GameDiscoveryResponse[],
+    players: [] as UserSearchResponse[],
+    playRequests: [] as PlayRequestDto[],
+  });
+  const debouncedTimeWindowDays = useDebouncedValue(timeWindowDays, DISCOVERY_RELOAD_DEBOUNCE_MS);
+  const debouncedRadiusKm = useDebouncedValue(radiusKm, DISCOVERY_RELOAD_DEBOUNCE_MS);
 
-  const { from, to } = useMemo(() => rangeToDates(timeWindowDays), [timeWindowDays]);
+  const { from, to } = useMemo(() => rangeToDates(debouncedTimeWindowDays), [debouncedTimeWindowDays]);
+
+  useEffect(() => {
+    latestDiscoveryData.current = {
+      locations,
+      games,
+      players,
+      playRequests,
+    };
+  }, [games, locations, players, playRequests]);
 
   const resolveInitialCenter = useCallback(async () => {
     let profile: Awaited<ReturnType<typeof getCurrentUserProfile>> | null = null;
@@ -256,77 +287,101 @@ export default function MapDiscoveryPage() {
   const loadDiscovery = useCallback(async () => {
     if (!centerReady) return;
 
+    const requestId = loadRequestId.current + 1;
+    loadRequestId.current = requestId;
+
     setBanner("");
     setLoadingGames(true);
     setLoadingLocations(true);
     setLoadingPlayers(true);
     setLoadingPlayRequests(true);
 
-    try {
-      const [locationData, gameData, playerData, playRequestData, friendData] = await Promise.all([
-        getDiscoveryLocations({ latitude: center[0], longitude: center[1], radiusKm }, user),
+    const [locationResult, gameResult, playerResult, playRequestResult, friendResult] =
+      await Promise.allSettled([
+        getDiscoveryLocations({ latitude: center[0], longitude: center[1], radiusKm: debouncedRadiusKm }, user),
         getDiscoveryGames(
           {
             fromUtc: from.toISOString(),
             toUtc: to.toISOString(),
             latitude: center[0],
             longitude: center[1],
-            radiusKm,
+            radiusKm: debouncedRadiusKm,
           },
           user
         ),
         searchUsers("", user),
         getPlayRequests(user),
-        getFriends(user).catch(() => []),
+        getFriends(user),
       ]);
 
-      setLocations(locationData);
-      setGames(gameData);
-      setPlayers(playerData);
-      setPlayRequests(playRequestData);
-      setFriendUserIds(new Set(friendData.map((friend) => friend.userId)));
+    if (requestId !== loadRequestId.current) return;
 
-      setSelection((current) => {
-        if (current?.type === "game" && gameData.some((game) => game.gameId === current.id)) {
-          return current;
-        }
+    const errors: string[] = [];
+    const currentData = latestDiscoveryData.current;
+    const nextLocations = locationResult.status === "fulfilled" ? locationResult.value : currentData.locations;
+    const nextGames = gameResult.status === "fulfilled" ? gameResult.value : currentData.games;
+    const nextPlayers = playerResult.status === "fulfilled" ? playerResult.value : currentData.players;
+    const nextPlayRequests =
+      playRequestResult.status === "fulfilled" ? playRequestResult.value : currentData.playRequests;
 
-        if (
-          current?.type === "location" &&
-          locationData.some((location) => location.locationId === current.id)
-        ) {
-          return current;
-        }
+    if (locationResult.status === "fulfilled") setLocations(locationResult.value);
+    else errors.push("Spielorte");
 
-        if (current?.type === "player" && playerData.some((player) => player.userId === current.id)) {
-          return current;
-        }
+    if (gameResult.status === "fulfilled") setGames(gameResult.value);
+    else errors.push("Spieltermine");
 
-        if (
-          current?.type === "playRequest" &&
-          playRequestData.some((request) => request.id === current.id)
-        ) {
-          return current;
-        }
+    if (playerResult.status === "fulfilled") setPlayers(playerResult.value);
+    else errors.push("Spieler");
 
-        const firstOwnGame = gameData.find(isOwnGame);
+    if (playRequestResult.status === "fulfilled") setPlayRequests(playRequestResult.value);
+    else errors.push("Spielgesuche");
 
-        if (firstOwnGame) return { type: "game", id: firstOwnGame.gameId };
-        if (gameData[0]) return { type: "game", id: gameData[0].gameId };
-        if (locationData[0]) return { type: "location", id: locationData[0].locationId };
-        if (playRequestData[0]) return { type: "playRequest", id: playRequestData[0].id };
-
-        return null;
-      });
-    } catch (err) {
-      setBanner(err instanceof Error ? err.message : "Discovery konnte nicht geladen werden.");
-    } finally {
-      setLoadingGames(false);
-      setLoadingLocations(false);
-      setLoadingPlayers(false);
-      setLoadingPlayRequests(false);
+    if (friendResult.status === "fulfilled") {
+      setFriendUserIds(new Set(friendResult.value.map((friend) => friend.userId)));
     }
-  }, [center, centerReady, from, radiusKm, to, user]);
+
+    if (errors.length > 0) {
+      setBanner(`Teilweise nicht geladen: ${errors.join(", ")}. Vorhandene Daten bleiben sichtbar.`);
+    }
+
+    setSelection((current) => {
+      if (current?.type === "game" && nextGames.some((game) => game.gameId === current.id)) {
+        return current;
+      }
+
+      if (
+        current?.type === "location" &&
+        nextLocations.some((location) => location.locationId === current.id)
+      ) {
+        return current;
+      }
+
+      if (current?.type === "player" && nextPlayers.some((player) => player.userId === current.id)) {
+        return current;
+      }
+
+      if (
+        current?.type === "playRequest" &&
+        nextPlayRequests.some((request) => request.id === current.id)
+      ) {
+        return current;
+      }
+
+      const firstOwnGame = nextGames.find(isOwnGame);
+
+      if (firstOwnGame) return { type: "game", id: firstOwnGame.gameId };
+      if (nextGames[0]) return { type: "game", id: nextGames[0].gameId };
+      if (nextLocations[0]) return { type: "location", id: nextLocations[0].locationId };
+      if (nextPlayRequests[0]) return { type: "playRequest", id: nextPlayRequests[0].id };
+
+      return null;
+    });
+
+    setLoadingGames(false);
+    setLoadingLocations(false);
+    setLoadingPlayers(false);
+    setLoadingPlayRequests(false);
+  }, [center, centerReady, debouncedRadiusKm, from, to, user]);
 
   useEffect(() => {
     if (centerReady) return;
@@ -424,9 +479,9 @@ export default function MapDiscoveryPage() {
 
     return players.filter((player) => {
       if (player.latitude == null || player.longitude == null) return false;
-      return distanceKm(center[0], center[1], player.latitude, player.longitude) <= radiusKm;
+      return distanceKm(center[0], center[1], player.latitude, player.longitude) <= debouncedRadiusKm;
     });
-  }, [center, mapMode, players, radiusKm]);
+  }, [center, debouncedRadiusKm, mapMode, players]);
 
   const visiblePlayRequests = useMemo(() => {
     if (mapMode === "games" || mapMode === "locations") return [];
@@ -434,10 +489,10 @@ export default function MapDiscoveryPage() {
     return playRequests
       .filter((request) => {
         if (request.latitude == null || request.longitude == null) return false;
-        return distanceKm(center[0], center[1], request.latitude, request.longitude) <= radiusKm;
+        return distanceKm(center[0], center[1], request.latitude, request.longitude) <= debouncedRadiusKm;
       })
       .filter((request) => (mapMode === "mine" ? request.isMine : true));
-  }, [center, mapMode, playRequests, radiusKm]);
+  }, [center, debouncedRadiusKm, mapMode, playRequests]);
 
   const selectionItems = useMemo(() => {
     const items: SelectionItem[] = [];
@@ -597,6 +652,12 @@ export default function MapDiscoveryPage() {
   }
 
   const isLoading = loadingGames || loadingLocations || loadingPlayers || loadingPlayRequests || !centerReady;
+  const loadingLabels = [
+    loadingLocations ? "Spielorte" : null,
+    loadingGames ? "Spieltermine" : null,
+    loadingPlayers ? "Spieler" : null,
+    loadingPlayRequests ? "Spielgesuche" : null,
+  ].filter((label): label is string => label != null);
 
   function createAtLocation(locationId: string) {
     navigate(`/games/create?locationId=${encodeURIComponent(locationId)}`);
@@ -800,6 +861,7 @@ export default function MapDiscoveryPage() {
           visiblePlayerCount={visiblePlayers.length}
           visibleGameCount={visibleGames.length}
           visiblePlayRequestCount={visiblePlayRequests.length}
+          loadingLabels={loadingLabels}
           onToggleCollapsed={() => setFilterCollapsed((value: boolean) => !value)}
         />
 

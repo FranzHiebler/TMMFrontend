@@ -6,6 +6,7 @@ type Props = {
   visiblePlayerCount: number;
   visibleGameCount: number;
   visiblePlayRequestCount: number;
+  loadingLabels: string[];
   onToggleCollapsed: () => void;
 };
 
@@ -17,6 +18,7 @@ export default function DiscoveryFilterPanel({
   visiblePlayerCount,
   visibleGameCount,
   visiblePlayRequestCount,
+  loadingLabels,
   onToggleCollapsed,
 }: Props) {
   return (
@@ -39,7 +41,11 @@ export default function DiscoveryFilterPanel({
       {!collapsed && (
         <>
           {banner && <div className="message message-error">{banner}</div>}
-          {isLoading && <div className="discovery-skeleton" />}
+          {isLoading && (
+            <div className="discovery-loading-inline">
+              Aktualisiere {loadingLabels.length > 0 ? loadingLabels.join(", ") : "Karte"}...
+            </div>
+          )}
           {!isLoading && !banner && (
             <p className="discovery-count">
               {visibleLocationCount} Spielorte · {visiblePlayerCount} Spieler ·{" "}
