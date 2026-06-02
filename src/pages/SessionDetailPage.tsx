@@ -39,6 +39,55 @@ function publicSessionUrl(game: GameResponse) {
   return `${backendBaseUrl}/s/${encodeURIComponent(publicId)}`;
 }
 
+function calendarIcsUrl(game: GameResponse) {
+  return `${API}/Games/${encodeURIComponent(game.id)}/calendar.ics`;
+}
+
+function calendarEndDate(game: GameResponse) {
+  return new Date(new Date(game.startTimeUtc).getTime() + 3 * 60 * 60 * 1000);
+}
+
+function calendarDateParam(value: Date) {
+  return value.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function calendarDescription(game: GameResponse) {
+  return [
+    game.description,
+    `Spieltermin in Tabletop Matchmaker: ${publicSessionUrl(game)}`,
+  ].filter(Boolean).join("\n\n");
+}
+
+function googleCalendarUrl(game: GameResponse) {
+  const start = new Date(game.startTimeUtc);
+  const end = calendarEndDate(game);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: game.title,
+    dates: `${calendarDateParam(start)}/${calendarDateParam(end)}`,
+    location: `${game.location.name}, ${game.location.city}`,
+    details: calendarDescription(game),
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function outlookCalendarUrl(game: GameResponse) {
+  const start = new Date(game.startTimeUtc);
+  const end = calendarEndDate(game);
+  const params = new URLSearchParams({
+    path: "/calendar/action/compose",
+    rru: "addevent",
+    subject: game.title,
+    startdt: start.toISOString(),
+    enddt: end.toISOString(),
+    location: `${game.location.name}, ${game.location.city}`,
+    body: calendarDescription(game),
+  });
+
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+}
+
 function statusLabel(status: GameResponse["status"]) {
   switch (status) {
     case "Cancelled":
@@ -201,6 +250,7 @@ export default function SessionDetailPage() {
   const pendingWaitlist = game?.waitlist ?? [];
   const hasInvitation = !!game && game.invitations.some((invitation) => invitation.user.userId === user.userId);
   const canWriteSessionComments = !!game && (isHost || alreadyInGame || hasInvitation);
+  const canExportCalendar = !!game && game.timingMode !== "Open";
   const primaryActionLabel =
     game?.joinMode === GameJoinMode.ApprovalRequired ? "Mitspielen anfragen" : "Freien Platz nehmen";
 
@@ -338,6 +388,31 @@ export default function SessionDetailPage() {
                 <button type="button" className="icon-link icon-share" onClick={copyShareText}>
                   Link kopieren
                 </button>
+              </div>
+              <div className="session-side-section session-calendar-box">
+                <h2>Kalender</h2>
+                <p>
+                  {canExportCalendar
+                    ? "Übernimm den Spieltermin in deinen persönlichen Kalender."
+                    : "Dieser Spieltermin hat noch kein festes Datum."}
+                </p>
+                <div className="session-calendar-actions">
+                  {canExportCalendar ? (
+                    <>
+                      <a href={calendarIcsUrl(game)} download>
+                        ICS herunterladen
+                      </a>
+                      <a href={googleCalendarUrl(game)} target="_blank" rel="noreferrer">
+                        Google Kalender
+                      </a>
+                      <a href={outlookCalendarUrl(game)} target="_blank" rel="noreferrer">
+                        Outlook Kalender
+                      </a>
+                    </>
+                  ) : (
+                    <span>Kalenderexport ist verfügbar, sobald ein Datum feststeht.</span>
+                  )}
+                </div>
               </div>
             </aside>
           </section>
