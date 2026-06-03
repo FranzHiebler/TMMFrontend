@@ -28,13 +28,14 @@ export default function DiscoveryFilterPanel({
       }`}
     >
       <div className="discovery-panel-header">
+        <span>Filterstatus</span>
         <button
           type="button"
           className="overlay-toggle"
-          aria-label={collapsed ? "Status öffnen" : "Status einklappen"}
+          aria-label={collapsed ? "Filterstatus öffnen" : "Filterstatus einklappen"}
           onClick={onToggleCollapsed}
         >
-          {collapsed ? ">" : "<"}
+          {collapsed ? "v" : "^"}
         </button>
       </div>
 
