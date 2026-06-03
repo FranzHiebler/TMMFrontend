@@ -190,7 +190,7 @@ export default function DirectMessagesPage() {
       <div className="page-header">
         <div>
           <h1>Nachrichten</h1>
-          <p className="page-subtitle">Direkte Absprachen und Spielrunden-Kommunikation an einem Ort.</p>
+          <p className="page-subtitle">Direkte Absprachen und Nachrichten an einem Ort.</p>
         </div>
         <NotificationBell />
       </div>

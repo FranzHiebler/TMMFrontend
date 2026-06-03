@@ -21,7 +21,7 @@ import { API, authHeaders, handleResponse, handleVoidResponse } from "./apiClien
 
 export async function getAllGames(): Promise<GameResponse[]> {
   const res = await fetch(`${API}/Games/search?OnlyOpen=false`);
-  return handleResponse<GameResponse[]>(res, "Games laden fehlgeschlagen");
+  return handleResponse<GameResponse[]>(res, "Spieltermine laden fehlgeschlagen");
 }
 
 export async function createGame(request: CreateGameRequest, user: User): Promise<GameResponse> {
@@ -31,17 +31,17 @@ export async function createGame(request: CreateGameRequest, user: User): Promis
     body: JSON.stringify(request),
   });
 
-  return handleResponse<GameResponse>(res, "Game erstellen fehlgeschlagen");
+  return handleResponse<GameResponse>(res, "Spieltermin erstellen fehlgeschlagen");
 }
 
 export async function getGameById(gameId: string): Promise<GameResponse> {
   const res = await fetch(`${API}/Games/${gameId}`);
-  return handleResponse<GameResponse>(res, "Game laden fehlgeschlagen");
+  return handleResponse<GameResponse>(res, "Spieltermin laden fehlgeschlagen");
 }
 
 export async function getPublicGame(slugOrId: string): Promise<PublicGameResponse> {
   const res = await fetch(`${API}/Games/public/${encodeURIComponent(slugOrId)}`);
-  return handleResponse<PublicGameResponse>(res, "Öffentliche Session laden fehlgeschlagen");
+  return handleResponse<PublicGameResponse>(res, "Öffentlichen Spieltermin laden fehlgeschlagen");
 }
 
 export async function getCalendar(user: User): Promise<CalendarItemResponse[]> {
@@ -61,7 +61,7 @@ export async function joinTable(
     body: JSON.stringify(request),
   });
 
-  return handleVoidResponse(res, "Join fehlgeschlagen");
+  return handleVoidResponse(res, "Beitreten fehlgeschlagen");
 }
 
 export async function applyToGame(
@@ -128,7 +128,7 @@ export async function searchNearbyGames(request: SearchNearbyGamesRequest): Prom
   if (request.systemKey) params.append("systemKey", request.systemKey);
 
   const res = await fetch(`${API}/Games/nearby?${params.toString()}`);
-  return handleResponse<GameResponse[]>(res, "Nearby Games fehlgeschlagen");
+  return handleResponse<GameResponse[]>(res, "Spieltermine in der Nähe laden fehlgeschlagen");
 }
 
 export async function getDiscoveryGames(
@@ -147,7 +147,7 @@ export async function getDiscoveryGames(
     headers: authHeaders(user),
   });
 
-  return handleResponse<GameDiscoveryResponse[]>(res, "Discovery laden fehlgeschlagen");
+  return handleResponse<GameDiscoveryResponse[]>(res, "Karten-Spieltermine laden fehlgeschlagen");
 }
 
 export async function assignApplicationToTable(
@@ -218,7 +218,7 @@ export async function updateGameSession(
     body: JSON.stringify(request),
   });
 
-  return handleResponse<GameResponse>(res, "Game Session aktualisieren fehlgeschlagen");
+  return handleResponse<GameResponse>(res, "Spieltermin aktualisieren fehlgeschlagen");
 }
 
 export async function updateGameTable(
@@ -323,7 +323,7 @@ export async function closeGame(gameId: string, request: CloseGameRequest, user:
     headers: authHeaders(user),
     body: JSON.stringify(request),
   });
-  return handleResponse<GameResponse>(res, "Session abschließen fehlgeschlagen");
+  return handleResponse<GameResponse>(res, "Spieltermin abschließen fehlgeschlagen");
 }
 
 export async function cancelGame(gameId: string, user: User): Promise<GameResponse> {
@@ -331,5 +331,5 @@ export async function cancelGame(gameId: string, user: User): Promise<GameRespon
     method: "POST",
     headers: authHeaders(user),
   });
-  return handleResponse<GameResponse>(res, "Spiel konnte nicht abgesagt werden");
+  return handleResponse<GameResponse>(res, "Spieltermin konnte nicht abgesagt werden");
 }

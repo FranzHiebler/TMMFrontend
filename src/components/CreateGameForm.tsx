@@ -334,7 +334,7 @@ export default function CreateGameForm() {
       showToast("success", "Spieltermin gespeichert");
       navigate(`/sessions/${created.id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Game konnte nicht erstellt werden";
+      const message = err instanceof Error ? err.message : "Spieltermin konnte nicht erstellt werden";
       setError(message);
       showToast("error", message);
     } finally {
