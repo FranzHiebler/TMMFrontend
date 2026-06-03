@@ -105,13 +105,13 @@
 }
 
 .app-bottom-nav {
-  position: fixed;
-  left: 50%;
-  bottom: max(10px, env(safe-area-inset-bottom, 0px));
-  z-index: 10000;
-  width: min(680px, calc(100vw - 20px));
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: 1;
+  width: 100%;
   min-height: calc(60px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
+  transform: none;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;

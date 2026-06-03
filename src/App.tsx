@@ -100,10 +100,6 @@ export default function App() {
             <div className="hamburger-menu">
               <Link to="/locations">Meine Spielorte</Link>
               <Link to="/series">Regelmäßige Runden</Link>
-              <div className="nav-more-divider" />
-              {isAdmin && <Link to="/admin/systems">Admin: Systeme verwalten</Link>}
-              {isAdmin && <Link to="/admin/feedback">Admin: Tester-Feedback</Link>}
-              <div className="nav-more-divider" />
               <Link to="/impressum">Impressum</Link>
               <Link to="/datenschutz">Datenschutz</Link>
               <div className="nav-more-divider" />
@@ -139,8 +135,7 @@ export default function App() {
         {isAdmin && <Route path="/admin/systems" element={<SystemsAdminPage />} />}
       </Routes>
 
-      <FeedbackBar />
-
+<div className="app-bottom-stack">
       <div className="app-bottom-nav" ref={createRef}>
         <NavLink to="/my-games" className={navClass}>
           <span className="app-icon app-icon-home" aria-hidden="true" />
@@ -199,6 +194,11 @@ export default function App() {
             </div>
           </>
         )}
+      </div>
+
+      
+      <FeedbackBar />
+
       </div>
     </>
   );
