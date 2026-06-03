@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   requestLocationMembership,
   searchNearbyLocations,
@@ -111,7 +112,18 @@ export default function NearbyPage() {
 
   return (
     <div className="container">
-      <h1>Spielorte in der Nähe</h1>
+      <div className="page-header page-header-stack">
+        <div>
+          <h1>Spielort-Suche</h1>
+          <p className="page-subtitle">
+            Ergänzende Listenansicht für Spielorte in der Nähe. Die zentrale Entdeckung läuft über die Karte.
+          </p>
+        </div>
+        <div className="button-row">
+          <Link to="/">Zur Karte</Link>
+          <Link to="/locations">Meine Spielorte</Link>
+        </div>
+      </div>
 
       <Message text={message} type={messageType} />
 

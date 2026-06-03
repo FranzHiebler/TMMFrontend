@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getPublicGame } from "../api/gamesApi";
 import Message from "../components/Message";
 import type { PublicGameResponse } from "../types/game";
@@ -28,6 +28,9 @@ export default function PublicSessionPage() {
           {game.timeLabel && <p>{game.timeLabel}</p>}
           {game.description && <p>{game.description}</p>}
           <p>{game.openSlots} freie Plätze</p>
+          <div className="button-row">
+            <Link to={`/sessions/${encodeURIComponent(game.id)}`}>In Tabletop Matchmaker öffnen</Link>
+          </div>
         </section>
       )}
     </main>

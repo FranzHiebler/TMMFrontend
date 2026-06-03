@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getAllGames } from "../api/gamesApi";
 import { useJoinGame } from "../api/useJoinGame";
 import GameList from "../components/GameList";
@@ -65,7 +65,7 @@ export default function GamesPage() {
       setError("");
       setGames(await getAllGames());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Games konnten nicht geladen werden.");
+      setError(err instanceof Error ? err.message : "Spieltermine konnten nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -121,17 +121,21 @@ export default function GamesPage() {
       <Message text={successMessage} type="success" />
       <Message text={errorMessage} type="error" />
       <Message text={error} type="error" />
-      {loading && <Message text="Lade Spiele..." type="info" />}
+      {loading && <Message text="Lade Spieltermine..." type="info" />}
 
       <div className="games-page-intro">
         <div className="page-header page-header-stack">
           <div>
             <h1 className="games-page-title">
-              Alle Spiele ({filteredGames.length})
+              Spieltermin-Liste ({filteredGames.length})
             </h1>
             <p className="page-subtitle">
-              Finde offene Runden, filtere nach Ort und System und tritt direkt bei.
+              Kompakte Listenansicht für Spieltermine. Für die Kartensuche nutze Entdecken.
             </p>
+            <div className="button-row">
+              <Link to="/">Zur Karte</Link>
+              <Link to="/my-games">Meine Spiele</Link>
+            </div>
           </div>
         </div>
       </div>
