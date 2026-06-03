@@ -5,6 +5,7 @@ import type {
   UserPermissionsResponse,
   UserProfileResponse,
   UserSearchResponse,
+  TestUserOptionResponse,
 } from "../types/game";
 import type { User } from "../context/UserContext";
 import { API, authHeaders, handleResponse } from "./apiClient";
@@ -20,6 +21,11 @@ export async function searchUsers(query: string, user?: User): Promise<UserSearc
     headers: user ? authHeaders(user) : undefined,
   });
   return handleResponse<UserSearchResponse[]>(res, "User-Suche fehlgeschlagen");
+}
+
+export async function getTestUsers(): Promise<TestUserOptionResponse[]> {
+  const res = await fetch(`${API}/Users/test-users`);
+  return handleResponse<TestUserOptionResponse[]>(res, "Testnutzer laden fehlgeschlagen");
 }
 
 export async function getCurrentUserProfile(user: User): Promise<UserProfileResponse> {

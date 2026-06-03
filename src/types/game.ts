@@ -336,6 +336,11 @@ export interface UserPermissionsResponse {
   isAdmin: boolean;
 }
 
+export interface TestUserOptionResponse {
+  userId: string;
+  displayName: string;
+}
+
 export interface UpdateUserProfileRequest {
   displayName: string;
   firstName?: string | null;
