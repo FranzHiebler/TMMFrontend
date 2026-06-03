@@ -30,11 +30,21 @@ export default function GameTableMessagesPanel({ gameId, tableId }: Props) {
 
   return (
     <MessageThreadPanel
-      title="Tisch-Nachrichten"
+      title="Tisch-Kommentare"
+      description="Hier sammelt ihr Absprachen, die nur diesen Tisch betreffen."
       messages={messages}
       loading={loading}
       onLoad={load}
       onSend={send}
+      emptyText="Noch keine Tisch-Kommentare. Schreib die erste Nachricht zu diesem Tisch."
+      readOnlyText="Du kannst die Tisch-Kommentare lesen. Schreiben ist nur für beteiligte Spieler möglich."
+      loadingText="Tisch-Kommentare werden geladen..."
+      placeholder="Kommentar zum Tisch schreiben..."
+      submitLabel="Kommentar senden"
+      sendingLabel="Sendet..."
+      successText="Tisch-Kommentar gesendet"
+      itemLabelSingular="Kommentar"
+      itemLabelPlural="Kommentare"
     />
   );
 }

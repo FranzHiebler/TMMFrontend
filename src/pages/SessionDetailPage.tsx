@@ -379,7 +379,7 @@ export default function SessionDetailPage() {
 
             <aside className="card session-side-card" id="session-chat">
               <div className="session-side-section">
-                <h2>Kommunikation</h2>
+                <h2>Kommentare</h2>
                 <GameSessionMessagesPanel gameId={game.id} canWrite={canWriteSessionComments} />
               </div>
               <div className="session-side-section session-share-box">

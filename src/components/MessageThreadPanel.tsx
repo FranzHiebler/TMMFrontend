@@ -4,6 +4,7 @@ import { useToast } from "../context/ToastContext";
 
 type Props = {
   title: string;
+  description?: string;
   initiallyOpen?: boolean;
   messages: MessageDto[];
   loading: boolean;
@@ -25,6 +26,7 @@ const maxLength = 2000;
 
 export default function MessageThreadPanel({
   title,
+  description,
   initiallyOpen = false,
   messages,
   loading,
@@ -97,6 +99,8 @@ export default function MessageThreadPanel({
 
       {isOpen && (
         <div className="thread-body">
+          {description && <p className="thread-description">{description}</p>}
+
           <div ref={listRef} className="thread-list">
             {loading && <div className="thread-empty">{loadingText}</div>}
             {!loading && messages.length === 0 && (

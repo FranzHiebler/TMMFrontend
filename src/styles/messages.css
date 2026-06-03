@@ -53,6 +53,14 @@
   padding: 12px;
 }
 
+.thread-description {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .thread-list {
   max-height: 300px;
   overflow: auto;

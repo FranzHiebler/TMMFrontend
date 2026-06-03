@@ -31,18 +31,19 @@ export default function GameSessionMessagesPanel({ gameId, canWrite = true }: Pr
   return (
     <div className="session-comments-panel">
       <MessageThreadPanel
-        title="Kommunikation"
+        title="Kommentare zum Spieltermin"
+        description="Hier klärt ihr Absprachen zum Spieltermin. Neue Kommentare erscheinen nach dem Absenden oder Nachladen."
         initiallyOpen
         messages={messages}
         loading={loading}
         onLoad={load}
         onSend={send}
         canWrite={canWrite}
-        emptyText="Noch keine Kommentare. Starte die Absprache für diesen Spieltermin."
+        emptyText="Noch keine Kommentare. Schreib die erste Nachricht zum Spieltermin."
         readOnlyText="Du kannst die Kommentare lesen. Schreiben ist für Host, Teilnehmer und eingeladene Spieler möglich."
         loadingText="Kommentare werden geladen..."
         placeholder="Kommentar schreiben..."
-        submitLabel="Kommentieren"
+        submitLabel="Kommentar senden"
         sendingLabel="Sendet..."
         successText="Kommentar gesendet"
         itemLabelSingular="Kommentar"
