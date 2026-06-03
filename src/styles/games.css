@@ -955,6 +955,35 @@
   color: #ffffff;
 }
 
+.my-games-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.my-games-summary div {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.my-games-summary strong {
+  color: #111827;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.my-games-summary span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .my-games-filters {
   overflow-x: auto;
   padding-bottom: 4px;
@@ -992,6 +1021,13 @@
   line-height: 1.2;
 }
 
+.my-overview-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .my-overview-card > a {
   min-height: 36px;
   padding: 8px 12px;
@@ -1005,6 +1041,13 @@
 
 .my-overview-main {
   min-width: 0;
+}
+
+.my-overview-role-hint {
+  margin: 0 0 5px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .my-overview-meta {
@@ -1035,6 +1078,18 @@
   text-transform: uppercase;
 }
 
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .role-host {
   background: #fef3c7;
   color: #92400e;
@@ -1063,6 +1118,10 @@
 .my-games-empty {
   display: grid;
   gap: 8px;
+}
+
+.my-games-empty .button-row {
+  flex-wrap: wrap;
 }
 
 .calendar-grid {
@@ -1195,12 +1254,17 @@
     flex: 1;
   }
 
+  .my-games-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .my-overview-card {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
 
   .my-overview-card > a {
+    justify-self: stretch;
     text-align: center;
   }
 

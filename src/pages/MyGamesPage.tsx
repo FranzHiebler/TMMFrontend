@@ -10,14 +10,49 @@ type MyGamesFilter = "all" | "host" | "participant" | "application" | "invitatio
 
 const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-const filters: Array<{ key: MyGamesFilter; label: string }> = [
-  { key: "all", label: "Alle" },
-  { key: "host", label: "Ich hoste" },
-  { key: "participant", label: "Ich spiele mit" },
-  { key: "application", label: "Bewerbungen" },
-  { key: "invitation", label: "Einladungen" },
-  { key: "waitlist", label: "Warteliste" },
-  { key: "past", label: "Vergangen" },
+const filters: Array<{ key: MyGamesFilter; label: string; emptyTitle: string; emptyText: string }> = [
+  {
+    key: "all",
+    label: "Aktuell",
+    emptyTitle: "Du hast noch keine Spieltermine.",
+    emptyText: "Entdecke Spieltermine auf der Karte oder biete selbst einen Termin an.",
+  },
+  {
+    key: "host",
+    label: "Von mir erstellt",
+    emptyTitle: "Du veranstaltest aktuell keinen Spieltermin.",
+    emptyText: "Biete einen Spieltermin an, wenn du Platz hast oder Mitspieler suchst.",
+  },
+  {
+    key: "participant",
+    label: "Ich nehme teil",
+    emptyTitle: "Du nimmst aktuell an keinem Spieltermin teil.",
+    emptyText: "Schau auf der Karte nach passenden Terminen in deiner Nähe.",
+  },
+  {
+    key: "application",
+    label: "Meine Bewerbungen",
+    emptyTitle: "Keine offenen Bewerbungen.",
+    emptyText: "Sobald du dich auf einen Spieltermin bewirbst, siehst du ihn hier.",
+  },
+  {
+    key: "invitation",
+    label: "Einladungen",
+    emptyTitle: "Keine offenen Einladungen.",
+    emptyText: "Einladungen von Freunden oder Hosts erscheinen hier.",
+  },
+  {
+    key: "waitlist",
+    label: "Warteliste",
+    emptyTitle: "Du stehst auf keiner Warteliste.",
+    emptyText: "Wenn ein Spieltermin voll ist, kannst du dich später hier wiederfinden.",
+  },
+  {
+    key: "past",
+    label: "Archiv",
+    emptyTitle: "Noch keine vergangenen Spieltermine.",
+    emptyText: "Abgesagte, geschlossene oder vergangene Termine werden hier gesammelt.",
+  },
 ];
 
 function monthStart(date: Date) {
@@ -53,17 +88,34 @@ function isPast(item: CalendarItemResponse, now: number) {
 function roleLabel(kind: string) {
   switch (kind) {
     case "Host":
-      return "Host";
+      return "Von mir erstellt";
     case "Teilnahme":
-      return "Teilnehmer";
+      return "Ich nehme teil";
     case "Bewerbung":
-      return "Bewerbung";
+      return "Bewerbung offen";
     case "Einladung":
-      return "Einladung";
+      return "Eingeladen";
     case "Warteliste":
       return "Warteliste";
     default:
       return kind || "Spieltermin";
+  }
+}
+
+function roleHint(kind: string) {
+  switch (kind) {
+    case "Host":
+      return "Du veranstaltest diesen Termin.";
+    case "Teilnahme":
+      return "Du bist als Spieler dabei.";
+    case "Bewerbung":
+      return "Du wartest noch auf Zusage.";
+    case "Einladung":
+      return "Du wurdest eingeladen.";
+    case "Warteliste":
+      return "Du wartest auf einen freien Platz.";
+    default:
+      return "Dieser Spieltermin betrifft dich.";
   }
 }
 
@@ -111,13 +163,16 @@ function MyGameItem({ item }: { item: CalendarItemResponse }) {
   return (
     <article className="my-overview-card">
       <div className="my-overview-main">
-        <span className={`role-pill role-${item.kind.toLowerCase()}`}>{roleLabel(item.kind)}</span>
+        <div className="my-overview-title-row">
+          <span className={`role-pill role-${item.kind.toLowerCase()}`}>{roleLabel(item.kind)}</span>
+          <span className="status-pill">{statusLabel(item.status)}</span>
+        </div>
         <h2>{item.title}</h2>
+        <p className="my-overview-role-hint">{roleHint(item.kind)}</p>
         <div className="my-overview-meta">
           <span>{timeLabel(item)}</span>
           <span>{item.locationName || "Spielort offen"}</span>
           {item.locationCity && <span>{item.locationCity}</span>}
-          <span>{statusLabel(item.status)}</span>
         </div>
       </div>
       <Link to={`/sessions/${item.id}`}>Öffnen</Link>
@@ -173,6 +228,19 @@ export default function MyGamesPage() {
     [filter, items, now]
   );
 
+  const activeItems = useMemo(
+    () => items.filter((item) => !isPast(item, now)),
+    [items, now]
+  );
+
+  const summaryCounts = useMemo(() => ({
+    host: activeItems.filter((item) => item.kind === "Host").length,
+    participant: activeItems.filter((item) => item.kind === "Teilnahme").length,
+    application: activeItems.filter((item) => item.kind === "Bewerbung").length,
+    invitation: activeItems.filter((item) => item.kind === "Einladung").length,
+    waitlist: activeItems.filter((item) => item.kind === "Warteliste").length,
+  }), [activeItems]);
+
   const sortedItems = useMemo(
     () => [...filteredItems].sort((a, b) => itemDate(a) - itemDate(b)),
     [filteredItems]
@@ -191,6 +259,7 @@ export default function MyGamesPage() {
 
   const selectedItems = itemsByDay[selectedDay] ?? [];
   const monthLabel = month.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  const activeFilter = filters.find((item) => item.key === filter) ?? filters[0];
 
   function moveMonth(delta: number) {
     const next = new Date(month);
@@ -204,13 +273,34 @@ export default function MyGamesPage() {
         <div>
           <h1>Meine Spiele</h1>
           <p className="page-subtitle">
-            Deine Spieltermine, Einladungen, Bewerbungen und Warteliste an einem Ort.
+            Alles, was dich betrifft: eigene Termine, Teilnahmen, Bewerbungen, Einladungen und Warteliste.
           </p>
         </div>
       </div>
 
       <Message text={loading ? "Lade Meine Spiele..." : ""} type="info" />
       <Message text={error} type="error" />
+
+      {!loading && !error && (
+        <section className="my-games-summary" aria-label="Meine Spiele Übersicht">
+          <div>
+            <strong>{activeItems.length}</strong>
+            <span>Aktuelle Termine</span>
+          </div>
+          <div>
+            <strong>{summaryCounts.host}</strong>
+            <span>Von mir erstellt</span>
+          </div>
+          <div>
+            <strong>{summaryCounts.participant}</strong>
+            <span>Ich nehme teil</span>
+          </div>
+          <div>
+            <strong>{summaryCounts.application + summaryCounts.invitation + summaryCounts.waitlist}</strong>
+            <span>Offen</span>
+          </div>
+        </section>
+      )}
 
       <div className="my-games-view-tabs">
         <button type="button" className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
@@ -236,9 +326,10 @@ export default function MyGamesPage() {
 
       {!loading && !error && sortedItems.length === 0 && (
         <section className="card my-games-empty">
-          <h2>Du hast noch keine Spieltermine.</h2>
-          <p>Starte mit einem eigenen Spieltermin oder erstelle ein Spielgesuch.</p>
+          <h2>{activeFilter.emptyTitle}</h2>
+          <p>{activeFilter.emptyText}</p>
           <div className="button-row">
+            <Link to="/">Spieltermine entdecken</Link>
             <Link to="/games/create">Spieltermin anbieten</Link>
             <Link to="/play-requests">Spiel suchen</Link>
           </div>
@@ -283,7 +374,7 @@ export default function MyGamesPage() {
 
           <section className="card calendar-agenda">
             <h2>{new Date(selectedDay).toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "2-digit" })}</h2>
-            {selectedItems.length === 0 && <p className="muted">Keine Einträge an diesem Tag.</p>}
+            {selectedItems.length === 0 && <p className="muted">Keine Spieltermine an diesem Tag.</p>}
             {selectedItems.map((item) => <MyGameItem key={`${item.kind}-${item.id}`} item={item} />)}
           </section>
 
