@@ -96,7 +96,6 @@ export default function App() {
 
           {menuOpen && (
             <div className="hamburger-menu">
-              <Link to="/calendar">Kalender</Link>
               <Link to="/locations">Meine Spielorte</Link>
               <Link to="/series">Regelmäßige Runden</Link>
               <div className="nav-more-divider" />
