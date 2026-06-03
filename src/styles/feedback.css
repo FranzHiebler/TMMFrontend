@@ -156,7 +156,7 @@
 
 .admin-feedback-summary {
 	display: grid;
-	grid-template-columns: minmax(260px, 1.6fr) minmax(120px, 0.7fr) minmax(130px, 0.8fr) minmax(126px, 0.7fr);
+	grid-template-columns: 92px minmax(260px, 1.6fr) minmax(120px, 0.7fr) minmax(130px, 0.8fr) minmax(126px, 0.7fr);
 	gap: 10px;
 	align-items: center;
 	padding: 9px 12px;
@@ -169,18 +169,37 @@
 }
 
 .admin-feedback-summary::before {
+	content: none;
+}
+
+.admin-feedback-ticket {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 26px;
+	padding: 4px 9px;
+	border-radius: 999px;
+	background: #111827;
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: 950;
+	white-space: nowrap;
+}
+
+.admin-feedback-ticket::before {
 	content: "+";
 	width: 22px;
 	height: 22px;
+	margin-right: 6px;
 	display: grid;
 	place-items: center;
 	border-radius: 999px;
-	background: #e5e7eb;
-	color: #111827;
+	background: rgba(255, 255, 255, 0.16);
+	color: #ffffff;
 	font-weight: 950;
 }
 
-.admin-feedback-row[open] .admin-feedback-summary::before {
+.admin-feedback-row[open] .admin-feedback-ticket::before {
 	content: "-";
 }
 

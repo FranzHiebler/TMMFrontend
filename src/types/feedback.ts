@@ -27,6 +27,7 @@ export interface UpdateFeedbackAdminRequest {
 
 export interface FeedbackResponse {
   id: string;
+  ticketNumber?: string | null;
   type: FeedbackType;
   message: string;
   userId: string;

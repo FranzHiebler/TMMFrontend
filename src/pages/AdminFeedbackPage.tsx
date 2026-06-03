@@ -34,6 +34,10 @@ function reporterLabel(item: FeedbackResponse) {
   return item.displayName;
 }
 
+function ticketLabel(item: FeedbackResponse) {
+  return item.ticketNumber || "ohne Nummer";
+}
+
 export default function AdminFeedbackPage({ isAdmin }: { isAdmin: boolean }) {
   const user = useUser();
   const [items, setItems] = useState<FeedbackResponse[]>([]);
@@ -144,6 +148,7 @@ export default function AdminFeedbackPage({ isAdmin }: { isAdmin: boolean }) {
         {items.map((item) => (
           <details key={item.id} className="card admin-feedback-row">
             <summary className="admin-feedback-summary">
+              <strong className="admin-feedback-ticket">{ticketLabel(item)}</strong>
               <div className="admin-feedback-summary-main">
                 <span className={`feedback-pill feedback-pill-${item.type.toLowerCase()}`}>
                   {typeLabels[item.type]}
@@ -158,6 +163,10 @@ export default function AdminFeedbackPage({ isAdmin }: { isAdmin: boolean }) {
 
             <div className="admin-feedback-details">
               <dl className="admin-feedback-meta">
+                <div>
+                  <dt>Ticket</dt>
+                  <dd>{ticketLabel(item)}</dd>
+                </div>
                 <div>
                   <dt>Name</dt>
                   <dd>{item.reporterName || "-"}</dd>
