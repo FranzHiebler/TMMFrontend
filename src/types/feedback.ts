@@ -15,6 +15,7 @@ export interface FeedbackContextRequest {
 
 export interface CreateFeedbackRequest {
   type: FeedbackType;
+  reporterName?: string | null;
   message: string;
   context: FeedbackContextRequest;
 }
@@ -30,6 +31,7 @@ export interface FeedbackResponse {
   message: string;
   userId: string;
   displayName: string;
+  reporterName?: string | null;
   pageUrl?: string | null;
   pathname?: string | null;
   search?: string | null;

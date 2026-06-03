@@ -29,6 +29,11 @@ function viewportLabel(item: FeedbackResponse) {
   return `${item.viewportWidth} x ${item.viewportHeight}`;
 }
 
+function reporterLabel(item: FeedbackResponse) {
+  if (item.reporterName) return `${item.reporterName} (${item.displayName})`;
+  return item.displayName;
+}
+
 export default function AdminFeedbackPage({ isAdmin }: { isAdmin: boolean }) {
   const user = useUser();
   const [items, setItems] = useState<FeedbackResponse[]>([]);
@@ -137,79 +142,86 @@ export default function AdminFeedbackPage({ isAdmin }: { isAdmin: boolean }) {
         {items.length === 0 && <div className="card">Noch kein Feedback für diese Filter.</div>}
 
         {items.map((item) => (
-          <article key={item.id} className="card admin-feedback-card">
-            <div className="admin-feedback-card-header">
-              <div>
+          <details key={item.id} className="card admin-feedback-row">
+            <summary className="admin-feedback-summary">
+              <div className="admin-feedback-summary-main">
                 <span className={`feedback-pill feedback-pill-${item.type.toLowerCase()}`}>
                   {typeLabels[item.type]}
                 </span>
                 <span className="feedback-pill">{statusLabels[item.status]}</span>
+                <strong>{item.message}</strong>
               </div>
+              <span>{reporterLabel(item)}</span>
+              <span>{item.pathname || "-"}</span>
               <time>{formatDate(item.createdAtUtc)}</time>
-            </div>
+            </summary>
 
-            <p className="admin-feedback-message">{item.message}</p>
+            <div className="admin-feedback-details">
+              <dl className="admin-feedback-meta">
+                <div>
+                  <dt>Name</dt>
+                  <dd>{item.reporterName || "-"}</dd>
+                </div>
+                <div>
+                  <dt>Testnutzer</dt>
+                  <dd>{item.displayName} ({item.userId})</dd>
+                </div>
+                <div>
+                  <dt>Route</dt>
+                  <dd>{item.pathname || "-"}</dd>
+                </div>
+                <div>
+                  <dt>URL</dt>
+                  <dd>{item.pageUrl ? <a href={item.pageUrl}>{item.pageUrl}</a> : "-"}</dd>
+                </div>
+                <div>
+                  <dt>Titel</dt>
+                  <dd>{item.pageTitle || "-"}</dd>
+                </div>
+                <div>
+                  <dt>Viewport</dt>
+                  <dd>{viewportLabel(item)}</dd>
+                </div>
+                <div>
+                  <dt>Browser</dt>
+                  <dd>{item.userAgent || "-"}</dd>
+                </div>
+              </dl>
 
-            <dl className="admin-feedback-meta">
-              <div>
-                <dt>Nutzer</dt>
-                <dd>{item.displayName} ({item.userId})</dd>
-              </div>
-              <div>
-                <dt>Route</dt>
-                <dd>{item.pathname || "-"}</dd>
-              </div>
-              <div>
-                <dt>URL</dt>
-                <dd>{item.pageUrl ? <a href={item.pageUrl}>{item.pageUrl}</a> : "-"}</dd>
-              </div>
-              <div>
-                <dt>Titel</dt>
-                <dd>{item.pageTitle || "-"}</dd>
-              </div>
-              <div>
-                <dt>Viewport</dt>
-                <dd>{viewportLabel(item)}</dd>
-              </div>
-              <div>
-                <dt>Browser</dt>
-                <dd>{item.userAgent || "-"}</dd>
-              </div>
-            </dl>
-
-            <div className="admin-feedback-actions">
-              <label>
-                Status
-                <select
-                  value={item.status}
-                  disabled={savingId === item.id}
-                  onChange={(event) => updateItem(item.id, { status: event.target.value as FeedbackStatus })}
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {statusLabels[status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Admin-Notiz
-                <textarea
-                  value={item.adminNote ?? ""}
-                  maxLength={2000}
-                  disabled={savingId === item.id}
-                  onChange={(event) =>
-                    setItems((prev) =>
-                      prev.map((entry) =>
-                        entry.id === item.id ? { ...entry, adminNote: event.target.value } : entry
+              <div className="admin-feedback-actions">
+                <label>
+                  Status
+                  <select
+                    value={item.status}
+                    disabled={savingId === item.id}
+                    onChange={(event) => updateItem(item.id, { status: event.target.value as FeedbackStatus })}
+                  >
+                    {statusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {statusLabels[status]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Admin-Notiz
+                  <textarea
+                    value={item.adminNote ?? ""}
+                    maxLength={2000}
+                    disabled={savingId === item.id}
+                    onChange={(event) =>
+                      setItems((prev) =>
+                        prev.map((entry) =>
+                          entry.id === item.id ? { ...entry, adminNote: event.target.value } : entry
+                        )
                       )
-                    )
-                  }
-                  onBlur={(event) => updateItem(item.id, { adminNote: event.target.value })}
-                />
-              </label>
+                    }
+                    onBlur={(event) => updateItem(item.id, { adminNote: event.target.value })}
+                  />
+                </label>
+              </div>
             </div>
-          </article>
+          </details>
         ))}
       </section>
     </main>

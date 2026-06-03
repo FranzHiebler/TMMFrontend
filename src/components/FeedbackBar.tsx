@@ -27,6 +27,7 @@ function collectContext() {
 export default function FeedbackBar() {
   const user = useUser();
   const [type, setType] = useState<FeedbackType>("Info");
+  const [reporterName, setReporterName] = useState("");
   const [message, setMessage] = useState("");
   const [statusText, setStatusText] = useState("");
   const [error, setError] = useState("");
@@ -54,11 +55,13 @@ export default function FeedbackBar() {
       await createFeedback(
         {
           type,
+          reporterName: reporterName.trim().slice(0, 120) || null,
           message: trimmed.slice(0, 1000),
           context: collectContext(),
         },
         user
       );
+      setReporterName("");
       setMessage("");
       setStatusText("Feedback gesendet. Danke!");
     } catch (err) {
@@ -80,6 +83,13 @@ export default function FeedbackBar() {
           ))}
         </select>
       </label>
+
+      <input
+        value={reporterName}
+        maxLength={120}
+        onChange={(event) => setReporterName(event.target.value)}
+        placeholder="Name optional"
+      />
 
       <input
         value={message}
