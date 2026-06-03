@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useState } from "react";
 import { getMyLocations } from "../api/locationsApi";
+import { useMemo } from "react";
 import { getCalendar } from "../api/gamesApi";
 import { getCurrentUserProfile, updateCurrentUserProfile, uploadProfileImage } from "../api/usersApi";
 import { getSystems } from "../api/systemsApi";
@@ -300,6 +301,30 @@ export default function ProfilePage() {
     }
   }
 
+  function handleProfileImageFileChange(file: File | null) {
+    setSuccess("");
+
+    if (!file) {
+      setProfileImageFile(null);
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setProfileImageFile(null);
+      setError("Bitte lade ein JPG-, PNG- oder WEBP-Bild hoch.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileImageFile(null);
+      setError("Profilbild darf maximal 2 MB groß sein.");
+      return;
+    }
+
+    setError("");
+    setProfileImageFile(file);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -378,6 +403,18 @@ export default function ProfilePage() {
     );
   };
 
+  const profileImagePreviewUrl = useMemo(
+    () => (profileImageFile ? URL.createObjectURL(profileImageFile) : ""),
+    [profileImageFile]
+  );
+
+  useEffect(() => {
+    if (!profileImagePreviewUrl) return;
+    return () => URL.revokeObjectURL(profileImagePreviewUrl);
+  }, [profileImagePreviewUrl]);
+
+  const visibleProfileImageUrl = profileImagePreviewUrl || profileImageUrl;
+
   return (
     <main className="container">
       <Message text={loading ? "Lade Profil..." : ""} type="info" />
@@ -388,7 +425,7 @@ export default function ProfilePage() {
         <form className="form profile-form profile-form-modern" onSubmit={handleSubmit}>
           <section className="card profile-hero-card">
             <div className="profile-avatar">
-              {profileImageUrl ? <img src={profileImageUrl} alt="" /> : <span>{displayName.slice(0, 2).toUpperCase()}</span>}
+              {visibleProfileImageUrl ? <img src={visibleProfileImageUrl} alt="" /> : <span>{displayName.slice(0, 2).toUpperCase()}</span>}
             </div>
             <div>
               <p className="panel-kicker">Mein Profil</p>
@@ -431,26 +468,43 @@ export default function ProfilePage() {
             </div>
 
             <div className="field profile-image-upload-field">
-              <label>Profilbild hochladen</label>
-              <div className="profile-image-upload-row">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => setProfileImageFile(e.target.files?.[0] ?? null)}
-                />
-                <button
-                  type="button"
-                  disabled={!profileImageFile || uploadingImage}
-                  onClick={handleProfileImageUpload}
-                >
-                  {uploadingImage ? "Lade hoch..." : "Bild hochladen"}
-                </button>
+              <label>Profilbild</label>
+              <div className="profile-image-upload-box">
+                <div className="profile-image-upload-preview">
+                  {visibleProfileImageUrl ? (
+                    <img src={visibleProfileImageUrl} alt="" />
+                  ) : (
+                    <span>{displayName.slice(0, 2).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="profile-image-upload-content">
+                  <strong>Bild vom Gerät hochladen</strong>
+                  <small className="field-hint">JPG, PNG oder WEBP bis maximal 2 MB.</small>
+                  <div className="profile-image-upload-row">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => handleProfileImageFileChange(e.target.files?.[0] ?? null)}
+                    />
+                    <button
+                      type="button"
+                      disabled={!profileImageFile || uploadingImage}
+                      onClick={handleProfileImageUpload}
+                    >
+                      {uploadingImage ? "Lade hoch..." : "Bild hochladen"}
+                    </button>
+                  </div>
+                  {profileImageFile && (
+                    <small className="field-hint">
+                      Ausgewählt: {profileImageFile.name}
+                    </small>
+                  )}
+                </div>
               </div>
-              <small className="field-hint">JPG, PNG oder WEBP bis maximal 2 MB.</small>
             </div>
 
             <details className="optional-section">
-              <summary>Bild-URL verwenden</summary>
+              <summary>Stattdessen Bild-URL verwenden</summary>
               <div className="optional-section-body">
                 <div className="field">
                   <label>Profilbild-URL</label>
