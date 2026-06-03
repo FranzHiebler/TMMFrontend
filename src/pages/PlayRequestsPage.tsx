@@ -138,6 +138,11 @@ export default function PlayRequestsPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (currentStep < wizardSteps.length - 1) {
+      goToNextStep();
+      return;
+    }
+
     for (let step = 0; step < wizardSteps.length - 1; step += 1) {
       const validationError = validateStep(step as WizardStep);
       if (validationError) {

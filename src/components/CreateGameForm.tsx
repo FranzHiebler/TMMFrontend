@@ -283,6 +283,11 @@ export default function CreateGameForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (currentStep < wizardSteps.length - 1) {
+      goToNextStep();
+      return;
+    }
+
     const systemsForValidation = buildSystems();
 
     for (let step = 0; step < wizardSteps.length - 1; step += 1) {
