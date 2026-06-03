@@ -10,7 +10,6 @@ import {
 } from "../api/messagesApi";
 import { searchUsers } from "../api/usersApi";
 import MessageThreadPanel from "../components/MessageThreadPanel";
-import NotificationBell from "../components/NotificationBell";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import type { ConversationDto, FriendDto, GameResponse, MessageDto, UserSearchResponse } from "../types/game";
@@ -76,7 +75,7 @@ export default function DirectMessagesPage() {
       setConversations(next);
       setSelectedId((current) => current ?? next[0]?.id ?? null);
     } catch (error) {
-      showToast("error", error instanceof Error ? error.message : "Chats konnten nicht geladen werden");
+      showToast("error", error instanceof Error ? error.message : "Unterhaltungen konnten nicht geladen werden");
     } finally {
       setLoadingList(false);
     }
@@ -189,16 +188,15 @@ export default function DirectMessagesPage() {
     <main className="page messages-page">
       <div className="page-header">
         <div>
-          <h1>Nachrichten</h1>
-          <p className="page-subtitle">Direkte Absprachen und Nachrichten an einem Ort.</p>
+          <h1>Direktnachrichten</h1>
+          <p className="page-subtitle">Private Unterhaltungen mit anderen Spielern. Benachrichtigungen bleiben oben in der Glocke.</p>
         </div>
-        <NotificationBell />
       </div>
 
       <div className="messages-layout">
         <aside className="conversation-list-panel">
           <div className="conversation-list-header">
-            <b>Chats</b>
+            <b>Unterhaltungen</b>
             <button type="button" onClick={() => {
               setSelectedId(null);
               setMessages([]);
@@ -207,7 +205,7 @@ export default function DirectMessagesPage() {
             </button>
           </div>
 
-          {loadingList && <div className="thread-empty">Lade Chats...</div>}
+          {loadingList && <div className="thread-empty">Lade Unterhaltungen...</div>}
           {!loadingList && conversations.length === 0 && (
             <div className="thread-empty">Noch keine Direktnachrichten.</div>
           )}
@@ -216,7 +214,7 @@ export default function DirectMessagesPage() {
             const title = conversation.participants
               .filter((participant) => participant.userId !== user.userId)
               .map((participant) => participant.displayName)
-              .join(", ") || "Chat";
+              .join(", ") || "Unterhaltung";
 
             return (
               <button

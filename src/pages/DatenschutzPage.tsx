@@ -37,7 +37,7 @@ export default function DatenschutzPage() {
 
         <h2>5. Nachrichten und Benachrichtigungen</h2>
         <p>
-          Direktnachrichten, Spieltermin-Kommentare, Tisch-Nachrichten und Benachrichtigungen werden
+          Direktnachrichten, Spieltermin-Kommentare, Tisch-Kommentare und Benachrichtigungen werden
           gespeichert, damit die Abstimmung rund um Spiele innerhalb der App möglich ist.
         </p>
 

@@ -13,7 +13,7 @@ export async function getConversations(user: User): Promise<ConversationDto[]> {
   const res = await fetch(`${API}/Messages/conversations`, {
     headers: authHeaders(user),
   });
-  return handleResponse<ConversationDto[]>(res, "Chats laden fehlgeschlagen");
+  return handleResponse<ConversationDto[]>(res, "Unterhaltungen laden fehlgeschlagen");
 }
 
 export async function getConversation(
@@ -23,7 +23,7 @@ export async function getConversation(
   const res = await fetch(`${API}/Messages/conversations/${conversationId}`, {
     headers: authHeaders(user),
   });
-  return handleResponse<ConversationDetailDto>(res, "Conversation laden fehlgeschlagen");
+  return handleResponse<ConversationDetailDto>(res, "Unterhaltung laden fehlgeschlagen");
 }
 
 export async function markConversationRead(conversationId: string, user: User): Promise<void> {
@@ -31,7 +31,7 @@ export async function markConversationRead(conversationId: string, user: User): 
     method: "POST",
     headers: authHeaders(user),
   });
-  return handleVoidResponse(res, "Conversation konnte nicht als gelesen markiert werden");
+  return handleVoidResponse(res, "Unterhaltung konnte nicht als gelesen markiert werden");
 }
 
 export async function sendDirectMessage(
@@ -50,7 +50,7 @@ export async function getGameMessages(gameId: string, user: User): Promise<Messa
   const res = await fetch(`${API}/Games/${gameId}/messages`, {
     headers: authHeaders(user),
   });
-  return handleResponse<MessageDto[]>(res, "Session-Nachrichten laden fehlgeschlagen");
+  return handleResponse<MessageDto[]>(res, "Kommentare zum Spieltermin laden fehlgeschlagen");
 }
 
 export async function sendGameMessage(
@@ -63,7 +63,7 @@ export async function sendGameMessage(
     headers: authHeaders(user),
     body: JSON.stringify(request),
   });
-  return handleResponse<MessageDto>(res, "Session-Nachricht konnte nicht gesendet werden");
+  return handleResponse<MessageDto>(res, "Kommentar zum Spieltermin konnte nicht gesendet werden");
 }
 
 export async function getTableMessages(
@@ -74,7 +74,7 @@ export async function getTableMessages(
   const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}/messages`, {
     headers: authHeaders(user),
   });
-  return handleResponse<MessageDto[]>(res, "Tisch-Nachrichten laden fehlgeschlagen");
+  return handleResponse<MessageDto[]>(res, "Tisch-Kommentare laden fehlgeschlagen");
 }
 
 export async function sendTableMessage(
@@ -88,5 +88,5 @@ export async function sendTableMessage(
     headers: authHeaders(user),
     body: JSON.stringify(request),
   });
-  return handleResponse<MessageDto>(res, "Tisch-Nachricht konnte nicht gesendet werden");
+  return handleResponse<MessageDto>(res, "Tisch-Kommentar konnte nicht gesendet werden");
 }
