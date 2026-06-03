@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   getNotifications,
@@ -48,10 +48,20 @@ function notificationTime(value: string) {
 export default function NotificationBell() {
   const user = useUser();
   const { showToast } = useToast();
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [showOlder, setShowOlder] = useState(false);
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.isRead).length,
+    [notifications]
+  );
+  const unreadNotifications = useMemo(
+    () => notifications.filter((notification) => !notification.isRead),
+    [notifications]
+  );
+  const readNotifications = useMemo(
+    () => notifications.filter((notification) => notification.isRead),
     [notifications]
   );
   const groupedNotifications = useMemo(
@@ -59,10 +69,14 @@ export default function NotificationBell() {
       groupOrder
         .map((group) => ({
           group,
-          items: notifications.filter((notification) => notificationGroup(notification) === group).slice(0, 6),
+          items: unreadNotifications.filter((notification) => notificationGroup(notification) === group).slice(0, 6),
         }))
         .filter((entry) => entry.items.length > 0),
-    [notifications]
+    [unreadNotifications]
+  );
+  const olderNotifications = useMemo(
+    () => readNotifications.slice(0, 8),
+    [readNotifications]
   );
 
   useEffect(() => {
@@ -85,6 +99,19 @@ export default function NotificationBell() {
       window.clearInterval(id);
     };
   }, [user]);
+
+  useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      const target = event.target as Node;
+      if (rootRef.current && !rootRef.current.contains(target)) {
+        setIsOpen(false);
+        setShowOlder(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
 
   async function markRead(notification: NotificationDto) {
     try {
@@ -113,7 +140,7 @@ export default function NotificationBell() {
   }
 
   return (
-    <div className="notification-bell">
+    <div className="notification-bell" ref={rootRef}>
       <button
         type="button"
         className="notification-trigger"
@@ -137,6 +164,12 @@ export default function NotificationBell() {
             </div>
           )}
 
+          {notifications.length > 0 && unreadNotifications.length === 0 && (
+            <div className="notification-empty">
+              Keine ungelesenen Benachrichtigungen.
+            </div>
+          )}
+
           {groupedNotifications.map(({ group, items }) => (
             <section key={group} className="notification-group">
               <h3>{group}</h3>
@@ -145,7 +178,11 @@ export default function NotificationBell() {
                   key={notification.id}
                   to={notificationTarget(notification)}
                   className={`notification-item notification-${notificationGroup(notification).toLowerCase()} ${notification.isRead ? "read" : "unread"}`}
-                  onClick={() => void markRead(notification)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowOlder(false);
+                    void markRead(notification);
+                  }}
                 >
                   <span
                     className={`notification-kind-icon notification-icon-${notificationIconClass(notification)}`}
@@ -160,6 +197,40 @@ export default function NotificationBell() {
               ))}
             </section>
           ))}
+
+          {olderNotifications.length > 0 && (
+            <section className="notification-group notification-group-older">
+              <button
+                type="button"
+                className="notification-older-toggle"
+                onClick={() => setShowOlder((value) => !value)}
+              >
+                {showOlder ? "Ältere ausblenden" : `Ältere anzeigen (${olderNotifications.length})`}
+              </button>
+              {showOlder &&
+                olderNotifications.map((notification) => (
+                  <Link
+                    key={notification.id}
+                    to={notificationTarget(notification)}
+                    className={`notification-item notification-${notificationGroup(notification).toLowerCase()} read older`}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowOlder(false);
+                    }}
+                  >
+                    <span
+                      className={`notification-kind-icon notification-icon-${notificationIconClass(notification)}`}
+                      aria-hidden="true"
+                    />
+                    <span className="notification-copy">
+                      <b>{notification.title}</b>
+                      <span>{notification.body}</span>
+                    </span>
+                    <time>{notificationTime(notification.createdAtUtc)}</time>
+                  </Link>
+                ))}
+            </section>
+          )}
         </div>
       )}
     </div>
