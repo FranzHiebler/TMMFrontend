@@ -34,7 +34,7 @@ export default function DiscoveryFilterPanel({
           aria-label={collapsed ? "Status öffnen" : "Status einklappen"}
           onClick={onToggleCollapsed}
         >
-          {collapsed ? "›" : "‹"}
+          {collapsed ? ">" : "<"}
         </button>
       </div>
 
