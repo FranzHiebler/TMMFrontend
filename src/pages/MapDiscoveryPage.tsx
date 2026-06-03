@@ -803,17 +803,14 @@ export default function MapDiscoveryPage() {
         </MapContainer>
 
         <div className={`discovery-map-controls ${filterCollapsed ? "discovery-map-controls-collapsed" : ""}`}>
-          <div className="discovery-filter-header">
-            <span>Filter</span>
-            <button
-              type="button"
-              className="overlay-toggle"
-              aria-label={filterCollapsed ? "Filter öffnen" : "Filter einklappen"}
-              onClick={() => setFilterCollapsed((value: boolean) => !value)}
-            >
-              {filterCollapsed ? "v" : "^"}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="discovery-filter-toggle"
+            aria-label={filterCollapsed ? "Filter öffnen" : "Filter einklappen"}
+            onClick={() => setFilterCollapsed((value: boolean) => !value)}
+          >
+            {filterCollapsed ? "<" : ">"}
+          </button>
 
           {!filterCollapsed && (
             <>
@@ -877,6 +874,8 @@ export default function MapDiscoveryPage() {
               />
             </>
           )}
+
+          {filterCollapsed && <span className="discovery-filter-collapsed-label">Filter</span>}
         </div>
 
         <DiscoveryLegend
