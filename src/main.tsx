@@ -15,6 +15,7 @@ import "./styles/responsive.css";
 import "./styles/profile.css";
 import "./styles/friends.css";
 import "./styles/profilepublic.css";
+import "./styles/feedback.css";
 
 
 import { UserProvider } from "./context/UserContext";

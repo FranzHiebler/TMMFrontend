@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { getCurrentUserPermissions } from "./api/usersApi";
+import FeedbackBar from "./components/FeedbackBar";
 import NotificationBell from "./components/NotificationBell";
 import UserSwitcher from "./components/UserSwitcher";
+import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import CalendarPage from "./pages/CalendarPage";
 import CreateGamePage from "./pages/CreateGamePage";
 import DatenschutzPage from "./pages/DatenschutzPage";
@@ -100,6 +102,7 @@ export default function App() {
               <Link to="/series">Regelmäßige Runden</Link>
               <div className="nav-more-divider" />
               {isAdmin && <Link to="/admin/systems">Admin: Systeme verwalten</Link>}
+              {isAdmin && <Link to="/admin/feedback">Admin: Tester-Feedback</Link>}
               <div className="nav-more-divider" />
               <Link to="/impressum">Impressum</Link>
               <Link to="/datenschutz">Datenschutz</Link>
@@ -132,8 +135,11 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/impressum" element={<ImpressumPage />} />
         <Route path="/datenschutz" element={<DatenschutzPage />} />
+        <Route path="/admin/feedback" element={<AdminFeedbackPage isAdmin={isAdmin} />} />
         {isAdmin && <Route path="/admin/systems" element={<SystemsAdminPage />} />}
       </Routes>
+
+      <FeedbackBar />
 
       <div className="app-bottom-nav" ref={createRef}>
         <NavLink to="/my-games" className={navClass}>
