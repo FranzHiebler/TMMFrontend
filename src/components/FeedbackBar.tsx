@@ -26,6 +26,7 @@ function collectContext() {
 
 export default function FeedbackBar() {
   const user = useUser();
+  const [isOpen, setIsOpen] = useState(false);
   const [type, setType] = useState<FeedbackType>("Info");
   const [reporterName, setReporterName] = useState("");
   const [message, setMessage] = useState("");
@@ -72,41 +73,68 @@ export default function FeedbackBar() {
   }
 
   return (
-    <form className="feedback-bar" onSubmit={submit} aria-label="Tester-Feedback">
-      <label className="feedback-type">
-        <span>Feedback</span>
-        <select value={type} onChange={(event) => setType(event.target.value as FeedbackType)}>
-          {typeOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <input
-        value={reporterName}
-        maxLength={120}
-        onChange={(event) => setReporterName(event.target.value)}
-        placeholder="Name optional"
-      />
-
-      <input
-        value={message}
-        maxLength={1000}
-        onChange={(event) => setMessage(event.target.value)}
-        placeholder="Kurzer Hinweis, Bug oder Vorschlag"
-      />
-
-      <button type="submit" disabled={sending}>
-        {sending ? "Sendet..." : "Senden"}
+    <div className={isOpen ? "feedback-widget feedback-widget-open" : "feedback-widget"}>
+      <button
+        type="button"
+        className="feedback-widget-trigger"
+        aria-expanded={isOpen}
+        aria-label={isOpen ? "Feedbackformular schließen" : "Feedback oder Bug melden"}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span aria-hidden="true">!</span>
+        <b>Feedback</b>
       </button>
 
-      {(statusText || error) && (
-        <p className={error ? "feedback-message feedback-message-error" : "feedback-message"}>
-          {error || statusText}
-        </p>
+      {isOpen && (
+        <form className="feedback-bar" onSubmit={submit} aria-label="Tester-Feedback">
+          <div className="feedback-panel-header">
+            <strong>Hinweis geben</strong>
+            <button
+              type="button"
+              className="feedback-close"
+              onClick={() => setIsOpen(false)}
+              aria-label="Feedbackformular schließen"
+            >
+              ×
+            </button>
+          </div>
+
+          <label className="feedback-type">
+            <span>Feedback</span>
+            <select value={type} onChange={(event) => setType(event.target.value as FeedbackType)}>
+              {typeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <input
+            value={reporterName}
+            maxLength={120}
+            onChange={(event) => setReporterName(event.target.value)}
+            placeholder="Name optional"
+          />
+
+          <input
+            value={message}
+            maxLength={1000}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="Kurzer Hinweis, Bug oder Vorschlag"
+          />
+
+          <button type="submit" disabled={sending}>
+            {sending ? "Sendet..." : "Senden"}
+          </button>
+
+          {(statusText || error) && (
+            <p className={error ? "feedback-message feedback-message-error" : "feedback-message"}>
+              {error || statusText}
+            </p>
+          )}
+        </form>
       )}
-    </form>
+    </div>
   );
 }
