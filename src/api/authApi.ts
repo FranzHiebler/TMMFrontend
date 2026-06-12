@@ -5,8 +5,13 @@ export interface AuthUserResponse {
   displayName: string;
   email?: string | null;
   isSystemAdmin: boolean;
+  realUserIsSystemAdmin: boolean;
   isDevUser: boolean;
   isImpersonating: boolean;
+  realUserId?: string | null;
+  realDisplayName?: string | null;
+  effectiveUserId?: string | null;
+  effectiveDisplayName?: string | null;
 }
 
 export async function getAuthMe(): Promise<AuthUserResponse> {

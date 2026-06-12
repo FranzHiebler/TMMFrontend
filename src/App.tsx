@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { stopImpersonation } from "./api/adminApi";
 import { getCurrentUserPermissions } from "./api/usersApi";
 import FeedbackBar from "./components/FeedbackBar";
 import NotificationBell from "./components/NotificationBell";
 import UserSwitcher from "./components/UserSwitcher";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
+import AdminOverviewPage from "./pages/AdminOverviewPage";
+import AdminTestUsersPage from "./pages/AdminTestUsersPage";
 import CalendarPage from "./pages/CalendarPage";
 import CreateGamePage from "./pages/CreateGamePage";
 import DatenschutzPage from "./pages/DatenschutzPage";
@@ -74,8 +77,37 @@ export default function App() {
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, []);
 
+  async function returnToSystemAdmin() {
+    const authUser = await stopImpersonation();
+    user.setUser({
+      userId: authUser.userId,
+      displayName: authUser.displayName,
+      email: authUser.email,
+      isSystemAdmin: authUser.isSystemAdmin,
+      realUserIsSystemAdmin: authUser.realUserIsSystemAdmin,
+      isDevUser: authUser.isDevUser,
+      isImpersonating: authUser.isImpersonating,
+      realUserId: authUser.realUserId,
+      realDisplayName: authUser.realDisplayName,
+      effectiveUserId: authUser.effectiveUserId,
+      effectiveDisplayName: authUser.effectiveDisplayName,
+    });
+  }
+
   return (
     <>
+      {user.isImpersonating && (
+        <div className="impersonation-banner">
+          <span>
+            Du siehst die App als <b>{user.displayName}</b>
+            {user.realDisplayName && <>. Angemeldet als {user.realDisplayName}</>}
+          </span>
+          <button type="button" onClick={() => void returnToSystemAdmin()}>
+            Zu Systemadmin zurückkehren
+          </button>
+        </div>
+      )}
+
       <nav className="app-top-nav">
         <Link className="nav-brand" to="/" aria-label="Zur Karte">
           <span className="nav-brand-mark">TMM</span>
@@ -101,6 +133,15 @@ export default function App() {
             <div className="hamburger-menu">
               <Link to="/locations">Meine Spielorte</Link>
               <Link to="/series">Regelmäßige Runden</Link>
+              {isAdmin && (
+                <>
+                  <div className="nav-more-divider" />
+                  <Link to="/admin">Admin Übersicht</Link>
+                  <Link to="/admin/systems">Systeme verwalten</Link>
+                  <Link to="/admin/feedback">Feedback</Link>
+                  <Link to="/admin/test-users">Testansichten</Link>
+                </>
+              )}
               <Link to="/impressum">Impressum</Link>
               <Link to="/datenschutz">Datenschutz</Link>
               <div className="nav-more-divider" />
@@ -144,74 +185,74 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/impressum" element={<ImpressumPage />} />
         <Route path="/datenschutz" element={<DatenschutzPage />} />
+        {isAdmin && <Route path="/admin" element={<AdminOverviewPage />} />}
+        {isAdmin && <Route path="/admin/test-users" element={<AdminTestUsersPage />} />}
         <Route path="/admin/feedback" element={<AdminFeedbackPage isAdmin={isAdmin} />} />
         {isAdmin && <Route path="/admin/systems" element={<SystemsAdminPage />} />}
       </Routes>
 
-<div className="app-bottom-stack">
-      <div className="app-bottom-nav" ref={createRef}>
-        <NavLink to="/my-games" className={navClass}>
-          <span className="app-icon app-icon-home" aria-hidden="true" />
-          Meine Spiele
-        </NavLink>
-        <NavLink to="/friends" className={navClass}>
-          <span className="app-icon app-icon-friends" aria-hidden="true" />
-          Freunde
-        </NavLink>
-        <NavLink to="/messages" className={navClass}>
-          <span className="app-icon app-icon-inbox" aria-hidden="true" />
-          Nachrichten
-        </NavLink>
-        <NavLink to="/profile" className={navClass}>
-          <span className="app-icon app-icon-profile" aria-hidden="true" />
-          Profil
-        </NavLink>
+      <div className="app-bottom-stack">
+        <div className="app-bottom-nav" ref={createRef}>
+          <NavLink to="/my-games" className={navClass}>
+            <span className="app-icon app-icon-home" aria-hidden="true" />
+            Meine Spiele
+          </NavLink>
+          <NavLink to="/friends" className={navClass}>
+            <span className="app-icon app-icon-friends" aria-hidden="true" />
+            Freunde
+          </NavLink>
+          <NavLink to="/messages" className={navClass}>
+            <span className="app-icon app-icon-inbox" aria-hidden="true" />
+            Nachrichten
+          </NavLink>
+          <NavLink to="/profile" className={navClass}>
+            <span className="app-icon app-icon-profile" aria-hidden="true" />
+            Profil
+          </NavLink>
 
-        <button
-          type="button"
-          className="app-tab app-tab-plus"
-          aria-expanded={createOpen}
-          aria-label={createOpen ? "Aktionsmenü schließen" : "Aktionsmenü öffnen"}
-          onClick={() => setCreateOpen((open) => !open)}
-        >
-          +
-        </button>
+          <button
+            type="button"
+            className="app-tab app-tab-plus"
+            aria-expanded={createOpen}
+            aria-label={createOpen ? "Aktionsmenü schließen" : "Aktionsmenü öffnen"}
+            onClick={() => setCreateOpen((open) => !open)}
+          >
+            +
+          </button>
 
-        {createOpen && (
-          <>
-            <button
-              type="button"
-              className="create-sheet-backdrop"
-              aria-label="Aktionsmenü schließen"
-              onClick={() => setCreateOpen(false)}
-            />
-            <div className="create-sheet" role="menu" aria-label="Neue Aktion">
-              <Link to="/games/create" className="create-action-card" role="menuitem">
-                <span className="create-action-title">Spieltermin anbieten</span>
-                <span className="create-action-description">
-                  Plane ein konkretes Spiel mit Ort, Tisch und freien Plätzen.
-                </span>
-              </Link>
-              <Link to="/play-requests" className="create-action-card" role="menuitem">
-                <span className="create-action-title">Spiel suchen</span>
-                <span className="create-action-description">
-                  Erstelle ein Gesuch und lass andere dich finden.
-                </span>
-              </Link>
-              <Link to="/series" className="create-action-card" role="menuitem">
-                <span className="create-action-title">Regelmäßige Runde planen</span>
-                <span className="create-action-description">
-                  Für Clubabende, Kampagnen oder feste Treffen.
-                </span>
-              </Link>
-            </div>
-          </>
-        )}
-      </div>
+          {createOpen && (
+            <>
+              <button
+                type="button"
+                className="create-sheet-backdrop"
+                aria-label="Aktionsmenü schließen"
+                onClick={() => setCreateOpen(false)}
+              />
+              <div className="create-sheet" role="menu" aria-label="Neue Aktion">
+                <Link to="/games/create" className="create-action-card" role="menuitem">
+                  <span className="create-action-title">Spieltermin anbieten</span>
+                  <span className="create-action-description">
+                    Plane ein konkretes Spiel mit Ort, Tisch und freien Plätzen.
+                  </span>
+                </Link>
+                <Link to="/play-requests" className="create-action-card" role="menuitem">
+                  <span className="create-action-title">Spiel suchen</span>
+                  <span className="create-action-description">
+                    Erstelle ein Gesuch und lass andere dich finden.
+                  </span>
+                </Link>
+                <Link to="/series" className="create-action-card" role="menuitem">
+                  <span className="create-action-title">Regelmäßige Runde planen</span>
+                  <span className="create-action-description">
+                    Für Clubabende, Kampagnen oder feste Treffen.
+                  </span>
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
 
-      
-      <FeedbackBar />
-
+        <FeedbackBar />
       </div>
     </>
   );

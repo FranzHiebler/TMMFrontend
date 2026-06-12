@@ -9,8 +9,13 @@ export type User = {
   displayName: string;
   email?: string | null;
   isSystemAdmin: boolean;
+  realUserIsSystemAdmin: boolean;
   isDevUser: boolean;
   isImpersonating: boolean;
+  realUserId?: string | null;
+  realDisplayName?: string | null;
+  effectiveUserId?: string | null;
+  effectiveDisplayName?: string | null;
 };
 
 type UserContextValue = User & {
@@ -35,8 +40,13 @@ function toUser(authUser: AuthUserResponse): User {
     displayName: authUser.displayName,
     email: authUser.email,
     isSystemAdmin: authUser.isSystemAdmin,
+    realUserIsSystemAdmin: authUser.realUserIsSystemAdmin,
     isDevUser: authUser.isDevUser,
     isImpersonating: authUser.isImpersonating,
+    realUserId: authUser.realUserId,
+    realDisplayName: authUser.realDisplayName,
+    effectiveUserId: authUser.effectiveUserId,
+    effectiveDisplayName: authUser.effectiveDisplayName,
   };
 }
 
