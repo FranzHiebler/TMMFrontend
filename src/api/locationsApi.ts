@@ -9,15 +9,15 @@ import type {
   UpsertLocationMemberRequest,
 } from "../types/game";
 import type { User } from "../context/UserContext";
-import { API, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
 
 export async function getLocations(): Promise<LocationOption[]> {
-  const res = await fetch(`${API}/Locations`);
+  const res = await apiFetch(`${API}/Locations`);
   return handleResponse<LocationOption[]>(res, "Spielorte laden fehlgeschlagen");
 }
 
 export async function getMyLocations(user: User): Promise<LocationResponse[]> {
-  const res = await fetch(`${API}/Locations/mine`, {
+  const res = await apiFetch(`${API}/Locations/mine`, {
     headers: authHeaders(user),
   });
 
@@ -36,7 +36,7 @@ export async function searchNearbyLocations(
 
   if (request.systemKey) params.append("systemKey", request.systemKey);
 
-  const res = await fetch(`${API}/Locations/nearby?${params.toString()}`, {
+  const res = await apiFetch(`${API}/Locations/nearby?${params.toString()}`, {
     headers: authHeaders(user),
   });
 
@@ -48,7 +48,7 @@ export async function requestLocationMembership(
   message: string | null,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Locations/${locationId}/join-requests`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/join-requests`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify({ message }),
@@ -61,7 +61,7 @@ export async function createLocation(
   request: CreateLocationRequest,
   user: User
 ): Promise<LocationResponse> {
-  const res = await fetch(`${API}/Locations`, {
+  const res = await apiFetch(`${API}/Locations`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -75,7 +75,7 @@ export async function updateLocation(
   request: CreateLocationRequest,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Locations/${id}`, {
+  const res = await apiFetch(`${API}/Locations/${id}`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -88,7 +88,7 @@ export async function getLocationMembers(
   locationId: string,
   user: User
 ): Promise<LocationMemberResponse[]> {
-  const res = await fetch(`${API}/Locations/${locationId}/members`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/members`, {
     headers: authHeaders(user),
   });
 
@@ -100,7 +100,7 @@ export async function upsertLocationMember(
   request: UpsertLocationMemberRequest,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Locations/${locationId}/members`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/members`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -114,7 +114,7 @@ export async function removeLocationMember(
   userId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Locations/${locationId}/members/${userId}`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/members/${userId}`, {
     method: "DELETE",
     headers: authHeaders(user),
   });
@@ -126,7 +126,7 @@ export async function getLocationJoinRequests(
   locationId: string,
   user: User
 ): Promise<LocationJoinRequestResponse[]> {
-  const res = await fetch(`${API}/Locations/${locationId}/join-requests`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/join-requests`, {
     headers: authHeaders(user),
   });
 
@@ -141,7 +141,7 @@ export async function acceptLocationJoinRequest(
   requestId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Locations/${locationId}/join-requests/${requestId}/accept`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/join-requests/${requestId}/accept`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -154,7 +154,7 @@ export async function rejectLocationJoinRequest(
   requestId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Locations/${locationId}/join-requests/${requestId}/reject`, {
+  const res = await apiFetch(`${API}/Locations/${locationId}/join-requests/${requestId}/reject`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -172,7 +172,7 @@ export async function getDiscoveryLocations(
   if (request.longitude != null) params.append("longitude", request.longitude.toString());
   if (request.radiusKm != null) params.append("radiusKm", request.radiusKm.toString());
 
-  const res = await fetch(`${API}/Locations/discovery?${params.toString()}`, {
+  const res = await apiFetch(`${API}/Locations/discovery?${params.toString()}`, {
     headers: authHeaders(user),
   });
 

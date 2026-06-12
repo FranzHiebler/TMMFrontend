@@ -1,9 +1,9 @@
 import type { User } from "../context/UserContext";
 import type { CreateEventSeriesRequest, EventSeriesDto, GameResponse } from "../types/game";
-import { API, authHeaders, handleResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse } from "./apiClient";
 
 export async function getEventSeries(user: User): Promise<EventSeriesDto[]> {
-  const res = await fetch(`${API}/EventSeries`, { headers: authHeaders(user) });
+  const res = await apiFetch(`${API}/EventSeries`, { headers: authHeaders(user) });
   return handleResponse<EventSeriesDto[]>(res, "Event-Serien laden fehlgeschlagen");
 }
 
@@ -11,7 +11,7 @@ export async function createEventSeries(
   request: CreateEventSeriesRequest,
   user: User
 ): Promise<EventSeriesDto> {
-  const res = await fetch(`${API}/EventSeries`, {
+  const res = await apiFetch(`${API}/EventSeries`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -24,7 +24,7 @@ export async function updateEventSeries(
   request: CreateEventSeriesRequest,
   user: User
 ): Promise<EventSeriesDto> {
-  const res = await fetch(`${API}/EventSeries/${encodeURIComponent(id)}`, {
+  const res = await apiFetch(`${API}/EventSeries/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -33,7 +33,7 @@ export async function updateEventSeries(
 }
 
 export async function createNextSeriesSession(id: string, user: User): Promise<GameResponse> {
-  const res = await fetch(`${API}/EventSeries/${id}/create-next-session`, {
+  const res = await apiFetch(`${API}/EventSeries/${id}/create-next-session`, {
     method: "POST",
     headers: authHeaders(user),
   });

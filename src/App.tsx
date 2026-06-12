@@ -32,6 +32,7 @@ function navClass({ isActive }: { isActive: boolean }) {
 export default function App() {
   const user = useUser();
   const location = useLocation();
+  const showDevelopmentUserSwitcher = import.meta.env.DEV && user.availableUsers.length > 0;
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -43,7 +44,7 @@ export default function App() {
 
     getCurrentUserPermissions(user)
       .then((permissions) => {
-        if (!cancelled) setIsAdmin(permissions.isAdmin);
+        if (!cancelled) setIsAdmin(permissions.isSystemAdmin || permissions.isAdmin);
       })
       .catch(() => {
         if (!cancelled) setIsAdmin(false);
@@ -103,11 +104,23 @@ export default function App() {
               <Link to="/impressum">Impressum</Link>
               <Link to="/datenschutz">Datenschutz</Link>
               <div className="nav-more-divider" />
-              <div className="test-mode-panel">
-                <b>Testmodus</b>
-                <small>Geschlossene Testerphase: Nutzerwechsel setzt nur die Dev-Header.</small>
+              <div className="auth-menu-panel">
+                <b>{user.displayName}</b>
+                {user.email && <small>{user.email}</small>}
+                {user.isSystemAdmin && <span>Systemadmin</span>}
               </div>
-              <UserSwitcher />
+              {showDevelopmentUserSwitcher && (
+                <>
+                  <div className="test-mode-panel">
+                    <b>Testmodus</b>
+                    <small>Development: Nutzerwechsel setzt nur die Dev-Header.</small>
+                  </div>
+                  <UserSwitcher />
+                </>
+              )}
+              <button type="button" className="hamburger-menu-button" onClick={() => void user.logout()}>
+                Abmelden
+              </button>
             </div>
           )}
         </div>

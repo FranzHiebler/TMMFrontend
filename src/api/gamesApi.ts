@@ -17,15 +17,15 @@ import type {
   UpdateGameTableRequest,
 } from "../types/game";
 import type { User } from "../context/UserContext";
-import { API, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
 
 export async function getAllGames(): Promise<GameResponse[]> {
-  const res = await fetch(`${API}/Games/search?OnlyOpen=false`);
+  const res = await apiFetch(`${API}/Games/search?OnlyOpen=false`);
   return handleResponse<GameResponse[]>(res, "Spieltermine laden fehlgeschlagen");
 }
 
 export async function createGame(request: CreateGameRequest, user: User): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games`, {
+  const res = await apiFetch(`${API}/Games`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -35,17 +35,17 @@ export async function createGame(request: CreateGameRequest, user: User): Promis
 }
 
 export async function getGameById(gameId: string): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}`);
+  const res = await apiFetch(`${API}/Games/${gameId}`);
   return handleResponse<GameResponse>(res, "Spieltermin laden fehlgeschlagen");
 }
 
 export async function getPublicGame(slugOrId: string): Promise<PublicGameResponse> {
-  const res = await fetch(`${API}/Games/public/${encodeURIComponent(slugOrId)}`);
+  const res = await apiFetch(`${API}/Games/public/${encodeURIComponent(slugOrId)}`);
   return handleResponse<PublicGameResponse>(res, "Öffentlichen Spieltermin laden fehlgeschlagen");
 }
 
 export async function getCalendar(user: User): Promise<CalendarItemResponse[]> {
-  const res = await fetch(`${API}/Games/calendar`, { headers: authHeaders(user) });
+  const res = await apiFetch(`${API}/Games/calendar`, { headers: authHeaders(user) });
   return handleResponse<CalendarItemResponse[]>(res, "Kalender laden fehlgeschlagen");
 }
 
@@ -55,7 +55,7 @@ export async function joinTable(
   request: JoinTableRequest,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}/join`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/tables/${tableId}/join`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -69,7 +69,7 @@ export async function applyToGame(
   request: ApplyToGameRequest,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Games/${gameId}/apply`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/apply`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -83,7 +83,7 @@ export async function createChangeProposal(
   request: CreateChangeProposalRequest,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/change-proposals`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/change-proposals`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -97,7 +97,7 @@ export async function acceptChangeProposal(
   proposalId: string,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/change-proposals/${proposalId}/accept`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/change-proposals/${proposalId}/accept`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -110,7 +110,7 @@ export async function rejectChangeProposal(
   proposalId: string,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/change-proposals/${proposalId}/reject`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/change-proposals/${proposalId}/reject`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -127,7 +127,7 @@ export async function searchNearbyGames(request: SearchNearbyGamesRequest): Prom
 
   if (request.systemKey) params.append("systemKey", request.systemKey);
 
-  const res = await fetch(`${API}/Games/nearby?${params.toString()}`);
+  const res = await apiFetch(`${API}/Games/nearby?${params.toString()}`);
   return handleResponse<GameResponse[]>(res, "Spieltermine in der Nähe laden fehlgeschlagen");
 }
 
@@ -143,7 +143,7 @@ export async function getDiscoveryGames(
   if (request.longitude != null) params.append("longitude", request.longitude.toString());
   if (request.radiusKm != null) params.append("radiusKm", request.radiusKm.toString());
 
-  const res = await fetch(`${API}/Games/discovery?${params.toString()}`, {
+  const res = await apiFetch(`${API}/Games/discovery?${params.toString()}`, {
     headers: authHeaders(user),
   });
 
@@ -156,7 +156,7 @@ export async function assignApplicationToTable(
   applicationId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}/assign`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/tables/${tableId}/assign`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify({ applicationId }),
@@ -170,7 +170,7 @@ export async function rejectApplication(
   applicationId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Games/${gameId}/applications/${applicationId}/reject`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/applications/${applicationId}/reject`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -184,7 +184,7 @@ export async function removePlayerFromTable(
   userId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}/players/${userId}/remove`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/tables/${tableId}/players/${userId}/remove`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -198,7 +198,7 @@ export async function movePlayerToTable(
   targetTableId: string,
   user: User
 ): Promise<void> {
-  const res = await fetch(`${API}/Games/${gameId}/players/${userId}/move`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/players/${userId}/move`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify({ targetTableId }),
@@ -212,7 +212,7 @@ export async function updateGameSession(
   request: UpdateGameSessionRequest,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}`, {
+  const res = await apiFetch(`${API}/Games/${gameId}`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -227,7 +227,7 @@ export async function updateGameTable(
   request: UpdateGameTableRequest,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/tables/${tableId}`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -241,7 +241,7 @@ export async function addDateOption(
   request: AddDateOptionRequest,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/date-options`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/date-options`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -250,7 +250,7 @@ export async function addDateOption(
 }
 
 export async function voteDateOption(gameId: string, optionId: string, user: User): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/date-options/${optionId}/vote`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/date-options/${optionId}/vote`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -258,7 +258,7 @@ export async function voteDateOption(gameId: string, optionId: string, user: Use
 }
 
 export async function selectDateOption(gameId: string, optionId: string, user: User): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/date-options/${optionId}/select`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/date-options/${optionId}/select`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -270,7 +270,7 @@ export async function inviteFriendToSession(
   request: InviteFriendToSessionRequest,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/invitations`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/invitations`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -284,7 +284,7 @@ export async function respondInvitation(
   accept: boolean,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/invitations/${invitationId}/${accept ? "accept" : "reject"}`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/invitations/${invitationId}/${accept ? "accept" : "reject"}`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -296,7 +296,7 @@ export async function joinWaitlist(
   request: JoinWaitlistRequest,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/waitlist`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/waitlist`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -310,7 +310,7 @@ export async function promoteWaitlist(
   tableId: string,
   user: User
 ): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/waitlist/${entryId}/promote?tableId=${encodeURIComponent(tableId)}`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/waitlist/${entryId}/promote?tableId=${encodeURIComponent(tableId)}`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -318,7 +318,7 @@ export async function promoteWaitlist(
 }
 
 export async function closeGame(gameId: string, request: CloseGameRequest, user: User): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/close`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/close`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -327,7 +327,7 @@ export async function closeGame(gameId: string, request: CloseGameRequest, user:
 }
 
 export async function cancelGame(gameId: string, user: User): Promise<GameResponse> {
-  const res = await fetch(`${API}/Games/${gameId}/cancel`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/cancel`, {
     method: "POST",
     headers: authHeaders(user),
   });

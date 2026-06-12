@@ -3,6 +3,10 @@ import { useUser } from "../context/UserContext";
 export default function UserSwitcher() {
   const user = useUser();
 
+  if (user.availableUsers.length === 0) {
+    return null;
+  }
+
   return (
     <select
       className="user-switcher"

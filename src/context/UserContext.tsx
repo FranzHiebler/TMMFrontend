@@ -1,20 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { getTestUsers } from "../api/usersApi";
+import { getAuthMe, logout as logoutApi, type AuthUserResponse } from "../api/authApi";
 import DatabaseUnavailableOverlay from "../components/DatabaseUnavailableOverlay";
+import LoginPage from "../pages/LoginPage";
 
 export type User = {
   userId: string;
   displayName: string;
+  email?: string | null;
+  isSystemAdmin: boolean;
+  isDevUser: boolean;
+  isImpersonating: boolean;
 };
 
 type UserContextValue = User & {
   availableUsers: User[];
   setUser: (user: User) => void;
   reloadUsers: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
+  logout: () => Promise<void>;
 };
-
-const STORAGE_KEY = "tmm-current-user";
 
 const UserContext = createContext<UserContextValue | null>(null);
 
@@ -22,71 +27,67 @@ type Props = {
   children: React.ReactNode;
 };
 
-type BootstrapState = "loading" | "ready" | "unavailable";
+type BootstrapState = "loading" | "ready" | "login" | "unavailable";
 
-function readStoredUserId() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return null;
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<User>;
-    return typeof parsed.userId === "string" ? parsed.userId : null;
-  } catch {
-    return null;
-  }
-}
-
-function persistUser(user: User) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+function toUser(authUser: AuthUserResponse): User {
+  return {
+    userId: authUser.userId,
+    displayName: authUser.displayName,
+    email: authUser.email,
+    isSystemAdmin: authUser.isSystemAdmin,
+    isDevUser: authUser.isDevUser,
+    isImpersonating: authUser.isImpersonating,
+  };
 }
 
 export function UserProvider({ children }: Props) {
   const [state, setState] = useState<BootstrapState>("loading");
   const [user, setUserState] = useState<User | null>(null);
-  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [technicalHint, setTechnicalHint] = useState("");
 
-  const loadUsers = useCallback(async () => {
+  const loadSession = useCallback(async () => {
     try {
       setState("loading");
       setTechnicalHint("");
 
-      const users = await getTestUsers();
-      if (users.length === 0) {
-        throw new Error("Keine Testnutzer geladen.");
-      }
-
-      const storedUserId = readStoredUserId();
-      const selected = users.find((candidate) => candidate.userId === storedUserId) ?? users[0];
-
-      setAvailableUsers(users);
-      setUserState(selected);
-      persistUser(selected);
+      const authUser = await getAuthMe();
+      setUserState(toUser(authUser));
       setState("ready");
     } catch (err) {
+      const message = err instanceof Error ? err.message : "API nicht erreichbar";
+      if (message.toLowerCase().includes("nicht angemeldet") || message.includes("401")) {
+        setUserState(null);
+        setState("login");
+        return;
+      }
+
       console.error("Initialisierung fehlgeschlagen", err);
-      localStorage.removeItem(STORAGE_KEY);
-      setAvailableUsers([]);
       setUserState(null);
-      setTechnicalHint(err instanceof Error ? err.message : "API nicht erreichbar");
+      setTechnicalHint(message);
       setState("unavailable");
     }
   }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      void loadUsers();
+      void loadSession();
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [loadUsers]);
+  }, [loadSession]);
 
-  function setUser(nextUser: User) {
-    const validated = availableUsers.find((candidate) => candidate.userId === nextUser.userId);
-    if (!validated) return;
+  async function handleLogout() {
+    await logoutApi();
+    setUserState(null);
+    setState("login");
+  }
 
-    persistUser(validated);
-    setUserState(validated);
+  function handleSetUser(nextUser: User) {
+    setUserState(nextUser);
+  }
+
+  if (state === "login") {
+    return <LoginPage onLogin={() => void loadSession()} />;
   }
 
   if (state !== "ready" || !user) {
@@ -94,13 +95,22 @@ export function UserProvider({ children }: Props) {
       <DatabaseUnavailableOverlay
         loading={state === "loading"}
         technicalHint={technicalHint}
-        onRetry={() => void loadUsers()}
+        onRetry={() => void loadSession()}
       />
     );
   }
 
   return (
-    <UserContext.Provider value={{ ...user, availableUsers, setUser, reloadUsers: loadUsers }}>
+    <UserContext.Provider
+      value={{
+        ...user,
+        availableUsers: [],
+        setUser: handleSetUser,
+        reloadUsers: loadSession,
+        refreshAuth: loadSession,
+        logout: handleLogout,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

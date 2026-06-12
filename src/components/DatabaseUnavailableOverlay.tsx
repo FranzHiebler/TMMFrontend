@@ -12,7 +12,7 @@ export default function DatabaseUnavailableOverlay({ loading, technicalHint, onR
         <h1>{loading ? "App wird geladen" : "Datenbank nicht verfügbar"}</h1>
         <p>
           {loading
-            ? "Die App lädt die initialen Testdaten."
+            ? "Die App lädt die Anmeldung."
             : "Die App konnte keine Verbindung zum Backend oder zur Datenbank herstellen. Bitte später erneut versuchen."}
         </p>
         {!loading && technicalHint && <small>{technicalHint}</small>}

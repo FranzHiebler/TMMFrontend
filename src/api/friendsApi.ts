@@ -4,17 +4,17 @@ import type {
   FriendRequestDto,
   SendFriendRequestRequest,
 } from "../types/game";
-import { API, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
 
 export async function getFriends(user: User): Promise<FriendDto[]> {
-  const res = await fetch(`${API}/Friends`, {
+  const res = await apiFetch(`${API}/Friends`, {
     headers: authHeaders(user),
   });
   return handleResponse<FriendDto[]>(res, "Freunde laden fehlgeschlagen");
 }
 
 export async function getFriendRequests(user: User): Promise<FriendRequestDto[]> {
-  const res = await fetch(`${API}/Friends/requests`, {
+  const res = await apiFetch(`${API}/Friends/requests`, {
     headers: authHeaders(user),
   });
   return handleResponse<FriendRequestDto[]>(res, "Freundschaftsanfragen laden fehlgeschlagen");
@@ -24,7 +24,7 @@ export async function sendFriendRequest(
   request: SendFriendRequestRequest,
   user: User
 ): Promise<FriendRequestDto | null> {
-  const res = await fetch(`${API}/Friends/request`, {
+  const res = await apiFetch(`${API}/Friends/request`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -33,7 +33,7 @@ export async function sendFriendRequest(
 }
 
 export async function acceptFriendRequest(id: string, user: User): Promise<FriendDto> {
-  const res = await fetch(`${API}/Friends/${id}/accept`, {
+  const res = await apiFetch(`${API}/Friends/${id}/accept`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -41,7 +41,7 @@ export async function acceptFriendRequest(id: string, user: User): Promise<Frien
 }
 
 export async function rejectFriendRequest(id: string, user: User): Promise<void> {
-  const res = await fetch(`${API}/Friends/${id}/reject`, {
+  const res = await apiFetch(`${API}/Friends/${id}/reject`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -49,7 +49,7 @@ export async function rejectFriendRequest(id: string, user: User): Promise<void>
 }
 
 export async function removeFriend(id: string, user: User): Promise<void> {
-  const res = await fetch(`${API}/Friends/${id}`, {
+  const res = await apiFetch(`${API}/Friends/${id}`, {
     method: "DELETE",
     headers: authHeaders(user),
   });

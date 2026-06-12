@@ -8,7 +8,7 @@ import type {
   TestUserOptionResponse,
 } from "../types/game";
 import type { User } from "../context/UserContext";
-import { API, authHeaders, handleResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse } from "./apiClient";
 
 export async function searchUsers(query: string, user?: User): Promise<UserSearchResponse[]> {
   const params = new URLSearchParams();
@@ -17,19 +17,19 @@ export async function searchUsers(query: string, user?: User): Promise<UserSearc
     params.append("query", query.trim());
   }
 
-  const res = await fetch(`${API}/Users/search?${params.toString()}`, {
+  const res = await apiFetch(`${API}/Users/search?${params.toString()}`, {
     headers: user ? authHeaders(user) : undefined,
   });
   return handleResponse<UserSearchResponse[]>(res, "User-Suche fehlgeschlagen");
 }
 
 export async function getTestUsers(): Promise<TestUserOptionResponse[]> {
-  const res = await fetch(`${API}/Users/test-users`);
+  const res = await apiFetch(`${API}/Users/test-users`);
   return handleResponse<TestUserOptionResponse[]>(res, "Testnutzer laden fehlgeschlagen");
 }
 
 export async function getCurrentUserProfile(user: User): Promise<UserProfileResponse> {
-  const res = await fetch(`${API}/Users/me`, {
+  const res = await apiFetch(`${API}/Users/me`, {
     headers: authHeaders(user),
   });
 
@@ -40,7 +40,7 @@ export async function updateCurrentUserProfile(
   request: UpdateUserProfileRequest,
   user: User
 ): Promise<UserProfileResponse> {
-  const res = await fetch(`${API}/Users/me`, {
+  const res = await apiFetch(`${API}/Users/me`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -53,7 +53,7 @@ export async function uploadProfileImage(file: File, user: User): Promise<UserPr
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API}/Users/me/profile-image`, {
+  const res = await apiFetch(`${API}/Users/me/profile-image`, {
     method: "POST",
     headers: {
       "x-user-id": user.userId,
@@ -66,7 +66,7 @@ export async function uploadProfileImage(file: File, user: User): Promise<UserPr
 }
 
 export async function getCurrentUserPermissions(user: User): Promise<UserPermissionsResponse> {
-  const res = await fetch(`${API}/Users/me/permissions`, {
+  const res = await apiFetch(`${API}/Users/me/permissions`, {
     headers: authHeaders(user),
   });
 
@@ -77,7 +77,7 @@ export async function updateDiscoverySettings(
   request: UserDiscoverySettingsDto,
   user: User
 ): Promise<UserDiscoverySettingsDto> {
-  const res = await fetch(`${API}/Users/me/discovery-settings`, {
+  const res = await apiFetch(`${API}/Users/me/discovery-settings`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -90,7 +90,7 @@ export async function getPublicUserProfile(
   userId: string,
   user: User
 ): Promise<PublicUserProfileResponse> {
-  const res = await fetch(`${API}/Users/${userId}/profile`, {
+  const res = await apiFetch(`${API}/Users/${userId}/profile`, {
     headers: authHeaders(user),
   });
 

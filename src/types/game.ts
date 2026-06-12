@@ -334,11 +334,14 @@ export interface UserProfileResponse {
 
 export interface UserPermissionsResponse {
   isAdmin: boolean;
+  isSystemAdmin: boolean;
+  isDevUser: boolean;
 }
 
 export interface TestUserOptionResponse {
   userId: string;
   displayName: string;
+  isDevUser: boolean;
 }
 
 export interface UpdateUserProfileRequest {

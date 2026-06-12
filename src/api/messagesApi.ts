@@ -7,10 +7,10 @@ import type {
   SendGameSessionMessageRequest,
   SendGameTableMessageRequest,
 } from "../types/game";
-import { API, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse, handleVoidResponse } from "./apiClient";
 
 export async function getConversations(user: User): Promise<ConversationDto[]> {
-  const res = await fetch(`${API}/Messages/conversations`, {
+  const res = await apiFetch(`${API}/Messages/conversations`, {
     headers: authHeaders(user),
   });
   return handleResponse<ConversationDto[]>(res, "Unterhaltungen laden fehlgeschlagen");
@@ -20,14 +20,14 @@ export async function getConversation(
   conversationId: string,
   user: User
 ): Promise<ConversationDetailDto> {
-  const res = await fetch(`${API}/Messages/conversations/${conversationId}`, {
+  const res = await apiFetch(`${API}/Messages/conversations/${conversationId}`, {
     headers: authHeaders(user),
   });
   return handleResponse<ConversationDetailDto>(res, "Unterhaltung laden fehlgeschlagen");
 }
 
 export async function markConversationRead(conversationId: string, user: User): Promise<void> {
-  const res = await fetch(`${API}/Messages/conversations/${conversationId}/read`, {
+  const res = await apiFetch(`${API}/Messages/conversations/${conversationId}/read`, {
     method: "POST",
     headers: authHeaders(user),
   });
@@ -38,7 +38,7 @@ export async function sendDirectMessage(
   request: SendDirectMessageRequest,
   user: User
 ): Promise<MessageDto> {
-  const res = await fetch(`${API}/Messages/direct`, {
+  const res = await apiFetch(`${API}/Messages/direct`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -47,7 +47,7 @@ export async function sendDirectMessage(
 }
 
 export async function getGameMessages(gameId: string, user: User): Promise<MessageDto[]> {
-  const res = await fetch(`${API}/Games/${gameId}/messages`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/messages`, {
     headers: authHeaders(user),
   });
   return handleResponse<MessageDto[]>(res, "Kommentare zum Spieltermin laden fehlgeschlagen");
@@ -58,7 +58,7 @@ export async function sendGameMessage(
   request: SendGameSessionMessageRequest,
   user: User
 ): Promise<MessageDto> {
-  const res = await fetch(`${API}/Games/${gameId}/messages`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/messages`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -71,7 +71,7 @@ export async function getTableMessages(
   tableId: string,
   user: User
 ): Promise<MessageDto[]> {
-  const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}/messages`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/tables/${tableId}/messages`, {
     headers: authHeaders(user),
   });
   return handleResponse<MessageDto[]>(res, "Tisch-Kommentare laden fehlgeschlagen");
@@ -83,7 +83,7 @@ export async function sendTableMessage(
   request: SendGameTableMessageRequest,
   user: User
 ): Promise<MessageDto> {
-  const res = await fetch(`${API}/Games/${gameId}/tables/${tableId}/messages`, {
+  const res = await apiFetch(`${API}/Games/${gameId}/tables/${tableId}/messages`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),

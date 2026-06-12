@@ -75,6 +75,53 @@
   justify-self: stretch;
 }
 
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.14), transparent 28%),
+    linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.login-card {
+  width: min(420px, 100%);
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+}
+
+.login-card h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 30px;
+  line-height: 1.08;
+}
+
+.login-card p {
+  margin: 0;
+  color: #475569;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.google-login-slot {
+  min-height: 44px;
+}
+
+.login-error {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b !important;
+}
+
 .hamburger-button {
   width: 42px;
   height: 42px;
@@ -129,6 +176,49 @@
 
 .hamburger-menu a:hover {
   background: #f3f4f6;
+}
+
+.auth-menu-panel {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #111827;
+}
+
+.auth-menu-panel b {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.auth-menu-panel small {
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.auth-menu-panel span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.hamburger-menu-button {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 900;
+  text-align: left;
 }
 
 .test-mode-panel {

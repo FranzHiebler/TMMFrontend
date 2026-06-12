@@ -376,6 +376,7 @@ export default function ProfilePage() {
 
       setProfile(updated);
       user.setUser({
+        ...user,
         userId: updated.userId,
         displayName: updated.displayName,
       });

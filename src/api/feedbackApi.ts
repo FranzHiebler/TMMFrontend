@@ -6,13 +6,13 @@ import type {
   UpdateFeedbackAdminRequest,
 } from "../types/feedback";
 import type { User } from "../context/UserContext";
-import { API, authHeaders, handleResponse } from "./apiClient";
+import { API, apiFetch, authHeaders, handleResponse } from "./apiClient";
 
 export async function createFeedback(
   request: CreateFeedbackRequest,
   user: User
 ): Promise<FeedbackResponse> {
-  const res = await fetch(`${API}/Feedback`, {
+  const res = await apiFetch(`${API}/Feedback`, {
     method: "POST",
     headers: authHeaders(user),
     body: JSON.stringify(request),
@@ -31,7 +31,7 @@ export async function getAdminFeedback(
   if (filters?.type) params.set("type", filters.type);
 
   const query = params.toString();
-  const res = await fetch(`${API}/Feedback/admin${query ? `?${query}` : ""}`, {
+  const res = await apiFetch(`${API}/Feedback/admin${query ? `?${query}` : ""}`, {
     headers: authHeaders(user),
   });
 
@@ -43,7 +43,7 @@ export async function updateAdminFeedback(
   request: UpdateFeedbackAdminRequest,
   user: User
 ): Promise<FeedbackResponse> {
-  const res = await fetch(`${API}/Feedback/admin/${encodeURIComponent(id)}`, {
+  const res = await apiFetch(`${API}/Feedback/admin/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: authHeaders(user),
     body: JSON.stringify(request),

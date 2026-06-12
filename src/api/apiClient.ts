@@ -3,6 +3,13 @@ import { readApiError } from "./apiError";
 
 export const API = import.meta.env.VITE_API_BASE_URL || "https://localhost:7173/api";
 
+export function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  return fetch(input, {
+    ...init,
+    credentials: "include",
+  });
+}
+
 export function authHeaders(user?: User): HeadersInit {
   return {
     "Content-Type": "application/json",
