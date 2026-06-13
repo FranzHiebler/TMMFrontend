@@ -28,15 +28,19 @@ type Props = {
 };
 
 function renderSystemBadges(labels: string[]) {
-  if (labels.length === 0) {
-    return <span className="system-badge muted">System offen</span>;
-  }
+  if (labels.length === 0) return null;
 
   return labels.map((label) => (
     <span key={label} className="system-badge">
       {label}
     </span>
   ));
+}
+
+function visibleSystemLabels(systemKeys: string[], systems: SystemOption[]) {
+  return systemShortCodes(systemKeys, systems)
+    .map(cleanSystemLabel)
+    .filter((label) => label && label.toLowerCase() !== "egal");
 }
 
 export default function DiscoverySelectionPanel({
@@ -115,38 +119,52 @@ export default function DiscoverySelectionPanel({
             {closeButton}
           </div>
 
-          <h2>{selectedLocation.name}</h2>
+          <div className="location-preview-layout">
+            <div className="location-preview-main">
+              <h2 className="location-preview-title">
+                <Link to={`/locations?locationId=${encodeURIComponent(selectedLocation.locationId)}`}>
+                  {selectedLocation.name}
+                </Link>
+              </h2>
 
-          <div className="preview-meta-grid">
-            <span>{selectedLocation.city}</span>
-            {selectedLocation.address && <span>{selectedLocation.address}</span>}
-            {selectedLocation.locationPrecision === "approximate" && <span>Ungefährer Spielort</span>}
-            <span>{selectedLocation.upcomingGameCount} kommende Spieltermine</span>
-            {selectedLocation.nextGameStartTimeUtc && (
-              <span>nächste: {dateTimeText(selectedLocation.nextGameStartTimeUtc)}</span>
-            )}
-          </div>
+              <p className="location-preview-address">
+                {[selectedLocation.city, selectedLocation.address].filter(Boolean).join(" · ")}
+              </p>
 
-          <div className="system-badge-row">
-            {renderSystemBadges(
-              systemShortCodes(selectedLocation.systemKeys, systems).map(cleanSystemLabel).filter(Boolean)
-            )}
-          </div>
+              <p className="location-preview-next">
+                {selectedLocation.upcomingGameCount > 0
+                  ? `${selectedLocation.upcomingGameCount} kommender Termin${
+                      selectedLocation.upcomingGameCount === 1 ? "" : "e"
+                    }${
+                      selectedLocation.nextGameStartTimeUtc
+                        ? ` · nächster: ${dateTimeText(selectedLocation.nextGameStartTimeUtc)}`
+                        : ""
+                    }`
+                  : "Keine kommenden Spieltermine"}
+              </p>
 
-          <div className="preview-actions">
-            <Link to={`/locations?locationId=${encodeURIComponent(selectedLocation.locationId)}`}>
-              Spielort öffnen
-            </Link>
+              {selectedLocation.locationPrecision === "approximate" && (
+                <p className="location-preview-note">Ungefährer Spielort</p>
+              )}
 
-            <button type="button" onClick={() => onCreateAtLocation(selectedLocation.locationId)}>
-              Spieltermin hier anbieten
-            </button>
+              {visibleSystemLabels(selectedLocation.systemKeys, systems).length > 0 && (
+                <div className="system-badge-row location-system-badges">
+                  {renderSystemBadges(visibleSystemLabels(selectedLocation.systemKeys, systems))}
+                </div>
+              )}
+            </div>
 
-            {selectedLocation.isOwnLocation && (
-              <Link to={`/locations?locationId=${encodeURIComponent(selectedLocation.locationId)}`}>
-                Mitglieder
-              </Link>
-            )}
+            <div className="preview-actions location-preview-actions">
+              <button type="button" onClick={() => onCreateAtLocation(selectedLocation.locationId)}>
+                Spieltermin anbieten
+              </button>
+
+              {selectedLocation.isOwnLocation && (
+                <Link to={`/locations?locationId=${encodeURIComponent(selectedLocation.locationId)}`}>
+                  Mitglieder
+                </Link>
+              )}
+            </div>
           </div>
         </article>
       )}

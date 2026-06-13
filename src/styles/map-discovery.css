@@ -922,6 +922,66 @@
   border-color: rgba(15, 118, 110, 0.35);
 }
 
+.location-preview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, auto);
+  gap: 10px;
+  align-items: start;
+}
+
+.location-preview-main {
+  min-width: 0;
+}
+
+.location-preview-title {
+  margin: 0 0 2px;
+  font-size: 16px;
+  line-height: 1.12;
+}
+
+.location-preview-title a {
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.location-preview-title a:hover,
+.location-preview-title a:focus-visible {
+  color: #0f766e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.location-preview-address,
+.location-preview-next,
+.location-preview-note {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-preview-next {
+  margin-top: 4px;
+  color: #334155;
+  font-weight: 850;
+}
+
+.location-preview-note {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.location-system-badges {
+  margin: 6px 0 0;
+  gap: 4px;
+}
+
 .player-preview {
   border-color: rgba(219, 39, 119, 0.35);
 }
@@ -994,10 +1054,10 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 3px 7px;
+  padding: 2px 6px;
   background: #e0e7ff;
   color: #3730a3;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
 }
 
@@ -1075,6 +1135,12 @@
   margin-top: 9px;
 }
 
+.location-preview-actions {
+  justify-content: flex-end;
+  align-content: start;
+  margin-top: 0;
+}
+
 .preview-actions a,
 .preview-actions button {
   display: inline-flex;
@@ -1087,6 +1153,14 @@
   font-weight: 800;
   line-height: 1;
   text-decoration: none;
+}
+
+.location-preview-actions a,
+.location-preview-actions button {
+  min-height: 28px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
 }
 
 .session-preview:not(.location-preview):not(.player-preview) .preview-actions a {
@@ -1292,6 +1366,22 @@
     margin: 0 34px 8px 0;
     font-size: 17px;
     line-height: 1.15;
+  }
+
+  .location-preview-layout {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .location-preview-title {
+    margin-right: 34px;
+    font-size: 16px;
+  }
+
+  .location-preview-address,
+  .location-preview-next,
+  .location-preview-note {
+    font-size: 11px;
   }
 
   .preview-meta-grid {
