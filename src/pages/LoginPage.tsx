@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loginWithGoogle } from "../api/authApi";
+import { loginWithGoogle, type AuthUserResponse } from "../api/authApi";
 import { recordAuthEvent } from "../debug/debugInfo";
 
 declare global {
@@ -19,7 +19,7 @@ declare global {
 }
 
 type Props = {
-  onLogin: () => void;
+  onLogin: (authUser: AuthUserResponse) => void;
 };
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
@@ -55,9 +55,9 @@ export default function LoginPage({ onLogin }: Props) {
             setLoading(true);
             setError("");
             recordAuthEvent("backend-login", "Google Credential wird an Backend gesendet.");
-            await loginWithGoogle(response.credential);
+            const authUser = await loginWithGoogle(response.credential);
             recordAuthEvent("backend-login", "Backend-Login erfolgreich.");
-            onLogin();
+            onLogin(authUser);
           } catch (err) {
             const message = err instanceof Error ? err.message : "Google Login fehlgeschlagen.";
             recordAuthEvent("backend-login-error", message);

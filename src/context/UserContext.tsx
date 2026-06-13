@@ -4,7 +4,7 @@ import { ApiError } from "../api/apiError";
 import { getAuthMe, logout as logoutApi, type AuthUserResponse } from "../api/authApi";
 import DatabaseUnavailableOverlay, { type UnavailableKind } from "../components/DatabaseUnavailableOverlay";
 import DebugPanel from "../components/DebugPanel";
-import { recordProfileLoadError } from "../debug/debugInfo";
+import { recordAuthEvent, recordProfileLoadError } from "../debug/debugInfo";
 import LoginPage from "../pages/LoginPage";
 
 export type User = {
@@ -102,10 +102,30 @@ export function UserProvider({ children }: Props) {
     setUserState(nextUser);
   }
 
+  function handleLogin(authUser: AuthUserResponse) {
+    setUserState(toUser(authUser));
+    setTechnicalHint("");
+    setState("ready");
+    recordAuthEvent("frontend-auth-state", "Frontend Auth-State aus Login-Antwort gesetzt.");
+    void verifySessionAfterLogin();
+  }
+
+  async function verifySessionAfterLogin() {
+    try {
+      recordAuthEvent("post-login-me", "/Auth/me wird nach Login geprüft.");
+      const authUser = await getAuthMe();
+      setUserState(toUser(authUser));
+      recordAuthEvent("post-login-me", "/Auth/me erfolgreich.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "/Auth/me nach Login fehlgeschlagen.";
+      recordAuthEvent("post-login-me-error", message);
+    }
+  }
+
   if (state === "login") {
     return (
       <>
-        <LoginPage onLogin={() => void loadSession()} />
+        <LoginPage onLogin={handleLogin} />
         <DebugPanel authStatus="nicht angemeldet" />
       </>
     );
