@@ -93,17 +93,41 @@ function coordinateGroupKey(latitude: number, longitude: number) {
   return `${latitude.toFixed(5)}:${longitude.toFixed(5)}`;
 }
 
-function markerGridOffset(index: number, total: number): MarkerVisualOffset {
+function diamondMosaicOffset(index: number, total: number): MarkerVisualOffset {
   if (total <= 1) return { x: 0, y: 0 };
 
-  const columns = total <= 4 ? 2 : 3;
+  if (total === 2) {
+    return [
+      { x: -17, y: 0 },
+      { x: 17, y: 0 },
+    ][index] ?? { x: 0, y: 0 };
+  }
+
+  if (total === 3) {
+    return [
+      { x: 0, y: -16 },
+      { x: -17, y: 13 },
+      { x: 17, y: 13 },
+    ][index] ?? { x: 0, y: 0 };
+  }
+
+  if (total === 4) {
+    return [
+      { x: -16, y: -16 },
+      { x: 16, y: -16 },
+      { x: -16, y: 16 },
+      { x: 16, y: 16 },
+    ][index] ?? { x: 0, y: 0 };
+  }
+
+  const columns = 3;
   const rows = Math.ceil(total / columns);
   const column = index % columns;
   const row = Math.floor(index / columns);
 
   return {
-    x: Math.round((column - (columns - 1) / 2) * 34),
-    y: Math.round((row - (rows - 1) / 2) * 34),
+    x: Math.round((column - (columns - 1) / 2) * 28),
+    y: Math.round((row - (rows - 1) / 2) * 28),
   };
 }
 
@@ -599,7 +623,7 @@ export default function MapDiscoveryPage() {
 
     for (const group of groups.values()) {
       group.forEach((item, index) => {
-        offsets.set(selectionKey(item.selection), markerGridOffset(index, group.length));
+        offsets.set(selectionKey(item.selection), diamondMosaicOffset(index, group.length));
       });
     }
 

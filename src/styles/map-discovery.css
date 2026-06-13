@@ -372,8 +372,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   pointer-events: auto;
 }
 
@@ -532,9 +532,9 @@
   border-color: #ffffff;
   box-shadow:
     0 0 0 4px rgba(255, 255, 255, 0.72),
-    0 0 0 7px rgba(15, 23, 42, 0.24),
+    0 0 0 6px rgba(15, 23, 42, 0.22),
     0 14px 30px rgba(15, 23, 42, 0.34);
-  transform: rotate(45deg) scale(calc(var(--marker-scale, 1) * 1.15));
+  transform: rotate(45deg) scale(calc(var(--marker-scale, 1) * 1.08));
 }
 
 .map-diamond-pill {
