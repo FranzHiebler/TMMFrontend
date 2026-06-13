@@ -9,8 +9,8 @@ import type {
 } from "../../../types/game";
 import { shortDateText } from "./discoveryDates";
 
-const MARKER_ICON_SIZE: [number, number] = [84, 48];
-const MARKER_ICON_ANCHOR: [number, number] = [42, 24];
+const MARKER_ICON_SIZE: [number, number] = [48, 48];
+const MARKER_ICON_ANCHOR: [number, number] = [24, 24];
 
 function gameMarkerState(game: GameDiscoveryResponse) {
   if (game.isHost) return "host";
@@ -55,35 +55,37 @@ function shortDisplay(value: string, maxLength: number) {
 function markerHtml({
   kind,
   state,
-  top,
-  bottom,
+  glyph,
+  activeLabel,
   isActive,
   isApproximate = false,
+  markerScale,
   visualOffsetX,
   visualOffsetY,
 }: {
   kind: string;
   state?: string;
-  top: string;
-  bottom: string;
+  glyph: string;
+  activeLabel?: string;
   isActive: boolean;
   isApproximate?: boolean;
+  markerScale: number;
   visualOffsetX: number;
   visualOffsetY: number;
 }) {
   const classes = [
-    "map-card-marker",
-    `map-card-${kind}`,
-    state ? `map-card-${state}` : "",
-    isActive ? "map-card-active" : "",
-    isApproximate ? "map-card-approximate" : "",
+    "map-diamond-marker",
+    `map-diamond-${kind}`,
+    state ? `map-diamond-${state}` : "",
+    isActive ? "map-diamond-active" : "",
+    isApproximate ? "map-diamond-approximate" : "",
   ].filter(Boolean).join(" ");
 
   return `
-    <div class="map-card-marker-wrap" style="transform: translate(${visualOffsetX}px, ${visualOffsetY}px)">
+    <div class="map-diamond-wrap ${isActive ? "map-diamond-wrap-active" : ""}" style="--marker-scale: ${markerScale}; transform: translate(${visualOffsetX}px, ${visualOffsetY}px)">
+      ${isActive && activeLabel ? `<span class="map-diamond-pill">${escapeHtml(activeLabel)}</span>` : ""}
       <div class="${classes}">
-        <span class="map-card-marker-top">${escapeHtml(top)}</span>
-        <span class="map-card-marker-bottom">${escapeHtml(bottom)}</span>
+        <span class="map-diamond-glyph ${glyph}" aria-hidden="true"></span>
       </div>
     </div>
   `;
@@ -95,19 +97,22 @@ export function gameMarkerIcon(
   systems: SystemOption[],
   isActive = false,
   visualOffsetX = 0,
-  visualOffsetY = 0
+  visualOffsetY = 0,
+  markerScale = 1
 ) {
   const systemLabels = systemLabelsFromSummary(game.tablesSummary, systems);
   const systemText = systemLabels.slice(0, 2).join(" · ") || "Termin";
+  const activeLabel = `${shortDateText(game.startTimeUtc)} · ${shortDisplay(systemText, 10)}`;
 
   return L.divIcon({
     className: "",
     html: markerHtml({
       kind: "session",
       state: gameMarkerState(game),
-      top: shortDateText(game.startTimeUtc),
-      bottom: shortDisplay(systemText, 12),
+      glyph: "map-glyph-game",
+      activeLabel,
       isActive,
+      markerScale,
       visualOffsetX,
       visualOffsetY,
     }),
@@ -121,21 +126,22 @@ export function locationMarkerIcon(
   location: LocationDiscoveryResponse,
   isActive = false,
   visualOffsetX = 0,
-  visualOffsetY = 0
+  visualOffsetY = 0,
+  markerScale = 1
 ) {
   const state = location.isOwnLocation ? "own-location-base" : "location";
   const isApproximate = location.locationPrecision === "approximate";
-  const count = location.upcomingGameCount > 0 ? ` · ${location.upcomingGameCount}` : "";
 
   return L.divIcon({
     className: "",
     html: markerHtml({
       kind: "location",
       state,
-      top: "Spielort",
-      bottom: shortDisplay(`${location.name}${count}`, 14),
+      glyph: "map-glyph-location",
+      activeLabel: shortDisplay(location.name, 18),
       isActive,
       isApproximate,
+      markerScale,
       visualOffsetX,
       visualOffsetY,
     }),
@@ -151,7 +157,8 @@ export function playerMarkerIcon(
   isFriend = false,
   isActive = false,
   visualOffsetX = 0,
-  visualOffsetY = 0
+  visualOffsetY = 0,
+  markerScale = 1
 ) {
   const isApproximate = player.locationPrecision === "approximate";
   const state = isMe ? "me" : isFriend ? "friend" : "player";
@@ -161,10 +168,11 @@ export function playerMarkerIcon(
     html: markerHtml({
       kind: "player",
       state,
-      top: isMe ? "Ich" : isFriend ? "Freund" : "Spieler",
-      bottom: shortDisplay(player.displayName, 14),
+      glyph: "map-glyph-user",
+      activeLabel: shortDisplay(player.displayName, 18),
       isActive,
       isApproximate,
+      markerScale,
       visualOffsetX,
       visualOffsetY,
     }),
@@ -179,18 +187,21 @@ export function playRequestMarkerIcon(
   systems: SystemOption[],
   isActive = false,
   visualOffsetX = 0,
-  visualOffsetY = 0
+  visualOffsetY = 0,
+  markerScale = 1
 ) {
   const isApproximate = request.locationPrecision === "approximate";
+  const systemText = systemShortCode(request.systemKey, systems);
 
   return L.divIcon({
     className: "",
     html: markerHtml({
       kind: "play-request",
-      top: "Gesuch",
-      bottom: shortDisplay(systemShortCode(request.systemKey, systems), 14),
+      glyph: "map-glyph-search",
+      activeLabel: `Gesuch · ${shortDisplay(systemText, 10)}`,
       isActive,
       isApproximate,
+      markerScale,
       visualOffsetX,
       visualOffsetY,
     }),

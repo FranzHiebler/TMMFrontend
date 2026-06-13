@@ -102,9 +102,16 @@ function markerGridOffset(index: number, total: number): MarkerVisualOffset {
   const row = Math.floor(index / columns);
 
   return {
-    x: Math.round((column - (columns - 1) / 2) * 86),
-    y: Math.round((row - (rows - 1) / 2) * 52),
+    x: Math.round((column - (columns - 1) / 2) * 34),
+    y: Math.round((row - (rows - 1) / 2) * 34),
   };
+}
+
+function markerScaleForZoom(zoom: number) {
+  if (zoom <= 8) return 0.72;
+  if (zoom <= 10) return 0.82;
+  if (zoom <= 12) return 0.92;
+  return 1;
 }
 
 function isOwnGame(game: GameDiscoveryResponse) {
@@ -705,6 +712,7 @@ export default function MapDiscoveryPage() {
     loadingPlayers ? "Spieler" : null,
     loadingPlayRequests ? "Spielgesuche" : null,
   ].filter((label): label is string => label != null);
+  const markerScale = markerScaleForZoom(zoom);
 
   function createAtLocation(locationId: string) {
     navigate(`/games/create?locationId=${encodeURIComponent(locationId)}`);
@@ -741,7 +749,8 @@ export default function MapDiscoveryPage() {
                     location,
                     isActive,
                     visualOffset.x,
-                    visualOffset.y
+                    visualOffset.y,
+                    markerScale
                   )}
                   zIndexOffset={isActive ? 1120 : location.isOwnLocation ? 220 : 140}
                   eventHandlers={{
@@ -788,7 +797,8 @@ export default function MapDiscoveryPage() {
                     systems,
                     isActive,
                     visualOffset.x,
-                    visualOffset.y
+                    visualOffset.y,
+                    markerScale
                   )}
                   zIndexOffset={isActive ? 1180 : isOwnGame(game) ? 360 + indexAtLocation : 240 + indexAtLocation}
                   eventHandlers={{
@@ -821,7 +831,8 @@ export default function MapDiscoveryPage() {
                   friendUserIds.has(player.userId),
                   isActive,
                   visualOffset.x,
-                  visualOffset.y
+                  visualOffset.y,
+                  markerScale
                 )}
                 zIndexOffset={isActive ? 1200 : 720}
                 eventHandlers={{
@@ -857,7 +868,8 @@ export default function MapDiscoveryPage() {
                   systems,
                   isActive,
                   visualOffset.x,
-                  visualOffset.y
+                  visualOffset.y,
+                  markerScale
                 )}
                 zIndexOffset={isActive ? 1210 : 780}
                 eventHandlers={{
