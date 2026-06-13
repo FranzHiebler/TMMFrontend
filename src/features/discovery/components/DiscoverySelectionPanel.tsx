@@ -82,11 +82,11 @@ export default function DiscoverySelectionPanel({
         <article className="session-preview">
           <div className="session-preview-topbar compact-preview-topbar">
             <time>{compactTimeText(selectedGame)}</time>
+            <p className="panel-kicker">Spieltermin</p>
             {switcher}
             {closeButton}
           </div>
 
-          <p className="panel-kicker">Spieltermin</p>
           <h2>{selectedGame.title}</h2>
 
           {selectedHostName && <p className="preview-host">von {selectedHostName}</p>}

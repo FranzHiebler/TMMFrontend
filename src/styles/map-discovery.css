@@ -182,7 +182,8 @@
   margin: 0;
   color: #2563eb;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 950;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -895,7 +896,7 @@
 }
 
 .session-preview h2 {
-  margin: 2px 30px 3px 0;
+  margin: 2px 0 3px;
   font-size: 15px;
   line-height: 1.15;
 }
@@ -989,18 +990,33 @@
 .session-preview-topbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   min-height: 24px;
 }
 
-.session-preview-topbar time {
+.session-preview-topbar time,
+.session-preview-topbar .panel-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
   padding: 3px 7px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #1e3a8a;
   font-size: 10px;
   font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.session-preview-topbar time {
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+.session-preview-topbar .panel-kicker {
+  background: rgba(219, 234, 254, 0.86);
+  color: #2563eb;
 }
 
 .session-preview-switcher,
@@ -1363,7 +1379,7 @@
   }
 
   .session-preview h2 {
-    margin: 0 34px 8px 0;
+    margin: 0 0 8px;
     font-size: 17px;
     line-height: 1.15;
   }
