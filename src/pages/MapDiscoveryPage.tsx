@@ -89,38 +89,21 @@ function selectionKey(selection: ActiveSelection) {
   return `${selection.type}:${selection.id}`;
 }
 
-function selectionStackCount(item: SelectionItem, items: SelectionItem[]) {
-  return items.filter((candidate) =>
-    distanceKm(item.latitude, item.longitude, candidate.latitude, candidate.longitude) <=
-    SELECTION_RADIUS_KM
-  ).length;
-}
-
 function coordinateGroupKey(latitude: number, longitude: number) {
   return `${latitude.toFixed(5)}:${longitude.toFixed(5)}`;
 }
 
-function markerFanOffset(index: number, total: number): MarkerVisualOffset {
+function markerGridOffset(index: number, total: number): MarkerVisualOffset {
   if (total <= 1) return { x: 0, y: 0 };
 
-  if (total === 2) {
-    return index === 0 ? { x: -13, y: 0 } : { x: 13, y: 0 };
-  }
-
-  if (total === 3) {
-    return [
-      { x: 0, y: -15 },
-      { x: -14, y: 10 },
-      { x: 14, y: 10 },
-    ][index] ?? { x: 0, y: 0 };
-  }
-
-  const radius = Math.min(24, 15 + total);
-  const angle = -Math.PI / 2 + (2 * Math.PI * index) / total;
+  const columns = total <= 4 ? 2 : 3;
+  const rows = Math.ceil(total / columns);
+  const column = index % columns;
+  const row = Math.floor(index / columns);
 
   return {
-    x: Math.round(Math.cos(angle) * radius),
-    y: Math.round(Math.sin(angle) * radius),
+    x: Math.round((column - (columns - 1) / 2) * 86),
+    y: Math.round((row - (rows - 1) / 2) * 52),
   };
 }
 
@@ -596,16 +579,6 @@ export default function MapDiscoveryPage() {
     );
   }, [visibleGames, visibleLocations, visiblePlayRequests, visiblePlayers]);
 
-  const markerStackCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-
-    for (const item of selectionItems) {
-      counts.set(selectionKey(item.selection), selectionStackCount(item, selectionItems));
-    }
-
-    return counts;
-  }, [selectionItems]);
-
   const markerVisualOffsets = useMemo(() => {
     const groups = new Map<string, SelectionItem[]>();
     const offsets = new Map<string, MarkerVisualOffset>();
@@ -619,7 +592,7 @@ export default function MapDiscoveryPage() {
 
     for (const group of groups.values()) {
       group.forEach((item, index) => {
-        offsets.set(selectionKey(item.selection), markerFanOffset(index, group.length));
+        offsets.set(selectionKey(item.selection), markerGridOffset(index, group.length));
       });
     }
 
@@ -767,7 +740,6 @@ export default function MapDiscoveryPage() {
                   icon={locationMarkerIcon(
                     location,
                     isActive,
-                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
                     visualOffset.x,
                     visualOffset.y
                   )}
@@ -815,7 +787,6 @@ export default function MapDiscoveryPage() {
                     indexAtLocation,
                     systems,
                     isActive,
-                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
                     visualOffset.x,
                     visualOffset.y
                   )}
@@ -849,7 +820,6 @@ export default function MapDiscoveryPage() {
                   player.userId === user.userId,
                   friendUserIds.has(player.userId),
                   isActive,
-                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
                   visualOffset.x,
                   visualOffset.y
                 )}
@@ -884,8 +854,8 @@ export default function MapDiscoveryPage() {
                 position={[request.latitude!, request.longitude!]}
                 icon={playRequestMarkerIcon(
                   request,
+                  systems,
                   isActive,
-                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
                   visualOffset.x,
                   visualOffset.y
                 )}
