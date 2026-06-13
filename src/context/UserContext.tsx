@@ -1,7 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { ApiError } from "../api/apiError";
 import { getAuthMe, logout as logoutApi, type AuthUserResponse } from "../api/authApi";
-import DatabaseUnavailableOverlay from "../components/DatabaseUnavailableOverlay";
+import DatabaseUnavailableOverlay, { type UnavailableKind } from "../components/DatabaseUnavailableOverlay";
+import DebugPanel from "../components/DebugPanel";
+import { recordProfileLoadError } from "../debug/debugInfo";
 import LoginPage from "../pages/LoginPage";
 
 export type User = {
@@ -54,6 +57,7 @@ export function UserProvider({ children }: Props) {
   const [state, setState] = useState<BootstrapState>("loading");
   const [user, setUserState] = useState<User | null>(null);
   const [technicalHint, setTechnicalHint] = useState("");
+  const [unavailableKind, setUnavailableKind] = useState<UnavailableKind>("unknown");
 
   const loadSession = useCallback(async () => {
     try {
@@ -65,7 +69,7 @@ export function UserProvider({ children }: Props) {
       setState("ready");
     } catch (err) {
       const message = err instanceof Error ? err.message : "API nicht erreichbar";
-      if (message.toLowerCase().includes("nicht angemeldet") || message.includes("401")) {
+      if (err instanceof ApiError && err.status === 401) {
         setUserState(null);
         setState("login");
         return;
@@ -73,7 +77,9 @@ export function UserProvider({ children }: Props) {
 
       console.error("Initialisierung fehlgeschlagen", err);
       setUserState(null);
+      setUnavailableKind(classifyBootstrapError(err));
       setTechnicalHint(message);
+      recordProfileLoadError(message);
       setState("unavailable");
     }
   }, []);
@@ -97,16 +103,25 @@ export function UserProvider({ children }: Props) {
   }
 
   if (state === "login") {
-    return <LoginPage onLogin={() => void loadSession()} />;
+    return (
+      <>
+        <LoginPage onLogin={() => void loadSession()} />
+        <DebugPanel authStatus="nicht angemeldet" />
+      </>
+    );
   }
 
   if (state !== "ready" || !user) {
     return (
-      <DatabaseUnavailableOverlay
-        loading={state === "loading"}
-        technicalHint={technicalHint}
-        onRetry={() => void loadSession()}
-      />
+      <>
+        <DatabaseUnavailableOverlay
+          loading={state === "loading"}
+          kind={unavailableKind}
+          technicalHint={technicalHint}
+          onRetry={() => void loadSession()}
+        />
+        <DebugPanel authStatus={state === "loading" ? "lädt" : "nicht verfügbar"} />
+      </>
     );
   }
 
@@ -122,6 +137,7 @@ export function UserProvider({ children }: Props) {
       }}
     >
       {children}
+      <DebugPanel authStatus="angemeldet" userEmail={user.email} displayName={user.displayName} />
     </UserContext.Provider>
   );
 }
@@ -133,4 +149,21 @@ export function useUser() {
   }
 
   return context;
+}
+
+function classifyBootstrapError(err: unknown): UnavailableKind {
+  if (err instanceof ApiError) {
+    if (err.status === 401) return "auth";
+    if (err.status === 403) return "permission";
+    if (err.status >= 500) {
+      const text = `${err.message} ${err.responseText}`.toLowerCase();
+      return text.includes("mongo") || text.includes("database") || text.includes("datenbank")
+        ? "database"
+        : "server";
+    }
+
+    return "profile";
+  }
+
+  return "api";
 }

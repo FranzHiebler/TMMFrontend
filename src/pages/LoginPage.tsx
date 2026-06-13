@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { loginWithGoogle } from "../api/authApi";
+import { recordAuthEvent } from "../debug/debugInfo";
 
 declare global {
   interface Window {
@@ -29,17 +30,22 @@ export default function LoginPage({ onLogin }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!googleClientId || !buttonRef.current) return;
-    const clientId = googleClientId;
+    if (!googleClientId || !buttonRef.current) {
+      if (!googleClientId) recordAuthEvent("google-config", "Google Client ID fehlt.");
+      return;
+    }
 
+    const clientId = googleClientId;
     let cancelled = false;
 
     function renderGoogleButton() {
       if (cancelled || !buttonRef.current || !window.google) return;
+      recordAuthEvent("google-render", "Google Button wird gerendert.");
 
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response) => {
+          recordAuthEvent("google-callback", response.credential ? "Credential erhalten." : "Credential fehlt.");
           if (!response.credential) {
             setError("Google hat kein gültiges Login-Token geliefert.");
             return;
@@ -48,10 +54,14 @@ export default function LoginPage({ onLogin }: Props) {
           try {
             setLoading(true);
             setError("");
+            recordAuthEvent("backend-login", "Google Credential wird an Backend gesendet.");
             await loginWithGoogle(response.credential);
+            recordAuthEvent("backend-login", "Backend-Login erfolgreich.");
             onLogin();
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Google Login fehlgeschlagen.");
+            const message = err instanceof Error ? err.message : "Google Login fehlgeschlagen.";
+            recordAuthEvent("backend-login-error", message);
+            setError(message);
           } finally {
             setLoading(false);
           }
@@ -79,7 +89,10 @@ export default function LoginPage({ onLogin }: Props) {
     script.async = true;
     script.defer = true;
     script.onload = renderGoogleButton;
-    script.onerror = () => setError("Google Login konnte nicht geladen werden.");
+    script.onerror = () => {
+      recordAuthEvent("google-script-error", "Google Login Script konnte nicht geladen werden.");
+      setError("Google Login konnte nicht geladen werden.");
+    };
     document.head.appendChild(script);
 
     return () => {
