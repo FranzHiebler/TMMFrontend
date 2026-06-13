@@ -394,7 +394,21 @@
 	}
 
 	.feedback-widget {
-		width: min(420px, 100%);
+		position: fixed;
+		top: calc(64px + env(safe-area-inset-top, 0px));
+		right: max(10px, env(safe-area-inset-right, 0px));
+		z-index: 11000;
+		width: auto;
+		pointer-events: auto;
+	}
+
+	.feedback-widget-open {
+		left: max(10px, env(safe-area-inset-left, 0px));
+		right: max(10px, env(safe-area-inset-right, 0px));
+		width: auto;
+		display: grid;
+		justify-items: end;
+		gap: 8px;
 	}
 
 	.feedback-widget-trigger b {
@@ -406,9 +420,14 @@
 		width: 42px;
 		justify-content: center;
 		padding: 0;
+		box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
 	}
 
 	.feedback-bar {
+		width: min(420px, calc(100vw - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+		max-height: calc(100dvh - 124px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		grid-template-columns: 86px minmax(90px, 130px) minmax(0, 1fr) auto;
 		padding: 6px;
 		border-radius: 16px;
@@ -457,10 +476,17 @@
 
 @media (max-width: 460px) {
 	.feedback-widget {
-		width: 100%;
+		width: auto;
+		left: auto;
+	}
+
+	.feedback-widget-open {
+		left: max(10px, env(safe-area-inset-left, 0px));
+		right: max(10px, env(safe-area-inset-right, 0px));
 	}
 
 	.feedback-bar {
+		width: calc(100vw - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
 		grid-template-columns: 86px minmax(0, 1fr);
 	}
 
