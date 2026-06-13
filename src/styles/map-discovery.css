@@ -7,6 +7,8 @@
   position: relative;
   min-height: calc(100vh - 72px);
   overflow: hidden;
+  --app-bottom-nav-height: 80px;
+  --map-sheet-top-clearance: 112px;
 }
 
 .discovery-map {
@@ -18,6 +20,21 @@
 
 .discovery-map .leaflet-marker-icon {
   overflow: visible;
+}
+
+.discovery-map .leaflet-popup-pane {
+  z-index: 1400;
+}
+
+.discovery-map .leaflet-popup-content-wrapper {
+  max-width: min(280px, calc(100vw - 42px));
+  border-radius: 14px;
+}
+
+.discovery-map .leaflet-popup-content {
+  max-width: min(240px, calc(100vw - 66px));
+  margin: 10px 12px;
+  overflow-wrap: anywhere;
 }
 
 .discovery-map-controls {
@@ -673,10 +690,14 @@
 
 .session-preview {
   right: 24px;
-  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
   width: min(300px, calc(100vw - 48px));
-  max-height: min(62vh, calc(100vh - 170px));
+  max-height: min(
+    62vh,
+    calc(100dvh - var(--map-sheet-top-clearance) - var(--app-bottom-nav-height) - env(safe-area-inset-bottom, 0px) - 24px)
+  );
   overflow-y: auto;
+  overscroll-behavior: contain;
   border-radius: 12px;
   padding: 8px;
   animation: preview-in 180ms ease-out;
@@ -931,11 +952,24 @@
 @media (max-width: 760px) {
   .discovery-map-shell {
     min-height: calc(100dvh - 72px);
+    --app-bottom-nav-height: 132px;
+    --map-sheet-top-clearance: 92px;
   }
 
   .discovery-map {
     height: calc(100dvh - 72px);
     min-height: 560px;
+  }
+
+  .discovery-map .leaflet-popup-content-wrapper {
+    max-width: calc(100vw - 34px);
+  }
+
+  .discovery-map .leaflet-popup-content {
+    max-width: calc(100vw - 58px);
+    margin: 9px 11px;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .discovery-map-controls {
@@ -1019,10 +1053,14 @@
   .session-preview {
     left: 10px;
     right: 10px;
-    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 10px);
     width: auto;
-    max-height: 42vh;
+    max-height: min(
+      52vh,
+      calc(100dvh - var(--map-sheet-top-clearance) - var(--app-bottom-nav-height) - env(safe-area-inset-bottom, 0px) - 20px)
+    );
     overflow-y: auto;
+    overscroll-behavior: contain;
     border-radius: 16px;
     padding: 11px;
   }

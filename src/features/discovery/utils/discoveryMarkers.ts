@@ -64,10 +64,14 @@ export function gameMarkerIcon(
   indexAtLocation: number,
   systems: SystemOption[],
   isActive = false,
-  stackCount = 1
+  stackCount = 1,
+  visualOffsetX = 0,
+  visualOffsetY = 0
 ) {
   const state = gameMarkerState(game);
-  const offset = Math.min(indexAtLocation, 3) * 8;
+  const baseOffset = stackCount > 1 ? 0 : Math.min(indexAtLocation, 3) * 8;
+  const offsetX = baseOffset + visualOffsetX;
+  const offsetY = -baseOffset + visualOffsetY;
   const systemLabels = systemLabelsFromSummary(game.tablesSummary, systems);
   const shortDate = shortDateText(game.startTimeUtc);
   const labelText = `${shortDate} · ${systemLabels.slice(0, 2).join(", ") || "Spieltermin"}`;
@@ -75,7 +79,7 @@ export function gameMarkerIcon(
   return L.divIcon({
     className: "",
     html: `
-      <div class="map-marker-wrap map-marker-game ${isActive ? "map-marker-active" : ""}" style="transform: translate(${offset}px, -${offset}px)">
+      <div class="map-marker-wrap map-marker-game ${isActive ? "map-marker-active" : ""}" style="transform: translate(${offsetX}px, ${offsetY}px)">
         ${isActive ? `<div class="map-marker-label">${escapeHtml(labelText)}</div>` : ""}
         <div class="game-dot-marker discovery-marker-${state}">
           <span class="marker-symbol">S</span>
@@ -90,7 +94,13 @@ export function gameMarkerIcon(
   });
 }
 
-export function locationMarkerIcon(location: LocationDiscoveryResponse, isActive = false, stackCount = 1) {
+export function locationMarkerIcon(
+  location: LocationDiscoveryResponse,
+  isActive = false,
+  stackCount = 1,
+  visualOffsetX = 0,
+  visualOffsetY = 0
+) {
   const state = location.isOwnLocation ? "own-location-base" : "location";
   const count = location.upcomingGameCount > 0 ? location.upcomingGameCount.toString() : "";
   const isApproximate = location.locationPrecision === "approximate";
@@ -98,7 +108,7 @@ export function locationMarkerIcon(location: LocationDiscoveryResponse, isActive
   return L.divIcon({
     className: "",
     html: `
-      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}">
+      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}" style="transform: translate(${visualOffsetX}px, ${visualOffsetY}px)">
         ${isActive ? `<div class="map-marker-label">${escapeHtml(location.name)}</div>` : ""}
         <div class="location-marker location-marker-${state} ${isApproximate ? "location-marker-approximate" : ""}">
           ${approximateRingHtml(isApproximate)}
@@ -118,7 +128,9 @@ export function playerMarkerIcon(
   isMe: boolean,
   isFriend = false,
   isActive = false,
-  stackCount = 1
+  stackCount = 1,
+  visualOffsetX = 0,
+  visualOffsetY = 0
 ) {
   const isApproximate = player.locationPrecision === "approximate";
   const classes = [
@@ -131,7 +143,7 @@ export function playerMarkerIcon(
   return L.divIcon({
     className: "",
     html: `
-      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}">
+      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}" style="transform: translate(${visualOffsetX}px, ${visualOffsetY}px)">
         ${isActive ? `<div class="map-marker-label">${escapeHtml(player.displayName)}</div>` : ""}
         <div class="${classes}">
           ${approximateRingHtml(isApproximate)}
@@ -147,7 +159,13 @@ export function playerMarkerIcon(
   });
 }
 
-export function playRequestMarkerIcon(request: PlayRequestDto, isActive = false, stackCount = 1) {
+export function playRequestMarkerIcon(
+  request: PlayRequestDto,
+  isActive = false,
+  stackCount = 1,
+  visualOffsetX = 0,
+  visualOffsetY = 0
+) {
   const isApproximate = request.locationPrecision === "approximate";
   const classes = [
     "player-marker",
@@ -158,7 +176,7 @@ export function playRequestMarkerIcon(request: PlayRequestDto, isActive = false,
   return L.divIcon({
     className: "",
     html: `
-      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}">
+      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}" style="transform: translate(${visualOffsetX}px, ${visualOffsetY}px)">
         ${isActive ? `<div class="map-marker-label">Spielgesuch</div>` : ""}
         <div class="${classes}">
           ${approximateRingHtml(isApproximate)}

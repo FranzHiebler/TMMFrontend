@@ -73,6 +73,11 @@ type SelectionItem = {
   sortLabel: string;
 };
 
+type MarkerVisualOffset = {
+  x: number;
+  y: number;
+};
+
 const SELECTION_RADIUS_KM = 0.35;
 const DISCOVERY_RELOAD_DEBOUNCE_MS = 350;
 
@@ -89,6 +94,34 @@ function selectionStackCount(item: SelectionItem, items: SelectionItem[]) {
     distanceKm(item.latitude, item.longitude, candidate.latitude, candidate.longitude) <=
     SELECTION_RADIUS_KM
   ).length;
+}
+
+function coordinateGroupKey(latitude: number, longitude: number) {
+  return `${latitude.toFixed(5)}:${longitude.toFixed(5)}`;
+}
+
+function markerFanOffset(index: number, total: number): MarkerVisualOffset {
+  if (total <= 1) return { x: 0, y: 0 };
+
+  if (total === 2) {
+    return index === 0 ? { x: -13, y: 0 } : { x: 13, y: 0 };
+  }
+
+  if (total === 3) {
+    return [
+      { x: 0, y: -15 },
+      { x: -14, y: 10 },
+      { x: 14, y: 10 },
+    ][index] ?? { x: 0, y: 0 };
+  }
+
+  const radius = Math.min(24, 15 + total);
+  const angle = -Math.PI / 2 + (2 * Math.PI * index) / total;
+
+  return {
+    x: Math.round(Math.cos(angle) * radius),
+    y: Math.round(Math.sin(angle) * radius),
+  };
 }
 
 function isOwnGame(game: GameDiscoveryResponse) {
@@ -573,6 +606,26 @@ export default function MapDiscoveryPage() {
     return counts;
   }, [selectionItems]);
 
+  const markerVisualOffsets = useMemo(() => {
+    const groups = new Map<string, SelectionItem[]>();
+    const offsets = new Map<string, MarkerVisualOffset>();
+
+    for (const item of selectionItems) {
+      const key = coordinateGroupKey(item.latitude, item.longitude);
+      const group = groups.get(key) ?? [];
+      group.push(item);
+      groups.set(key, group);
+    }
+
+    for (const group of groups.values()) {
+      group.forEach((item, index) => {
+        offsets.set(selectionKey(item.selection), markerFanOffset(index, group.length));
+      });
+    }
+
+    return offsets;
+  }, [selectionItems]);
+
   const gamesByLocation = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -705,6 +758,7 @@ export default function MapDiscoveryPage() {
             .map((location) => {
               const markerSelection: ActiveSelection = { type: "location", id: location.locationId };
               const isActive = selection ? sameSelection(selection, markerSelection) : false;
+              const visualOffset = markerVisualOffsets.get(selectionKey(markerSelection)) ?? { x: 0, y: 0 };
 
               return (
                 <Marker
@@ -713,7 +767,9 @@ export default function MapDiscoveryPage() {
                   icon={locationMarkerIcon(
                     location,
                     isActive,
-                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
+                    visualOffset.x,
+                    visualOffset.y
                   )}
                   zIndexOffset={isActive ? 1120 : location.isOwnLocation ? 220 : 140}
                   eventHandlers={{
@@ -748,6 +804,7 @@ export default function MapDiscoveryPage() {
             .map(({ game, indexAtLocation }) => {
               const markerSelection: ActiveSelection = { type: "game", id: game.gameId };
               const isActive = selection ? sameSelection(selection, markerSelection) : false;
+              const visualOffset = markerVisualOffsets.get(selectionKey(markerSelection)) ?? { x: 0, y: 0 };
 
               return (
                 <Marker
@@ -758,7 +815,9 @@ export default function MapDiscoveryPage() {
                     indexAtLocation,
                     systems,
                     isActive,
-                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
+                    visualOffset.x,
+                    visualOffset.y
                   )}
                   zIndexOffset={isActive ? 1180 : isOwnGame(game) ? 360 + indexAtLocation : 240 + indexAtLocation}
                   eventHandlers={{
@@ -779,6 +838,7 @@ export default function MapDiscoveryPage() {
           {visiblePlayers.map((player) => {
             const markerSelection: ActiveSelection = { type: "player", id: player.userId };
             const isActive = selection ? sameSelection(selection, markerSelection) : false;
+            const visualOffset = markerVisualOffsets.get(selectionKey(markerSelection)) ?? { x: 0, y: 0 };
 
             return (
               <Marker
@@ -789,7 +849,9 @@ export default function MapDiscoveryPage() {
                   player.userId === user.userId,
                   friendUserIds.has(player.userId),
                   isActive,
-                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
+                  visualOffset.x,
+                  visualOffset.y
                 )}
                 zIndexOffset={isActive ? 1200 : 720}
                 eventHandlers={{
@@ -814,6 +876,7 @@ export default function MapDiscoveryPage() {
           {visiblePlayRequests.map((request) => {
             const markerSelection: ActiveSelection = { type: "playRequest", id: request.id };
             const isActive = selection ? sameSelection(selection, markerSelection) : false;
+            const visualOffset = markerVisualOffsets.get(selectionKey(markerSelection)) ?? { x: 0, y: 0 };
 
             return (
               <Marker
@@ -822,7 +885,9 @@ export default function MapDiscoveryPage() {
                 icon={playRequestMarkerIcon(
                   request,
                   isActive,
-                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1,
+                  visualOffset.x,
+                  visualOffset.y
                 )}
                 zIndexOffset={isActive ? 1210 : 780}
                 eventHandlers={{
