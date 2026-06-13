@@ -80,6 +80,17 @@ function sameSelection(a: ActiveSelection, b: ActiveSelection) {
   return a.type === b.type && a.id === b.id;
 }
 
+function selectionKey(selection: ActiveSelection) {
+  return `${selection.type}:${selection.id}`;
+}
+
+function selectionStackCount(item: SelectionItem, items: SelectionItem[]) {
+  return items.filter((candidate) =>
+    distanceKm(item.latitude, item.longitude, candidate.latitude, candidate.longitude) <=
+    SELECTION_RADIUS_KM
+  ).length;
+}
+
 function isOwnGame(game: GameDiscoveryResponse) {
   return game.isHost || game.isParticipant;
 }
@@ -552,6 +563,16 @@ export default function MapDiscoveryPage() {
     );
   }, [visibleGames, visibleLocations, visiblePlayRequests, visiblePlayers]);
 
+  const markerStackCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const item of selectionItems) {
+      counts.set(selectionKey(item.selection), selectionStackCount(item, selectionItems));
+    }
+
+    return counts;
+  }, [selectionItems]);
+
   const gamesByLocation = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -681,92 +702,131 @@ export default function MapDiscoveryPage() {
 
           {visibleLocations
             .filter((location) => location.latitude != null && location.longitude != null)
-            .map((location) => (
-              <Marker
-                key={location.locationId}
-                position={[location.latitude!, location.longitude!]}
-                icon={locationMarkerIcon(location)}
-                zIndexOffset={location.isOwnLocation ? 180 : 120}
-                eventHandlers={{
-                  click: () => setSelection({ type: "location", id: location.locationId }),
-                }}
-              >
-                <Popup>
-                  <strong>{location.name}</strong>
-                  <br />
-                  {location.city}
-                  {location.locationPrecision === "approximate" && (
-                    <>
-                      <br />
-                      <small>Ungefährer Spielort</small>
-                    </>
+            .map((location) => {
+              const markerSelection: ActiveSelection = { type: "location", id: location.locationId };
+              const isActive = selection ? sameSelection(selection, markerSelection) : false;
+
+              return (
+                <Marker
+                  key={location.locationId}
+                  position={[location.latitude!, location.longitude!]}
+                  icon={locationMarkerIcon(
+                    location,
+                    isActive,
+                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1
                   )}
-                  {location.upcomingGameCount > 0 && (
-                    <>
-                      <br />
-                      {location.upcomingGameCount === 1
-                        ? "1 kommender Spieltermin"
-                        : `${location.upcomingGameCount} kommende Spieltermine`}
-                    </>
-                  )}
-                </Popup>
-              </Marker>
-            ))}
+                  zIndexOffset={isActive ? 1120 : location.isOwnLocation ? 220 : 140}
+                  eventHandlers={{
+                    click: () => setSelection(markerSelection),
+                  }}
+                >
+                  <Popup>
+                    <strong>{location.name}</strong>
+                    <br />
+                    {location.city}
+                    {location.locationPrecision === "approximate" && (
+                      <>
+                        <br />
+                        <small>Ungefährer Spielort</small>
+                      </>
+                    )}
+                    {location.upcomingGameCount > 0 && (
+                      <>
+                        <br />
+                        {location.upcomingGameCount === 1
+                          ? "1 kommender Spieltermin"
+                          : `${location.upcomingGameCount} kommende Spieltermine`}
+                      </>
+                    )}
+                  </Popup>
+                </Marker>
+              );
+            })}
 
           {gamesByLocation
             .filter(({ game }) => game.latitude != null && game.longitude != null)
-            .map(({ game, indexAtLocation }) => (
+            .map(({ game, indexAtLocation }) => {
+              const markerSelection: ActiveSelection = { type: "game", id: game.gameId };
+              const isActive = selection ? sameSelection(selection, markerSelection) : false;
+
+              return (
+                <Marker
+                  key={game.gameId}
+                  position={[game.latitude!, game.longitude!]}
+                  icon={gameMarkerIcon(
+                    game,
+                    indexAtLocation,
+                    systems,
+                    isActive,
+                    markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                  )}
+                  zIndexOffset={isActive ? 1180 : isOwnGame(game) ? 360 + indexAtLocation : 240 + indexAtLocation}
+                  eventHandlers={{
+                    click: () => setSelection(markerSelection),
+                  }}
+                >
+                  <Popup>
+                    <strong>{game.title}</strong>
+                    <br />
+                    {shortDateText(game.startTimeUtc)}
+                    <br />
+                    {game.locationName}, {game.city}
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+          {visiblePlayers.map((player) => {
+            const markerSelection: ActiveSelection = { type: "player", id: player.userId };
+            const isActive = selection ? sameSelection(selection, markerSelection) : false;
+
+            return (
               <Marker
-                key={game.gameId}
-                position={[game.latitude!, game.longitude!]}
-                icon={gameMarkerIcon(game, indexAtLocation, systems)}
-                zIndexOffset={60 + indexAtLocation}
+                key={player.userId}
+                position={[player.latitude!, player.longitude!]}
+                icon={playerMarkerIcon(
+                  player,
+                  player.userId === user.userId,
+                  friendUserIds.has(player.userId),
+                  isActive,
+                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                )}
+                zIndexOffset={isActive ? 1200 : 720}
                 eventHandlers={{
-                  click: () => setSelection({ type: "game", id: game.gameId }),
+                  click: () => setSelection(markerSelection),
                 }}
               >
                 <Popup>
-                  <strong>{game.title}</strong>
+                  <strong>{player.displayName}</strong>
                   <br />
-                  {shortDateText(game.startTimeUtc)}
-                  <br />
-                  {game.locationName}, {game.city}
+                  {player.city ?? "Ort unbekannt"}
+                  {player.locationPrecision === "approximate" && (
+                    <>
+                      <br />
+                      <small>Ungefährer Standort</small>
+                    </>
+                  )}
                 </Popup>
               </Marker>
-            ))}
+            );
+          })}
 
-          {visiblePlayers.map((player) => (
-            <Marker
-              key={player.userId}
-              position={[player.latitude!, player.longitude!]}
-              icon={playerMarkerIcon(player, player.userId === user.userId, friendUserIds.has(player.userId))}
-              zIndexOffset={720}
-              eventHandlers={{
-                click: () => setSelection({ type: "player", id: player.userId }),
-              }}
-            >
-              <Popup>
-                <strong>{player.displayName}</strong>
-                <br />
-                {player.city ?? "Ort unbekannt"}
-                {player.locationPrecision === "approximate" && (
-                  <>
-                    <br />
-                    <small>Ungefährer Standort</small>
-                  </>
-                )}
-              </Popup>
-            </Marker>
-          ))}
+          {visiblePlayRequests.map((request) => {
+            const markerSelection: ActiveSelection = { type: "playRequest", id: request.id };
+            const isActive = selection ? sameSelection(selection, markerSelection) : false;
 
-          {visiblePlayRequests.map((request) => (
+            return (
               <Marker
                 key={request.id}
                 position={[request.latitude!, request.longitude!]}
-                icon={playRequestMarkerIcon(request)}
-                zIndexOffset={780}
+                icon={playRequestMarkerIcon(
+                  request,
+                  isActive,
+                  markerStackCounts.get(selectionKey(markerSelection)) ?? 1
+                )}
+                zIndexOffset={isActive ? 1210 : 780}
                 eventHandlers={{
-                  click: () => setSelection({ type: "playRequest", id: request.id }),
+                  click: () => setSelection(markerSelection),
                 }}
               >
                 <Popup>
@@ -799,7 +859,8 @@ export default function MapDiscoveryPage() {
                   )}
                 </Popup>
               </Marker>
-            ))}
+            );
+          })}
         </MapContainer>
 
         <div className={`discovery-map-controls ${filterCollapsed ? "discovery-map-controls-collapsed" : ""}`}>

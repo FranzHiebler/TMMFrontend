@@ -26,7 +26,7 @@ export function systemLabelsFromSummary(summary: string, systems: SystemOption[]
   if (!summary.trim()) return [];
 
   return summary
-    .split("·")
+    .split(/\s*(?:·|Â·)\s*/)
     .flatMap((part) => part.split(":").slice(1).join(":").split(","))
     .map((value) => systemShortCode(cleanSystemLabel(value.replace(/\d+\s*Punkte/i, "")), systems))
     .filter(Boolean)
@@ -34,10 +34,23 @@ export function systemLabelsFromSummary(summary: string, systems: SystemOption[]
     .slice(0, 3);
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function systemBadgesHtml(labels: string[]) {
   if (labels.length === 0) return `<span class="map-system-badge">?</span>`;
 
-  return labels.map((label) => `<span class="map-system-badge">${label}</span>`).join("");
+  return labels.map((label) => `<span class="map-system-badge">${escapeHtml(label)}</span>`).join("");
+}
+
+function stackBadgeHtml(count: number) {
+  return count > 1 ? `<span class="marker-stack-badge">${count}</span>` : "";
 }
 
 function approximateRingHtml(isApproximate: boolean) {
@@ -46,28 +59,38 @@ function approximateRingHtml(isApproximate: boolean) {
   return `<span class="marker-approx-ring" aria-hidden="true"><svg viewBox="0 0 44 44" focusable="false"><path d="M22 3 C28 3 31 7 36 10 C42 15 40 23 39 28 C37 36 30 39 23 41 C16 43 11 39 7 35 C2 30 3 22 5 16 C7 9 14 4 22 3 Z" /></svg></span>`;
 }
 
-export function gameMarkerIcon(game: GameDiscoveryResponse, indexAtLocation: number, systems: SystemOption[]) {
+export function gameMarkerIcon(
+  game: GameDiscoveryResponse,
+  indexAtLocation: number,
+  systems: SystemOption[],
+  isActive = false,
+  stackCount = 1
+) {
   const state = gameMarkerState(game);
   const offset = Math.min(indexAtLocation, 3) * 8;
   const systemLabels = systemLabelsFromSummary(game.tablesSummary, systems);
+  const shortDate = shortDateText(game.startTimeUtc);
+  const labelText = `${shortDate} · ${systemLabels.slice(0, 2).join(", ") || "Spieltermin"}`;
 
   return L.divIcon({
     className: "",
     html: `
-      <div class="discovery-marker discovery-marker-${state}" style="transform: translate(${offset}px, -${offset}px)">
-        <div class="marker-main-row">
+      <div class="map-marker-wrap map-marker-game ${isActive ? "map-marker-active" : ""}" style="transform: translate(${offset}px, -${offset}px)">
+        ${isActive ? `<div class="map-marker-label">${escapeHtml(labelText)}</div>` : ""}
+        <div class="game-dot-marker discovery-marker-${state}">
           <span class="marker-symbol">S</span>
-          <span>${shortDateText(game.startTimeUtc)}</span>
+          <span class="game-dot-date">${escapeHtml(shortDate)}</span>
+          ${stackBadgeHtml(stackCount)}
         </div>
-        <div class="marker-system-row">${systemBadgesHtml(systemLabels)}</div>
+        ${isActive ? `<div class="marker-system-row">${systemBadgesHtml(systemLabels)}</div>` : ""}
       </div>
     `,
-    iconSize: [104, 52],
-    iconAnchor: [52, 26],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 }
 
-export function locationMarkerIcon(location: LocationDiscoveryResponse) {
+export function locationMarkerIcon(location: LocationDiscoveryResponse, isActive = false, stackCount = 1) {
   const state = location.isOwnLocation ? "own-location-base" : "location";
   const count = location.upcomingGameCount > 0 ? location.upcomingGameCount.toString() : "";
   const isApproximate = location.locationPrecision === "approximate";
@@ -75,18 +98,28 @@ export function locationMarkerIcon(location: LocationDiscoveryResponse) {
   return L.divIcon({
     className: "",
     html: `
-      <div class="location-marker location-marker-${state} ${isApproximate ? "location-marker-approximate" : ""}">
-        ${approximateRingHtml(isApproximate)}
-        <span class="marker-icon marker-icon-house" aria-hidden="true"></span>
-        ${count ? `<strong>${count}</strong>` : ""}
+      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}">
+        ${isActive ? `<div class="map-marker-label">${escapeHtml(location.name)}</div>` : ""}
+        <div class="location-marker location-marker-${state} ${isApproximate ? "location-marker-approximate" : ""}">
+          ${approximateRingHtml(isApproximate)}
+          <span class="marker-icon marker-icon-house" aria-hidden="true"></span>
+          ${count ? `<strong>${escapeHtml(count)}</strong>` : ""}
+          ${stackBadgeHtml(stackCount)}
+        </div>
       </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 }
 
-export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean, isFriend = false) {
+export function playerMarkerIcon(
+  player: UserSearchResponse,
+  isMe: boolean,
+  isFriend = false,
+  isActive = false,
+  stackCount = 1
+) {
   const isApproximate = player.locationPrecision === "approximate";
   const classes = [
     "player-marker",
@@ -98,19 +131,23 @@ export function playerMarkerIcon(player: UserSearchResponse, isMe: boolean, isFr
   return L.divIcon({
     className: "",
     html: `
-      <div class="${classes}">
-        ${approximateRingHtml(isApproximate)}
-        <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
-        ${isFriend ? `<span class="marker-friend-label">Freund</span>` : ""}
-        ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
+      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}">
+        ${isActive ? `<div class="map-marker-label">${escapeHtml(player.displayName)}</div>` : ""}
+        <div class="${classes}">
+          ${approximateRingHtml(isApproximate)}
+          <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
+          ${isFriend ? `<span class="marker-friend-label">Freund</span>` : ""}
+          ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
+          ${stackBadgeHtml(stackCount)}
+        </div>
       </div>
     `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 }
 
-export function playRequestMarkerIcon(request: PlayRequestDto) {
+export function playRequestMarkerIcon(request: PlayRequestDto, isActive = false, stackCount = 1) {
   const isApproximate = request.locationPrecision === "approximate";
   const classes = [
     "player-marker",
@@ -121,14 +158,18 @@ export function playRequestMarkerIcon(request: PlayRequestDto) {
   return L.divIcon({
     className: "",
     html: `
-      <div class="${classes}">
-        ${approximateRingHtml(isApproximate)}
-        <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
-        ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
-        <span class="marker-mini-label">Gesuch</span>
+      <div class="map-marker-wrap ${isActive ? "map-marker-active" : ""}">
+        ${isActive ? `<div class="map-marker-label">Spielgesuch</div>` : ""}
+        <div class="${classes}">
+          ${approximateRingHtml(isApproximate)}
+          <span class="marker-icon marker-icon-user" aria-hidden="true"></span>
+          ${isApproximate ? `<span class="marker-approx-label">&asymp;</span>` : ""}
+          <span class="marker-mini-label">Gesuch</span>
+          ${stackBadgeHtml(stackCount)}
+        </div>
       </div>
     `,
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 }
