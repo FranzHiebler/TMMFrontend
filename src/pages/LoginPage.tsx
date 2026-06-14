@@ -20,11 +20,12 @@ declare global {
 
 type Props = {
   onLogin: (authUser: AuthUserResponse) => void;
+  notice?: string;
 };
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-export default function LoginPage({ onLogin }: Props) {
+export default function LoginPage({ onLogin, notice }: Props) {
   const buttonRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -106,6 +107,7 @@ export default function LoginPage({ onLogin }: Props) {
         <span className="nav-brand-mark">TMM</span>
         <h1>Tabletop Matchmaker</h1>
         <p>Bitte melde dich mit deinem Google-Konto an, um die geschlossene Testphase zu nutzen.</p>
+        {notice && <p className="login-error">{notice}</p>}
 
         {!googleClientId ? (
           <p className="login-error">Google Login ist noch nicht konfiguriert.</p>

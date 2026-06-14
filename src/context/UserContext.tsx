@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { authExpiredEventName } from "../api/apiClient";
+import { authExpiredMessage } from "../api/apiError";
 import { ApiError } from "../api/apiError";
 import { getAuthMe, logout as logoutApi, type AuthUserResponse } from "../api/authApi";
 import DatabaseUnavailableOverlay, { type UnavailableKind } from "../components/DatabaseUnavailableOverlay";
@@ -58,6 +60,7 @@ export function UserProvider({ children }: Props) {
   const [user, setUserState] = useState<User | null>(null);
   const [technicalHint, setTechnicalHint] = useState("");
   const [unavailableKind, setUnavailableKind] = useState<UnavailableKind>("unknown");
+  const [loginNotice, setLoginNotice] = useState("");
 
   const loadSession = useCallback(async () => {
     try {
@@ -66,6 +69,7 @@ export function UserProvider({ children }: Props) {
 
       const authUser = await getAuthMe();
       setUserState(toUser(authUser));
+      setLoginNotice("");
       setState("ready");
     } catch (err) {
       const message = err instanceof Error ? err.message : "API nicht erreichbar";
@@ -92,9 +96,22 @@ export function UserProvider({ children }: Props) {
     return () => window.clearTimeout(timeout);
   }, [loadSession]);
 
+  useEffect(() => {
+    function handleAuthExpired() {
+      recordAuthEvent("auth-expired", "Geschützter API-Request wurde mit 401/403 abgelehnt.");
+      setUserState(null);
+      setLoginNotice(authExpiredMessage);
+      setState("login");
+    }
+
+    window.addEventListener(authExpiredEventName, handleAuthExpired);
+    return () => window.removeEventListener(authExpiredEventName, handleAuthExpired);
+  }, []);
+
   async function handleLogout() {
     await logoutApi();
     setUserState(null);
+    setLoginNotice("");
     setState("login");
   }
 
@@ -105,6 +122,7 @@ export function UserProvider({ children }: Props) {
   function handleLogin(authUser: AuthUserResponse) {
     setUserState(toUser(authUser));
     setTechnicalHint("");
+    setLoginNotice("");
     setState("ready");
     recordAuthEvent("frontend-auth-state", "Frontend Auth-State aus Login-Antwort gesetzt.");
     void verifySessionAfterLogin();
@@ -125,7 +143,7 @@ export function UserProvider({ children }: Props) {
   if (state === "login") {
     return (
       <>
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage onLogin={handleLogin} notice={loginNotice} />
         <DebugPanel authStatus="nicht angemeldet" />
       </>
     );

@@ -8,6 +8,7 @@ import {
   type SystemOption,
 } from "../types/game";
 import { createGame } from "../api/gamesApi";
+import { authExpiredMessage, isAuthSessionError } from "../api/apiError";
 import { getMyLocations } from "../api/locationsApi";
 import { getSystems } from "../api/systemsApi";
 import LocationSelect from "./LocationSelect";
@@ -339,7 +340,9 @@ export default function CreateGameForm() {
       showToast("success", "Spieltermin gespeichert");
       navigate(`/sessions/${created.id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Spieltermin konnte nicht erstellt werden";
+      const message = isAuthSessionError(err)
+        ? authExpiredMessage
+        : err instanceof Error ? err.message : "Spieltermin konnte nicht erstellt werden";
       setError(message);
       showToast("error", message);
     } finally {

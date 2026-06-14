@@ -12,6 +12,22 @@ export class ApiError extends Error {
   }
 }
 
+export const authExpiredMessage = "Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.";
+
+export function isAuthSessionError(err: unknown): err is ApiError {
+  if (!(err instanceof ApiError)) return false;
+  if (err.status !== 401 && err.status !== 403) return false;
+
+  const text = `${err.message} ${err.responseText}`.toLowerCase();
+
+  return (
+    text.includes("anmeldung erforderlich") ||
+    text.includes("nicht angemeldet") ||
+    text.includes("session ist ung") ||
+    text.includes("unauthorized")
+  );
+}
+
 export async function readApiError(res: Response, fallback: string): Promise<ApiError> {
   const text = await res.text();
 

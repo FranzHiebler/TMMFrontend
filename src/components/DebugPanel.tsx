@@ -71,6 +71,14 @@ export default function DebugPanel({ authStatus, userEmail, displayName }: Props
                   : "Keiner"}
               </dd>
             </div>
+            {snapshot.lastApiFailure?.responseText && (
+              <div>
+                <dt>Letzte API-Response</dt>
+                <dd>
+                  <code>{snapshot.lastApiFailure.responseText}</code>
+                </dd>
+              </div>
+            )}
             <div>
               <dt>Letzter Auth-Status</dt>
               <dd>{snapshot.lastAuthEvent ? `${snapshot.lastAuthEvent.step}: ${snapshot.lastAuthEvent.message ?? ""}` : "Keiner"}</dd>

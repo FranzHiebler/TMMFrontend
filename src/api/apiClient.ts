@@ -1,9 +1,10 @@
 import type { User } from "../context/UserContext";
 import { recordApiFailure } from "../debug/debugInfo";
-import { readApiError } from "./apiError";
+import { isAuthSessionError, readApiError } from "./apiError";
 
 export const API = import.meta.env.VITE_API_BASE_URL || "https://localhost:7173/api";
 const responseMethods = new WeakMap<Response, string>();
+export const authExpiredEventName = "tmm-auth-expired";
 
 export function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const method = init.method ?? "GET";
@@ -47,6 +48,7 @@ export async function handleResponse<T>(res: Response, fallback: string): Promis
       responseText: error.responseText,
       error: error.message,
     });
+    notifyAuthExpired(error);
     throw error;
   }
 
@@ -69,6 +71,12 @@ export async function handleVoidResponse(res: Response, fallback: string): Promi
       responseText: error.responseText,
       error: error.message,
     });
+    notifyAuthExpired(error);
     throw error;
   }
+}
+
+function notifyAuthExpired(error: unknown) {
+  if (!isAuthSessionError(error)) return;
+  window.dispatchEvent(new CustomEvent(authExpiredEventName));
 }
